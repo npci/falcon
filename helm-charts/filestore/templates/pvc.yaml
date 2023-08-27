@@ -1,0 +1,18 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-{{ include "filestore.fullname" . }}
+  labels:
+    {{- include "filestore.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - {{ .Values.storage.accessMode | default "ReadWriteOnce" }} 
+  resources:
+    requests:
+      storage: {{ .Values.storage.size | default "1G" }}
+  storageClassName: {{ .Values.storage.storageClass | default "default" }}

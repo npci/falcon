@@ -1,0 +1,111 @@
+# Default values for fabric-peer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: "initialpeerorg"
+fullnameOverride: ""
+project: yourproject
+
+imagePullSecrets: []
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+init:
+  image:
+   repository: npcioss/hlf-builder
+   tag: 2.4
+
+ica_tls_cert_file: /root/ica-cert.pem
+tlsca_tls_cert_file: /root/tlsca-cert.pem
+fabric_base_dir: /etc/hyperledger/fabric
+retry_seconds: 60
+
+peers:
+  - name: peer0
+    identity_name: peer0-initialpeerorg
+    identity_secret: peer0initialpeerorgSamplePassword
+  - name: peer1
+    identity_name: peer1-initialpeerorg
+    identity_secret: peer1initialpeerorgSamplePassword
+  - name: peer2
+    identity_name: peer2-initialpeerorg
+    identity_secret: peer2initialpeerorgSamplePassword
+    
+
+global:
+  hlf_domain: my-hlf-domain.com
+  ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+  tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+  ingressClass: nginx
+  ingressPort: 30000
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  imageRegistry: hyperledger
+  imagePullPolicy: Always
+  serviceAccount:
+    annotations: []
+   
+  useCouchDB: true
+  couchImageRegistry: docker.io
+  couchImageRepo: couchdb
+  couchImageTag: 3.1.1
+  couchContainerPort: "5984"
+  couchServiceType: ClusterIP
+  couchServicePort: "5984"
+  couchDataDir: /opt/couchdb/data
+  couchDiskSize: 1G
+  couchDbUser: couchDbSampleUser
+  couchDbUserPass: couchDbSampleUserPassword
+  couchPvcAccessMode: ReadWriteOnce
+  
+  peerImageRegistry: docker.io
+  peerImageRepo: hyperledger/fabric-peer
+  peerImageTag: 2.4
+  peerContainerPort: "7051"
+  peerDataDir: /var/hyperledger/production
+  peerServiceType: ClusterIP
+  peerServicePort: "30002"
+  peerDiskSize: 1G
+  peerPvcAccessMode: ReadWriteOnce
+  peerArgs:
+    - peer
+    - node
+    - start
+  core_peer_gossip_bootstrap: peer0-initialpeerorg.my-hlf-domain.com:30000
+
+  dindImageRegistry: docker.io
+  dindImageRepo: npcioss/dind
+  dindImageTag: dind-20-10-16
+  dindDataDir: /var/lib/docker
+  storageClass: standard
+  dindDiskSize: 5G
+  dindPvcAccessMode: ReadWriteOnce
+
+
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+nodeSelector: {}
+tolerations: []
+affinity: {}

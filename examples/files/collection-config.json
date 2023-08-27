@@ -1,0 +1,74 @@
+[
+  {
+    "name": "initialpeerorgDataCollection",
+    "policy": "OR('initialpeerorg.member')",
+    "requiredPeerCount": 0,
+    "maxPeerCount": 1,
+    "blockToLive": 0,
+    "memberOnlyRead": true,
+    "memberOnlyWrite": false,
+    "endorsementPolicy": {
+      "signaturePolicy": "OR('initialpeerorg.member')"
+    }
+  },
+  {
+    "name": "org1initialpeerorgCollection",
+    "policy": "OR('initialpeerorg.member', 'org1.member')",
+    "requiredPeerCount": 0,
+    "maxPeerCount": 1,
+    "blockToLive": 0,
+    "memberOnlyRead": true,
+    "memberOnlyWrite": false,
+    "endorsementPolicy": {
+      "signaturePolicy": "OR('initialpeerorg.member', 'org1.member')"
+    }
+  },
+  {
+    "name": "org1DataCollection",
+    "policy": "OR('org1.member')",
+    "requiredPeerCount": 0,
+    "maxPeerCount": 1,
+    "blockToLive": 0,
+    "memberOnlyRead": true,
+    "memberOnlyWrite": false,
+    "endorsementPolicy": {
+      "signaturePolicy": "OR('org1.member')"
+    }
+  },
+  {
+    "name": "org2DataCollection",
+    "policy": "OR('org2.member')",
+    "requiredPeerCount": 0,
+    "maxPeerCount": 1,
+    "blockToLive": 0,
+    "memberOnlyRead": true,
+    "memberOnlyWrite": false,
+    "endorsementPolicy": {
+      "signaturePolicy": "OR('org2.member')"
+    }
+  },
+  {
+    "name": "org2org1RequestsCollection",
+    "policy": "OR('org1.member', 'org2.member', 'initialpeerorg.member')",
+    "requiredPeerCount": 1,
+    "maxPeerCount": 1,
+    "blockToLive": 0,
+    "memberOnlyRead": true,
+    "memberOnlyWrite": true,
+    "endorsementPolicy": {
+      "signaturePolicy": "OR('org1.member', 'org2.member')"
+    }
+  },
+  {
+    "name": "systemDataCollection",
+    "policy": "OR('org2.member')",
+    "requiredPeerCount": 0,
+    "maxPeerCount": 1,
+    "blockToLive": 0,
+    "memberOnlyRead": true,
+    "memberOnlyWrite": false,
+    "endorsementPolicy": {
+      "signaturePolicy": "OR('org2.member')"
+    }
+  }
+]

@@ -1,0 +1,82 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- if eq "crypto" .Values.job_type  }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+spec:
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-ops.selectorLabels" $ | nindent 8 }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fabric-ops.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Never  
+      containers:
+        - name: {{ $.Chart.Name }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          workingDir: /scripts
+          command: ["/bin/sh","-c"]
+          args:
+            - /scripts/enroll.sh;
+              /scripts/gen_artifacts.sh;
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          env:
+            - name: FABRIC_CFG_PATH
+              value: /scripts
+          volumeMounts:
+            - name: configtx
+              subPath: configtx.yaml
+              mountPath: /scripts/configtx.yaml
+            - name: crypto-gen
+              subPath: enroll.sh
+              mountPath: /scripts/enroll.sh
+            - name: crypto-gen
+              subPath: gen_artifacts.sh
+              mountPath: /scripts/gen_artifacts.sh
+            - name: crypto-gen
+              subPath: config.yaml
+              mountPath: /tmp/config.yaml
+      volumes:
+        - name: configtx
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-configtx
+            defaultMode: 0777
+        - name: crypto-gen
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-crypto-gen
+            defaultMode: 0777
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,122 @@
+# Default values for ca.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+nameOverride: "root-ca"
+fullnameOverride: ""
+project: yourproject
+
+replicaCount: 1
+
+image:
+  repository: hyperledger/fabric-ca
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.5.0"
+
+# tls_domain : This will be used to create an Ingress, and CSR for the CA server.
+# Eg: my-hlf-domain.com, then the Ingress object will be created as a combination of ".fabric-ca.fullname + .Values.tls_domain"
+# ie, root-ca.my-hlf-domain.com
+tls_domain: my-hlf-domain.com
+ca_server:
+  csr_names_country: IN
+  csr_names_st: Maharashtra
+  csr_names_l: Mumbai
+  csr_names_o: "Testing Compamny"
+  csr_names_ou: "Testing Innovation"
+  container_port: 7051
+  debug: true
+  tls_enabled: true
+  # You must create this secret outside of this chart for maximum security. Never commit CA user/pass into any charts.
+  # kubectl -n <namespace> create secret generic ca-secret --from-literal=admin=<your-ca-user> --from-literal=password=<your-ca-user-password>
+  admin_secret: rca-secret
+
+
+
+# Enable the following additional_env for deplyoing root-ca with additional capabilities. 
+# !!!!!!!!! Use these features carefully. 
+# additional_env:
+#   - name: FABRIC_CA_SERVER_SIGNING_PROFILES_CA_CACONSTRAINT_MAXPATHLEN
+#     value: "1"
+#   - name: FABRIC_CA_SERVER_SIGNING_PROFILES_CA_CACONSTRAINT_MAXPATHLENZERO
+#     value: "false"
+#   - name: FABRIC_CA_SERVER_CSR_CA_PATHLEN
+#     value: "3"
+
+ica:
+  enabled: false
+
+service:
+  type: ClusterIP
+  port: 7051
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  hosts:
+    - paths:
+        - path: /
+          pathType: Prefix
+
+storage:
+  pvc_enabled: true
+  accessMode: ReadWriteOnce
+  storageClass: standard-rwo
+  size: 1G
+  path: /tmp/hyperledger/fabric-ca/crypto
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# affinity:
+#  nodeAffinity:
+#   preferredDuringSchedulingIgnoredDuringExecution:
+#   - weight: 50
+#     preference:
+#       matchExpressions:
+#       - key: project
+#         operator: In
+#         values:
+#         - value1
+
+startupProbe:
+  httpGet:
+    path: /cainfo
+    port: http
+    scheme: HTTPS
+  initialDelaySeconds: 10
+livenessProbe:
+  httpGet:
+    path: /cainfo
+    port: http
+    scheme: HTTPS
+readinessProbe:
+  httpGet:
+    path: /cainfo
+    port: http
+    scheme: HTTPS
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+nodeSelector: {}
+tolerations: []
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80

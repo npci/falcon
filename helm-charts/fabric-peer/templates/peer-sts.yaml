@@ -1,0 +1,194 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $BankName      := .Values.nameOverride }}
+{{- $HlfDomain     := .Values.global.hlf_domain }}
+{{- $IcaEndpoint   := .Values.global.ica_endpoint }}
+{{- $TlsCaEndpoint := .Values.global.tlsca_endpoint }}
+
+{{- range .Values.peers }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .name }}-{{ include "fabric-peer.name" $ }}
+  labels:
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+spec:
+  serviceName: {{ .name }}-{{ include "fabric-peer.name" $ }}
+  replicas: {{ $.Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "fabric-peer.selectorLabels" $ | nindent 6 }}
+      app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-peer.selectorLabels" $ | nindent 8 }}
+        app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .name }}-{{ include "fabric-peer.name" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init
+          image: {{ $.Values.init.image.repository }}:{{ $.Values.init.image.tag }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
+          command: ["/bin/sh","-c"]
+          args:
+           - /scripts/enroll.sh {{ $IcaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
+          volumeMounts:
+           - name: certs
+             mountPath: {{ $.Values.fabric_base_dir }}
+           - name: config
+             mountPath: /scripts/enroll.sh
+             subPath: enroll.sh
+      containers:
+        {{- if .useCouchDB | default $.Values.global.useCouchDB }}
+        - name: couchdb
+          image: {{ .couchImageRegistry | default $.Values.global.couchImageRegistry }}/{{ .couchImageRepo | default $.Values.global.couchImageRepo }}:{{ .couchImageTag | default $.Values.global.couchImageTag }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
+          env:
+            - name: COUCHDB_USER
+              value: {{ .couchDbUser | default $.Values.global.couchDbUser | quote  }}
+            - name: COUCHDB_PASSWORD
+              value: {{ .couchDbUserPass | default $.Values.global.couchDbUserPass | quote }}
+          ports:
+            - containerPort: {{ .couchContainerPort | default $.Values.global.couchContainerPort }}
+          volumeMounts:
+            - name: data-couchdb
+              mountPath: {{ .couchDataDir | default $.Values.global.couchDataDir }}
+        {{- end }}
+        - name: dind-daemon
+          image: {{ .dindImageRegistry | default $.Values.global.dindImageRegistry }}/{{ .dindImageRepo | default $.Values.global.dindImageRepo }}:{{ .dindImageTag | default $.Values.global.dindImageTag }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh","-c","sleep 20; sh /docker-preload/load_images.sh"]
+          securityContext:
+              privileged: true
+          volumeMounts:
+            - name: data-graph
+              mountPath: {{ .dindDataDir | default $.Values.global.dindDataDir }}
+        - name: peer
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: {{ .peerImageRegistry | default $.Values.global.peerImageRegistry }}/{{ .peerImageRepo | default $.Values.global.peerImageRepo }}:{{ .peerImageTag | default $.Values.global.peerImageTag }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
+          args:
+            - peer
+            - node
+            - start
+          ports:
+            - containerPort: {{ .peerContainerPort | default $.Values.global.peerContainerPort }}
+          {{- $peerServicePort := .peerServicePort | default $.Values.global.peerServicePort }}
+          {{- $IngressPort := $.Values.global.ingressPort }}
+          env:
+            {{- include "fabric-peer.envVars" $ | nindent 12 }}
+            - name: CORE_PEER_ADDRESS
+              value: {{ .identity_name }}:{{ $peerServicePort }}
+            - name: CORE_PEER_GOSSIP_EXTERNALENDPOINT
+              value: {{ .identity_name }}.{{ $HlfDomain }}:{{ $IngressPort }}
+            - name: CORE_PEER_GOSSIP_BOOTSTRAP
+              value: {{ .core_peer_gossip_bootstrap | default $.Values.global.core_peer_gossip_bootstrap }}
+            - name: CORE_PEER_ID
+              value: {{ .identity_name }}
+            {{- if .useCouchDB | default $.Values.global.useCouchDB }}
+            - name: CORE_LEDGER_STATE_STATEDATABASE
+              value: "CouchDB"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_REQUESTTIMEOUT
+              value: "180s"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_MAXRETRIES
+              value: "5"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_MAXUPDATEBATCHSIZE
+              value: "5000"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_INTERNALQUERYLIMIT
+              value: "5000"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_TOTALQUERYLIMIT
+              value: "5000"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS
+              value: "localhost:5984"
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME
+              value: {{ .couchDbUser | default $.Values.global.couchDbUser | quote }}
+            - name: CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD
+              value: {{ .couchDbUserPass | default $.Values.global.couchDbUserPass | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data-peer
+              mountPath: {{ .peerDataDir | default $.Values.global.peerDataDir }}
+            - name: certs
+              mountPath: {{ $.Values.fabric_base_dir }}/msp
+              subPath: msp
+            - name: certs
+              mountPath: {{ $.Values.fabric_base_dir }}/tls
+              subPath: tls
+            - name: config
+              mountPath: {{ $.Values.fabric_base_dir }}/msp/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: certs
+          emptyDir:
+           sizeLimit: 100Mi
+        - name: config
+          configMap:
+            name: {{ include "fabric-peer.fullname" $ }}-fabric-ops
+            defaultMode: 0777
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+  {{- if .useCouchDB | default $.Values.global.useCouchDB }}
+  - metadata:
+      name: data-couchdb
+    spec:
+      accessModes:
+      - {{ .couchPvcAccessMode | default $.Values.global.couchPvcAccessMode }}
+      resources:
+        requests:
+          storage: {{ .couchDiskSize | default $.Values.global.couchDiskSize }}
+      storageClassName: {{ $.Values.global.storageClass }} 
+  {{- end }}
+  - metadata:
+      name: data-graph
+    spec:
+      accessModes:
+      - {{ .dindPvcAccessMode | default $.Values.global.dindPvcAccessMode }}
+      resources:
+        requests:
+          storage: {{ .dindDiskSize | default $.Values.global.dindDiskSize }}
+      storageClassName: {{ $.Values.global.storageClass }}
+  - metadata:
+      name: data-peer
+    spec:
+      accessModes:
+      - {{ .peerPvcAccessMode | default $.Values.global.peerPvcAccessMode }}
+      resources:
+        requests:
+          storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
+      storageClassName: {{ $.Values.global.storageClass }}
+{{- end }}

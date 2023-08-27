@@ -1,0 +1,25 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- range .Values.orderers }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+  labels:
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $.Values.global.servicePort }}
+      targetPort: {{ $.Values.global.containerPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "fabric-orderer.selectorLabels" $ | nindent 4 }}
+    app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+{{- end }}

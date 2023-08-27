@@ -1,0 +1,80 @@
+# Default values for ca-user.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+job_type: chaincode_ops
+nameOverride: "org1"
+fullnameOverride: ""
+project: yourproject
+
+imagePullSecrets: []
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"
+
+ca:
+ ca_endpoint: ica-org1.my-hlf-domain.com:30000
+ tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
+
+hlf_domain: my-hlf-domain.com
+hlf_channel: "mychannel"
+fabric_actions: 
+ approve_chaincode: true
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
+filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+require_collection_config: "true"
+collection_config_file: "collection-config.json"
+collection_config_file_hash: "627dd1b8d679dc52475c148e502c576b109796df8495282ba602cc51ec173286"
+
+cc_name: basic-chaincode
+cc_version: "1.0"
+cc_package_id: "basic-chaincode-1.0:7c83030bdb05a4a4864f3d1d96afa2dc33d8ad0709c8485a12b5e895ef80c82d"
+seq: "1"
+
+identities:
+  - identity_name: admin
+    identity_secret: adminSamplePassword
+    identity_type: admin
+  - identity_name: peer0-org1
+    identity_secret: peer0org1SamplePassword
+    identity_type: peer
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

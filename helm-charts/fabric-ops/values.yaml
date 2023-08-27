@@ -1,0 +1,9 @@
+# Copyright National Payments Corporation of India. All Rights Reserved.
+# SPDX-License-Identifier:  GPL-3.0
+
+workdir: /opt/gopath/src/github.com/hyperledger/fabric
+peer_internal_service_port: "30002"
+ttlSecondsAfterFinished: "100"
+retry_seconds: 60
+tls_cert_file: /root/cert.pem
+default_msp_dir: /tmp/fabric

@@ -1,0 +1,32 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- range .Values.peers }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .name }}-{{ include "fabric-peer.name" $ }}
+  labels:
+    app: {{ include "fabric-peer.name" $ }}
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+  {{- with $.Values.global.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .ingressClass | default $.Values.global.ingressClass }}
+  rules:
+    - host: {{ .name }}-{{ include "fabric-peer.name" $ }}.{{ $.Values.global.hlf_domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .name }}-{{ include "fabric-peer.name" $ }}
+                port:
+                  number: {{ .peerServicePort | default $.Values.global.peerServicePort }}
+{{- end }}

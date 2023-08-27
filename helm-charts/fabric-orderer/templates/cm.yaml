@@ -1,0 +1,142 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $HlfDomain     := .Values.hlf_domain | default "cluster.local" }}
+{{- $Project       := .Values.project }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-orderer.fullname" $ }}-conf
+  labels:
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+data:
+  enroll.sh: |
+    function fabric_public_key_fetch() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_TLS_CERT_FILE=$2
+
+    while true; do
+      http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
+      if [ "$http_response" -eq "200" ]; then
+        echo "--------------------------------"
+        echo "Fetching public key cert of $FABRIC_CA_URL, received HTTP response with 200."
+        echo "--------------------------------"
+          if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
+            echo "--------------------------------"
+            echo "The downloaded public key cert of $FABRIC_CA_URL"
+            echo "--------------------------------"
+            cat $FABRIC_TLS_CERT_FILE
+            break;
+          else
+            echo "There are some issues with fetching the public key using 'jq' and 'curl' command."
+          fi
+      else
+        echo "------------------------------------"
+        echo "Fetching public key cert of $FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert. "
+        echo "------------------------------------"
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+
+    function fabric_enroll() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_CA_IDENTITY=$2
+    FABRIC_CA_SECRET=$3
+    FABRIC_TLS_CERT_FILE=$4
+
+    while true; do
+      fabric-ca-client enroll \
+            --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
+            --mspdir {{ .Values.orderer_cert_base_dir }}/msp \
+            --tls.certfiles $FABRIC_TLS_CERT_FILE \
+            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
+            --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
+      if [ $? -eq 0 ]; then
+        echo "------------------------------------"
+        echo "Identity is valid and enrollment is successful. Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY"
+        echo "--------------------------------------"
+        cp {{ .Values.orderer_cert_base_dir }}/msp/intermediatecerts/* {{ .Values.orderer_cert_base_dir }}/msp/intermediatecerts/ca-cert.pem
+        echo "-------------------------------------------------"
+        echo "MSP directory has been configured successfully."
+        echo "-------------------------------------------------"
+        break;
+      else
+        echo "------------------------------------"
+        echo "Cannot login with the given Identity, will retry in {{ .Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints"
+        echo "------------------------------------"
+        rm -rf {{ .Values.orderer_cert_base_dir }}/msp
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+
+    function get_file() {
+
+      FILE_NAME=$1
+      FILESTORE_DOWNLOAD_URL=$2
+              
+      while true; do
+        if [ -e "$FILE_NAME" ]; then
+          echo "--------------------------------------------------------------------"
+          echo "File $FILE_NAME available. Proceeding to next stage."
+          echo "--------------------------------------------------------------------"
+          break;
+        else
+          echo "--------------------------------------------------------------------"
+          echo "Atempting to download $FILE_NAME from $FILESTORE_DOWNLOAD_URL"
+          echo "--------------------------------------------------------------------"
+          if curl --silent --head --fail "$FILESTORE_DOWNLOAD_URL"; then
+            echo "--------------------------------------------------------------------"
+            echo "Received success http response, downloading $FILE_NAME from $FILESTORE_DOWNLOAD_URL"
+            echo "--------------------------------------------------------------------"
+            curl $FILESTORE_DOWNLOAD_URL -o $FILE_NAME
+            echo "Received file SHA256 value is = $(sha256sum $FILE_NAME)"
+            break;
+          else
+            echo "--------------------------------------------------------------------"
+            echo "Received non success http response for $FILESTORE_DOWNLOAD_URL, will retry in {{ .Values.retry_seconds }} seconds."
+            echo "--------------------------------------------------------------------"
+            sleep {{ .Values.retry_seconds }}
+          fi
+        fi
+      done
+    }
+
+    get_file {{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.block_file }} 
+    fabric_public_key_fetch $1 $4
+    fabric_enroll $1 $2 $3 $4       
+    get_file /var/hyperledger/tls.tar.gz {{ .Values.filestore_endpoint }}/{{ $Project }}/$2-tls-certs.tar.gz
+    echo "--------------------------------------------------------------------"
+    echo "Rearranging tls certificate directory structure for $2"
+    echo "--------------------------------------------------------------------"
+    if tar -xvf /var/hyperledger/tls.tar.gz -C {{ .Values.orderer_cert_base_dir }}/; then
+      echo "-------------------------------------------------"
+      echo "TLS directory has been configured successfully."
+      echo "-------------------------------------------------"
+    else
+      echo "----------------------------------------------------------------------------------------------------------------------"
+      echo "Something went wrong, please verify the identity, make sure the tls cert for this identity is avaiable in filestore."
+      echo "----------------------------------------------------------------------------------------------------------------------"
+    fi
+
+  config.yaml: |
+      NodeOUs:
+        Enable: true
+        ClientOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: client
+        PeerOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: peer
+        AdminOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: admin
+        OrdererOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: orderer

@@ -1,0 +1,8 @@
+# Copyright National Payments Corporation of India. All Rights Reserved.
+# SPDX-License-Identifier:  GPL-3.0
+apiVersion: v2
+name: fabric-ops
+description: A Helm chart for performing various Fabric CA Server operations Kubernetes.
+type: application
+version: 0.1.1
+appVersion: "1.5.0"

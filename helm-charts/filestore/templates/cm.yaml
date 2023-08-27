@@ -1,0 +1,63 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $HlfDomain := .Values.global.hlf_domain }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "filestore.fullname" $ }}-nginx-conf
+  labels:
+    {{- include "filestore.labels" $ | nindent 4 }}
+data:
+  default.conf: |
+    server {
+    listen       80;
+    #listen  [::]:80;
+    server_name  _;
+
+    #access_log  /var/log/nginx/host.access.log  main;
+
+    location / {
+        alias     /usr/share/nginx/html/$1;
+        client_body_temp_path  /tmp/upload_tmp;
+        dav_methods  PUT DELETE MKCOL COPY MOVE;
+        create_full_put_path   on;
+        dav_access             group:rw  all:r;
+    }
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    #location ~ /\.ht {
+    #    deny  all;
+    #}
+    }
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to FileStore Server</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>FileStore Server</h1>
+    <p>If you see this page, then the FileStore Server is successfully installed and
+    working. Further configuration is required.</p>
+    </body>
+    </html>

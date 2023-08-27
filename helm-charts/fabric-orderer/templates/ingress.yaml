@@ -1,0 +1,40 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Chart               := .Chart.Name -}}
+{{- $Name                := .Values.nameOverride | default .Chart.Name -}}
+{{- $Org                 := .Values.org -}}
+{{- $GlobalEnv           := .Values.global.env -}}
+{{- $GlobalContainerPort := .Values.global.containerPort -}}
+{{- $Annotations         := .Values.global.ingress.annotations -}}
+{{- $ClassName           := .Values.global.ingress.className -}}
+
+{{- range .Values.orderers }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+  labels:
+    app: {{ include "fabric-orderer.fullname" $ }}-{{ .name }}
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+  {{- with $Annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ $ClassName }}
+  rules:
+    - host: {{ .identity_name }}.{{ $.Values.hlf_domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+                port:
+                  number: {{ $.Values.global.servicePort }}
+{{- end }}

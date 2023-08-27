@@ -1,0 +1,66 @@
+# Default values for ca-ops.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+job_type: identity
+nameOverride: "rootca"
+fullnameOverride: ""
+project: yourproject
+
+imagePullSecrets: []
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: "Your Company Name"
+
+ca:
+  ca_endpoint: root-ca.my-hlf-domain.com:30000
+  admin_secret: rca-secret
+
+identities:
+  - identity_name: ica-orderer
+    identity_secret: icaordererSamplePassword
+    identity_type: ica
+  - identity_name: ica-initialpeerorg
+    identity_secret: icainitialpeerorgSamplePassword
+    identity_type: ica
+  - identity_name: ica-org1
+    identity_secret: icaorg1SamplePassword
+    identity_type: ica
+  - identity_name: ica-org2
+    identity_secret: icaorg2SamplePassword
+    identity_type: ica
+
+ttlSecondsAfterFinished: "100"
+retry_seconds: 60
+tls_cert_file: /root/cert.pem
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,50 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $BankName := .Values.nameOverride }}
+
+{{- range .Values.peers }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-{{ include "fabric-peer.name" $ }}
+  labels:
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+spec:
+  type: {{ .peerServiceType | default $.Values.global.peerServiceType }}
+  ports:
+    - name: peer
+      port: {{ .peerServicePort | default $.Values.global.peerServicePort }}
+      targetPort: 7051
+      protocol: TCP
+    - name: health
+      port: 9443
+      targetPort: 9443
+      protocol: TCP
+  selector:
+    app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+    {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
+{{- if .useCouchDB | default $.Values.global.useCouchDB }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: couchdb-{{ .name }}-{{ include "fabric-peer.name" $ }}
+  labels:
+    component: couchdb
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+spec:
+  type: {{ .couchServiceType | default $.Values.global.couchServiceType }}
+  ports:
+  - name: couchdb
+    port: {{ .couchServicePort | default $.Values.global.couchServicePort }}
+    targetPort: 5984
+    protocol: TCP
+  selector:
+    app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+    {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
+{{- end }}
+{{- end }}

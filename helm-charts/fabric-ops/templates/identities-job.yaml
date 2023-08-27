@@ -1,0 +1,78 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- if eq "identity" .Values.job_type }}
+
+{{- range .Values.identities }}
+{{- $CaEndpoint              := $.Values.ca.ca_endpoint }}
+{{- $ttlSecondsAfterFinished := $.Values.ttlSecondsAfterFinished }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}-{{ .identity_name }}-registration
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+    job: {{ .identity_name }}
+spec:
+  ttlSecondsAfterFinished: {{ $ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-ops.selectorLabels" $ | nindent 8 }}
+        job: {{ .identity_name }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fabric-ops.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Never  
+      containers:
+        - name: {{ $.Chart.Name }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["/bin/sh","-c"]
+          args:
+            - /scripts/fabric_enroll.sh {{ $CaEndpoint }} $CA_ADMIN_USER $CA_ADMIN_PASSWORD;
+              /scripts/fabric_register_identity.sh {{ $CaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }};
+          env:
+            {{- include "fabric-ops.fabricEnv" $ | nindent 12 }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: fabric-ops
+              subPath: fabric_enroll.sh
+              mountPath: /scripts/fabric_enroll.sh
+            - name: fabric-ops
+              subPath: fabric_register_identity.sh
+              mountPath: /scripts/fabric_register_identity.sh
+      volumes:
+        - name: fabric-ops
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-fabric-ops
+            defaultMode: 0777
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

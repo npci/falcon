@@ -1,0 +1,103 @@
+# Default values for orderer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: "orderer"
+fullnameOverride: ""
+project: yourproject
+
+orderers:
+  - name: orderer0
+    identity_name: orderer0-orderer
+    identity_secret: orderer0ordererSamplePassword
+  - name: orderer1
+    identity_name: orderer1-orderer
+    identity_secret: orderer1ordererSamplePassword
+  - name: orderer2
+    identity_name: orderer2-orderer
+    identity_secret: orderer2ordererSamplePassword
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+block_file: genesis.block
+
+hlf_domain: my-hlf-domain.com
+ca:
+ ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+
+init:
+  image:
+   repository: npcioss/hlf-builder
+   tag: 2.4
+
+ica_tls_cert_file: /root/cert.pem
+retry_seconds: 60
+
+global:
+  containerPort: 7050
+  servicePort: 7050
+  replicaCount: 1
+  image:
+    repository: hyperledger/fabric-orderer
+    pullPolicy: Always
+    imagePullSecrets: []
+    tag: "2.4"
+  serviceAccount:
+    annotations: []
+  ingress:
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  env:
+    - name: FABRIC_LOGGING_SPEC
+      value: INFO
+    - name: ORDERER_GENERAL_GENESISMETHOD
+      value: file
+    - name: ORDERER_GENERAL_LISTENADDRESS
+      value: 0.0.0.0
+    - name: ORDERER_GENERAL_LOCALMSPID
+      value: OrdererMSP
+    - name: ORDERER_GENERAL_TLS_ENABLED
+      value: "true"
+    - name: ORDERER_GENERAL_GENESISFILE
+      value: "{{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }}"
+    - name: ORDERER_GENERAL_LOCALMSPDIR
+      value: "{{ .Values.orderer_cert_base_dir }}/msp"
+    - name: ORDERER_GENERAL_TLS_CERTIFICATE
+      value: "{{ .Values.orderer_cert_base_dir }}/tls/server.crt"
+    - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+      value: "{{ .Values.orderer_cert_base_dir }}/tls/server.key"
+    - name: ORDERER_GENERAL_TLS_ROOTCAS
+      value: "[{{ .Values.orderer_cert_base_dir }}/tls/ca.crt]"
+    - name: ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE
+      value: "{{ .Values.orderer_cert_base_dir }}/tls/server.crt"
+    - name: ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY
+      value: "{{ .Values.orderer_cert_base_dir }}/tls/server.key"
+    - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
+      value: "[{{ .Values.orderer_cert_base_dir }}/tls/ca.crt]"
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+startupProbe: {}
+livenessProbe: {}
+readinessProbe: {}
+
+resources: 
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+nodeSelector: {}
+tolerations: []
+affinity: {}

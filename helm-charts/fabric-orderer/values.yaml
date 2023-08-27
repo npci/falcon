@@ -1,0 +1,33 @@
+# Copyright National Payments Corporation of India. All Rights Reserved.
+# SPDX-License-Identifier:  GPL-3.0
+# Default values for orderer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+orderer_cert_base_dir: "/var/hyperledger/orderer"
+orderer_data_dir: "/var/hyperledger/production"
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,73 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- if .Values.ica.enabled -}}
+{{- $ParentCaEndpoint := .Values.ica.parent_ca_endpoint -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ca.fullname" . }}-scripts
+  labels:
+    {{- include "fabric-ca.labels" . | nindent 4 }}
+data:
+  init.sh: |
+    function fabric_public_key_fetch() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_TLS_CERT_FILE=$2
+
+    while true; do
+      http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
+      if [ "$http_response" -eq "200" ]; then
+        echo "--------------------------------"
+        echo "Fetching public key cert of $FABRIC_CA_URL, received HTTP response with 200."
+        echo "--------------------------------"
+        curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE
+          if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
+            echo "--------------------------------"
+            echo "The downloaded public key cert of $FABRIC_CA_URL"
+            echo "--------------------------------"
+            cat $FABRIC_TLS_CERT_FILE
+            break;
+          else
+            echo "There are some issues with fetching the public key using 'jq' OR 'curl' command."
+          fi
+      else
+        echo "------------------------------------"
+        echo "Fetching public key cert of $FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert. "
+        echo "------------------------------------"
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+
+    function fabric_validate_identity() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_CA_IDENTITY=$2
+    FABRIC_CA_SECRET=$3
+    FABRIC_TLS_CERT_FILE=$4
+
+    while true; do
+      fabric-ca-client enroll -u https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL --tls.certfiles $FABRIC_TLS_CERT_FILE
+      if [ $? -eq 0 ]; then
+        echo "-------------------------------------------------------------------------"
+        echo "Identity $FABRIC_CA_IDENTITY is valid. Init job validation is successful."
+        echo "-------------------------------------------------------------------------"
+        break;
+      else
+        echo "------------------------------------"
+        echo "Cannot login with the given Identity, will retry in {{ .Values.retry_seconds }} seconds."
+        echo "------------------------------------"
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+
+    fabric_public_key_fetch $1 $4
+    fabric_validate_identity $1 $2 $3 $4
+
+{{- end }}

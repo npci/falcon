@@ -1,0 +1,104 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $IcaEndpoint := .Values.ca.ica_endpoint }}
+
+{{- range .Values.orderers }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+  labels:
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+spec:
+  replicas: {{ $.Values.global.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "fabric-orderer.selectorLabels" $ | nindent 6 }}
+      app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-orderer.selectorLabels" $ | nindent 8 }}
+        app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+        type: {{ $.Values.project }}-{{ include "fabric-orderer.fullname" $ }}
+    spec:
+      {{- with $.Values.global.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init
+          image: {{ $.Values.init.image.repository }}:{{ $.Values.init.image.tag }}
+          imagePullPolicy: {{ $.Values.global.image.pullPolicy }}
+          command: ["/bin/sh","-c"]
+          args:
+           - /scripts/enroll.sh {{ $IcaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }}
+          volumeMounts:
+           - name: config
+             subPath: enroll.sh
+             mountPath: /scripts/enroll.sh
+           - name: certs
+             mountPath: {{ $.Values.orderer_cert_base_dir }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.global.image.repository }}:{{ $.Values.global.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.global.image.pullPolicy }}
+          workingDir: /opt/gopath/src/github.com/hyperledger/fabric
+          args:
+            - orderer
+          env:
+            {{- tpl (toYaml $.Values.global.env) $ | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ $.Values.global.containerPort }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: {{ $.Values.orderer_data_dir }}
+              name: data
+            - mountPath: {{ $.Values.orderer_cert_base_dir }}
+              name: certs
+            - name: config
+              subPath: config.yaml
+              mountPath: {{ $.Values.orderer_cert_base_dir }}/msp/config.yaml
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: data-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+        - name: certs
+          emptyDir:
+           sizeLimit: 50Mi
+        - name: config
+          configMap:
+            name: {{ include "fabric-orderer.fullname" $ }}-conf
+            defaultMode: 0777
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

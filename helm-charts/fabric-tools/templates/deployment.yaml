@@ -1,0 +1,100 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{ $BankName := .Values.nameOverride }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fabric-tools.fullname" . }}
+  labels:
+    {{- include "fabric-tools.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "fabric-tools.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-tools.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fabric-tools.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cli
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: {{ $.Values.workdir }}/peer
+          tty: true
+          env: 
+            - name: CLUSTER_DOMAIN
+              value: {{ .Values.hlf_domain }}
+            - name: FABRIC_LOGGING_SPEC
+              value: INFO
+            - name: CORE_PEER_ADDRESS
+              value: peer0-{{ $BankName }}:{{ .Values.peer_internal_service_port }}
+            - name: CORE_PEER_ID
+              value: cli-{{ $BankName }}
+            - name: CORE_PEER_LOCALMSPID
+              value: {{ $BankName }}
+            - name: CORE_PEER_MSPCONFIGPATH
+              value: {{ $.Values.workdir }}/peer/crypto/users/admin/msp
+            - name: CORE_PEER_TLS_CERT_FILE
+              value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/server.crt
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+            - name: CORE_PEER_TLS_KEY_FILE
+              value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/server.key
+            - name: CORE_PEER_TLS_ROOTCERT_FILE
+              value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/ca.crt
+            - name: GOPATH
+              value: /opt/gopath
+            - name: ORDERER_CA
+              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
+            - name: ORDERER_BASE_PATH
+              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca
+          volumeMounts:
+            - name: data
+              mountPath: {{ $.Values.workdir }}
+            - name: fabric-ops
+              subPath: config.yaml
+              mountPath: /tmp/config.yaml
+            - name: fabric-ops
+              subPath: enroll.sh
+              mountPath: /scripts/enroll.sh
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: fabric-ops
+          configMap:
+            name: {{ include "fabric-tools.fullname" $ }}-fabric-ops
+            defaultMode: 0777
+        - name: data
+          persistentVolumeClaim:
+            claimName: data-{{ include "fabric-tools.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

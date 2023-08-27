@@ -1,0 +1,81 @@
+# Default values for ca-user.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+job_type: chaincode_ops
+nameOverride: "org1"
+fullnameOverride: ""
+project: yourproject
+
+imagePullSecrets: []
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+ca:
+ ca_endpoint: ica-org1.my-hlf-domain.com:30000
+ tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
+
+orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
+
+hlf_domain: my-hlf-domain.com
+hlf_channel: "mychannel"
+fabric_actions: 
+ update_anchor_peer: true
+
+# Only admin and one core peer entries are required for updating the anchor peer. 
+# You don't need to pass all the existing peer identities here.
+identities:
+  - identity_name: admin
+    identity_secret: adminSamplePassword
+    identity_type: admin
+  - identity_name: peer0-org1
+    identity_secret: peer0org1SamplePassword
+    identity_type: peer
+
+anchor_peers:
+   - host: peer0-org1.my-hlf-domain.com
+     port: "30000"
+   - host: peer1-org1.my-hlf-domain.com
+     port: "30000"
+   - host: peer2-org1.my-hlf-domain.com
+     port: "30000"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,97 @@
+# Default values for ca-user.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+project: yourproject
+job_type: crypto
+
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"
+
+# This organizations is the list of CAs required to generate the genesis.block file creation. 
+# Usually, the orderer organization and initial peer organization's ICA credentials.
+organizations:
+ - org_name: orderer
+   ca_endpoint: ica-orderer.my-hlf-domain.com:30000
+   ca_user: ica-orderer
+   ca_pass: icaordererSamplePassword
+   cert_path: /root/ca-cert.pem
+   dir_suffix: ordererOrganizations
+ - org_name: initialpeerorg
+   ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+   ca_user: ica-initialpeerorg
+   ca_pass: icainitialpeerorgSamplePassword
+   cert_path: /root/peerorg-ca-cert.pem
+   dir_suffix: peerOrganizations
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+tls:
+  ca_endpoint: tls-ca.my-hlf-domain.com:30000
+  cert_path: /root/tls-ca-cert.pem
+
+orderer_org_name: orderer # This name should match with the above .Values.organizations.org_name of orderer organization
+peer_org_name: initialpeerorg # This name should match with the above .Values.organizations.org_name of peer organization
+channel_artifact_dir: /scripts/channel-artifacts
+orderer_system_channel: "orderer-sys-channel"
+block_file: genesis.block
+config_transaction_filename: channel.tx
+
+hlf_channel: "mychannel"
+filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+
+anchorPeers:
+   - host: peer0-initialpeerorg.my-hlf-domain.com
+     port: "30000"
+
+base_dir: /scripts/crypto-config
+hlf_domain: my-hlf-domain.com
+
+orderer_port: "30000"
+orderer_identities:
+  - identity_name: orderer0-orderer
+    identity_secret: orderer0ordererSamplePassword
+    port: "30000"
+  - identity_name: orderer1-orderer
+    identity_secret: orderer1ordererSamplePassword
+    port: "30000"
+  - identity_name: orderer2-orderer
+    identity_secret: orderer2ordererSamplePassword
+    port: "30000"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}

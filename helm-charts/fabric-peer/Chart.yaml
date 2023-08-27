@@ -1,0 +1,8 @@
+# Copyright National Payments Corporation of India. All Rights Reserved.
+# SPDX-License-Identifier:  GPL-3.0
+apiVersion: v2
+name: fabric-peer
+description: A Helm chart for deploying Fabric Peers in Kubernetes.
+type: application
+version: 0.1.1
+appVersion: "2.4"

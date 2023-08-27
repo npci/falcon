@@ -1,0 +1,130 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $ParentCaEndpoint := .Values.ica.parent_ca_endpoint -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fabric-ca.fullname" . }}
+  labels:
+    {{- include "fabric-ca.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "fabric-ca.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-ca.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fabric-ca.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.ica.enabled }}
+      initContainers:
+        - name: init
+          image: {{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}
+          command: ["/bin/sh","-c"]
+          args:
+           - /scripts/init.sh {{ $ParentCaEndpoint }} $CA_ADMIN_USER $CA_ADMIN_PASSWORD {{ .Values.ica.intermediate_tls_cert_dir }}/{{ .Values.ica.intermediate_tls_cert_file }}
+          env:
+            - name: CA_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ca_server.admin_secret }}
+                  key: user
+            - name: CA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ca_server.admin_secret }}
+                  key: password
+          volumeMounts:
+           - name: scripts
+             subPath: init.sh
+             mountPath: /scripts/init.sh
+           - name: intermediate-ca-cert
+             mountPath: {{ .Values.ica.intermediate_tls_cert_dir }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command: ["/bin/sh", "-c", "--"]
+          {{- if .Values.ica.enabled }}
+          args: ["fabric-ca-server start -b $CA_ADMIN_USER:$CA_ADMIN_PASSWORD -u https://$CA_ADMIN_USER:$CA_ADMIN_PASSWORD@{{ $ParentCaEndpoint }}"]
+          {{- else }}
+          args: ["fabric-ca-server start -b $CA_ADMIN_USER:$CA_ADMIN_PASSWORD"]
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ca_server.container_port }}
+              protocol: TCP
+          env:
+            {{- include "fabric-ca.fabricEnv" . | nindent 12 }}
+            {{- if .Values.additional_env }}
+            {{- toYaml .Values.additional_env | default "" | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+          {{- if .Values.storage.pvc_enabled }}
+            - mountPath: {{ .Values.storage.path }}
+              name: data
+          {{- end }}
+          {{- if .Values.ica.enabled }}
+            - name: intermediate-ca-cert
+              mountPath: {{ .Values.ica.intermediate_tls_cert_dir }}/{{ .Values.ica.intermediate_tls_cert_file }}
+              subPath: {{ .Values.ica.intermediate_tls_cert_file }}
+          {{- end }}
+          startupProbe:
+             {{- toYaml .Values.startupProbe | nindent 12 }}
+          livenessProbe:
+             {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+             {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      {{- if .Values.storage.pvc_enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "fabric-ca.fullname" . }}-data
+      {{- end }}
+        {{- if .Values.ica.enabled }}
+        - name: intermediate-ca-cert
+          emptyDir:
+            sizeLimit: 5Mi
+        - name: scripts
+          configMap:
+            name: {{ include "fabric-ca.fullname" . }}-scripts
+            defaultMode: 0777
+        {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
