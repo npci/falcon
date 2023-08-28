@@ -6,7 +6,7 @@ Maintainers
 | Name | GitHub | email
 |------|--------|----------------------
 | Tittu Varghese | [tittuvarghese][tittuvarghese]  | tittu.varghese[@]npci.org.in
-| Jithin D | [jithindevasia][jithindevasia]  | jithin.devasia_inf[@]npci.org.in
+| Jithin Devasia | [jithindevasia][jithindevasia]  | jithin.devasia_inf[@]npci.org.in
 | Siddharth M | [siddharthmakwana][siddharthmakwana]  | siddharth.m_inf[@]npci.org.in
 
 

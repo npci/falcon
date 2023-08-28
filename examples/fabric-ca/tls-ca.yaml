@@ -29,7 +29,7 @@ ca_server:
   debug: true
   tls_enabled: true
   # You must create this secret outside of this chart for maximum security. Never commit CA user/pass into any charts.
-  # kubectl -n <namespace> create secret generic ca-secret --from-literal=admin=<your-ca-user> --from-literal=password=<your-ca-user-password>
+  # kubectl -n orderer create secret generic your-secret --from-literal=user=your-admin-user --from-literal=password=your-admin-password
   admin_secret: tlsca-secret
 
 ica:

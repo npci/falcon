@@ -1,0 +1,28 @@
+------------------------------------------------------
+** Please be patient while the chart is being deployed, usually the Fabric CA server will take 20 seconds to pass the initial health check. **
+
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+{{- if .Values.ica.enabled }}
+------------------------------------------------------
+| The Fabric CA chart has been deployed in ICA mode. |
+------------------------------------------------------
+| ICA Endpoint  : {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }} 
+| The Parent CA : {{ .Values.ica.parent_ca_endpoint }}
+{{ else }}
+---------------------------------------------------------------------
+| The Fabric CA chart has been deployed as ParentCA/Standalone mode. |
+---------------------------------------------------------------------
+| CA Endpoint : {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }}
+
+{{- end }}
+
+Get the list of pods by executing:
+
+  kubectl get pods --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+Get the list of Ingress by executing:
+  
+  kubectl get ing --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
