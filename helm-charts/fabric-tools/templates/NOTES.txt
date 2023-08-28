@@ -1,0 +1,28 @@
+------------------------------------------------------
+** Please be patient while the chart is being deployed, usually the Fabric tools will only require less than 15 seconds.**
+
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+------------------------------------------------------
+You have deployed the tools for the following identities;
+------------------------------------------------------
+{{- range .Values.identities }}
+{{ .name }} : {{ .identity_name }}
+{{- end }}
+---------------------------------------------
+Other endpoints these identities enrolled with;
+---------------------------------------------
+ICA Endpoint    : {{ .Values.ca.ca_endpoint }}
+TLSCA Endpoint  : {{ .Values.ca.tlss_ca_endpoint }}
+------------------------------------------------------
+This helm will only render the necessary scripts to enroll with the given identities. You would need to run the script manually to generate the certs.
+---------------------------------------------
+Steps;
+
+1. Get the list of pods by executing:
+
+  kubectl get pods --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+2. Exec into the pod and run "bash /scripts/enroll.sh"

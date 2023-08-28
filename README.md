@@ -1,11 +1,11 @@
-## Hyperledger Fabric Deployment Helper for Kubernetes
+## Falcon: Hyperledger Fabric Deployment Helper for Kubernetes
 
 [![NPCIOSS Lifecycle](https://img.shields.io/badge/oss_lifecyce-active-green)](OSSMETADATA) 
 [![HELM VERSION](https://img.shields.io/badge/helm_version-v3.10.1-blue)]() 
 
-[![HLF DEPLOYMENT HELPER](images/hlf-deployment-helper.png)]() 
+[![HLF DEPLOYMENT HELPER](images/falcon-hlf-logo.png)]() 
 
-The Hyperledger Fabric Deployment Helper for Kubernetes is an open-source project designed to streamline the deployment and management of Hyperledger Fabric based blockchain networks on Kubernetes clusters. This tool simplifies the complex process of setting up, configuring, and maintaining Fabric nodes, peers, orderers, and channels within a Kubernetes environment. With templatised helm charts and customizable configuration options, the project empowers developers and administrators to effortlessly deploy and scale secure and robust Hyperledger Fabric networks, leveraging the flexibility and scalability of Kubernetes orchestration. 
+**Falcon** - the hyperledger fabric deployment helper for Kubernetes is an open-source project designed to streamline the deployment and management of Hyperledger Fabric based blockchain networks on Kubernetes clusters. This tool simplifies the complex process of setting up, configuring, and maintaining Fabric nodes, peers, orderers, and channels within a Kubernetes environment. With templatised helm charts and customizable configuration options, the project empowers developers and administrators to effortlessly deploy and scale secure and robust Hyperledger Fabric networks, leveraging the flexibility and scalability of Kubernetes orchestration. 
 
 Whether you're a blockchain enthusiast, developer, or enterprise seeking to harness the power of distributed ledger technology using Hyperledger Fabric, the deployment helper for Kubernetes is your go-to solution for efficient, reliable, and automated Fabric network deployment. 
 
@@ -34,13 +34,13 @@ Whether you're a blockchain enthusiast, developer, or enterprise seeking to harn
 - [ ] Key Management using HSM / Vault
 
 ### Releases
-- v1.0-beta
+- v1.0.0
 
 ### Samples
 Please refer our [examples](examples/README.md) for running a complete blockchain network using the deployment helper.
 
 ### Production Readiness
-The Hyperledger Fabric Deployment Helper is utilised across multiple blockchain projects within NPCI.
+**Falcon** is utilised across multiple blockchain projects within NPCI.
 
 ### Disclaimer
 This program is free software: you can redistribute it and/or modify
@@ -57,4 +57,4 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ### License
-Hyperledger Fabric Deployment Helper for Kubernetes source code files are made available under the GNU General Public License, Version 3.0 (GPL-3.0), located in the LICENSE file.
+Falcon source code files are made available under the GNU General Public License, Version 3.0 (GPL-3.0), located in the LICENSE file.

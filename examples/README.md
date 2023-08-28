@@ -15,7 +15,7 @@
 * ```--enable-ssl-passthrough``` Should be enabled on the Nginx Ingress pod. All of the Hyperledger Fabric related TLS requests should be terminated on the Pod level as long as we're keeping the certs in the POD itself. If Nginx, then a similar ssl passthrough annotation ```"nginx.ingress.kubernetes.io/ssl-passthrough: "true"``` must be added to all the HLF Ingress resources we create. This annotation can be handled from the values file for every helm chart. In case if you're not using Nginx Ingress, kindly add the proper annotations accordingly.
 * ```Configurable DNS```. You should have the ability to add custom DNS zones that are resolvable from the pods. If you're using CoreDNS, follow this guide to add custom zones on your Kubernetes cluster https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/. If deploying to GKE, you can make use of CloudDNS private zones. 
 * Once added the zone, then you need to add A record(s) point to the server(s) where the Ingress is listening. It must be a wildcard DNS entry.
-    Eg, If your domain name is ```my-hlf-domain.com``` and you have 3 worker nodes ```10.10.10.10``` ```10.10.10.11``` ```10.10.10.12```. Then you need to create a DNS entry ```*.hlf-domain.com``` to point to above IPs. This is a must have configuration and make sure that wildcard DNS queries are resolving properly. If this fails, the deployment will fail. Kindly make sure this DNS is resolving and the tcp connections are reaching the ingress. You can verify it by simple telnet command. 
+    Eg, If your domain name is ```my-hlf-domain.com``` and you have 3 worker nodes ```10.10.10.10``` ```10.10.10.11``` ```10.10.10.12```. Then you need to create a DNS entry ```*.my-hlf-domain.com``` to point to above IPs. This is a must have configuration and make sure that wildcard DNS queries are resolving properly. If this fails, the deployment will fail. Kindly make sure this DNS is resolving and the tcp connections are reaching the ingress. You can verify it by simple telnet command. 
     ```telnet anyname.my-hlf-domain.com 30000 ``` assuming that 30000 is the Nodeport on Nginx Ingress that maps to Ingress 443. 
 * ```StorageClass``` that supports dynamic volume provisioning. 
 * We're using the docker hub upstream HyperLedger Fabric images for Fabric CA, Peers, Orderers and a custom builder tool which is hosted on NPCI docker hub registry. Make sure that your worker nodes can pull these images from docker hub. If not, upload them to your internal registry and the registry/repository can be managed over values.
@@ -217,6 +217,7 @@ helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examp
  **Important** :- For additional validation, we have added the uploaded collection config `sha256sum` value in the values files of the approval & commit job. These jobs will fail if the `sha256sum` value of the downloaded `collection-config` and the one provided in the values files are different. So if you're changing the `collection-config`, then kindly update the `sha256sum` value under `Values.collection_config_file_hash`.
 
 1. **Approve ChainCode on Initialpeerorg**
+
  Ensure that you have updated the Chaincode package ID in [examples/fabric-ops/initialpeerorg/approve-chaincode.yaml](./fabric-ops/initialpeerorg/approve-chaincode.yaml), below are the required fields for updating with your own chaincode details.
 - cc_name
 - cc_version
@@ -226,6 +227,7 @@ helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examp
 # helm install approvechaincode -n initialpeerorg helm-charts/fabric-ops/ -f examples/fabric-ops/initialpeerorg/approve-chaincode.yaml
 ```
 2. **Approve ChainCode on Org1**
+
  Ensure that you have updated the Chaincode package ID in [examples/fabric-ops/org1/approve-chaincode.yaml](./fabric-ops/org1/approve-chaincode.yaml), below are the required fields for updating with your own chaincode details.
 - cc_name
 - cc_version
@@ -235,6 +237,7 @@ helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examp
 # helm install approvechaincode -n org1 helm-charts/fabric-ops/ -f examples/fabric-ops/org1/approve-chaincode.yaml
 ```
 3. **Approve ChainCode on Org2**
+
  Ensure that you have updated the Chaincode package ID in [examples/fabric-ops/org2/approve-chaincode.yaml](./fabric-ops/org2/approve-chaincode.yaml), below are the required fields for updating with your own chaincode details.
 - cc_name
 - cc_version
@@ -244,6 +247,7 @@ helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examp
 # helm install approvechaincode -n org2 helm-charts/fabric-ops/ -f examples/fabric-ops/org2/approve-chaincode.yaml
 ```
 4. **Commit ChainCode on Initialpeerorg**
+
  Ensure that you have updated the Chaincode package ID in [examples/fabric-ops/initialpeerorg/approve-chaincode.yaml](./fabric-ops/initialpeerorg/approve-chaincode.yaml), below are the required fields for updating with your own chaincode details.
 - cc_name
 - cc_version

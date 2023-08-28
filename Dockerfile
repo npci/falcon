@@ -7,4 +7,4 @@ RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.23.10/bin/
      && mv kubectl /usr/local/bin/ \
      && chmod 755 /usr/local/bin/fabric-ca-client \
      && chmod 755 /usr/local/bin/kubectl
- 
+

@@ -1,0 +1,28 @@
+------------------------------------------------------
+** Please be patient while the chart is being deployed, usually the Fabric Orderer server will take less than 30 seconds for the initial enrollment and other startup activities. **
+
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+------------------------------------------------------
+You have deployed the following Orderers and endpoints;
+------------------------------------------------------
+{{- range .Values.orderers }}
+{{ .name }} : {{ .identity_name }}.{{ $.Values.hlf_domain }}
+{{- end }}
+
+---------------------------------------------
+Other endpoints these Orderers enrolled with;
+---------------------------------------------
+ICA Endpoint    : {{ .Values.ca.ica_endpoint }}
+TLSCA Endpoint  : {{ .Values.ca.tlsca_endpoint }}
+------------------------------------------------------
+
+Get the list of pods by executing:
+
+  kubectl get pods --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+Get the list of Ingress by executing:
+  
+  kubectl get ing --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
