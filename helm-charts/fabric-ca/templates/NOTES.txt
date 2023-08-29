@@ -7,15 +7,15 @@ APP VERSION: {{ .Chart.AppVersion }}
 
 {{- if .Values.ica.enabled }}
 ------------------------------------------------------
-| The Fabric CA chart has been deployed in ICA mode. |
+The Fabric CA chart has been deployed in ICA mode.
 ------------------------------------------------------
-| ICA Endpoint  : {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }} 
-| The Parent CA : {{ .Values.ica.parent_ca_endpoint }}
+ICA Endpoint  : {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }} 
+The Parent CA : {{ .Values.ica.parent_ca_endpoint }}
 {{ else }}
 ---------------------------------------------------------------------
-| The Fabric CA chart has been deployed as ParentCA/Standalone mode. |
+The Fabric CA chart has been deployed in ParentCA/Standalone mode.
 ---------------------------------------------------------------------
-| CA Endpoint : {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }}
+CA Endpoint : {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }}
 
 {{- end }}
 
