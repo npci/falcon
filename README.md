@@ -34,7 +34,7 @@ Whether you're a blockchain enthusiast, developer, or enterprise seeking to harn
 - [ ] Key Management using HSM / Vault
 
 ### Releases
-- v1.0.0
+- [v1.0.0](/releases/latest)
 
 ### Samples
 Please refer our [examples](examples/README.md) for running a complete blockchain network using the deployment helper.
