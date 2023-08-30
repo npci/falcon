@@ -13,9 +13,9 @@ metadata:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
 spec:
   accessModes:
-  - ReadWriteOnce
+  - {{ .storageAccessMode | default ($.Values.global.storageAccessMode | default "ReadWriteOnce") }}
   resources:
     requests:
-      storage: 5Gi
-  storageClassName: standard-rwo
+      storage: {{ .storageSize | default ($.Values.global.storageSize | default "5Gi") }}
+  storageClassName: {{ .storageClass | default ($.Values.global.storageClass | default "default") }}
 {{- end }}

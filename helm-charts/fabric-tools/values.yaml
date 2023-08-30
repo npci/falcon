@@ -3,3 +3,7 @@
 
 workdir: /opt/gopath/src/github.com/hyperledger/fabric
 peer_internal_service_port: "30002"
+tools:
+  storageAccessMode: ReadWriteOnce
+  storageSize: "5Gi"
+  storageClass: standard-rwo

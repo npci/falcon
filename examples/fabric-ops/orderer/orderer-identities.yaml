@@ -32,6 +32,11 @@ identities:
     identity_secret: orderer2ordererSamplePassword
     identity_type: orderer
 
+tools:
+  storageAccessMode: ReadWriteOnce
+  storageSize: "5Gi"
+  storageClass: standard-rwo
+
 imagePullSecrets: []
 
 serviceAccount:
