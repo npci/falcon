@@ -37,6 +37,11 @@ identities:
     identity_secret: peer1org2SamplePassword
     identity_type: peer
 
+tools:
+  storageAccessMode: ReadWriteOnce
+  storageSize: "5Gi"
+  storageClass: standard-rwo
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true

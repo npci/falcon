@@ -11,8 +11,8 @@ metadata:
     {{- include "fabric-tools.labels" $ | nindent 4 }}
 spec:
   accessModes:
-  - ReadWriteOnce
+  - {{ .Values.tools.storageAccessMode | default "ReadWriteOnce" }}
   resources:
     requests:
-      storage: 5Gi
-  storageClassName: standard-rwo
+      storage: {{ .Values.tools.storageSize | default "5Gi" }}
+  storageClassName: {{ .Values.tools.storageClass | default "default" }}

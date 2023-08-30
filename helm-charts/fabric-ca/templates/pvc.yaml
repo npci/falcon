@@ -16,7 +16,7 @@ spec:
   - {{ .Values.storage.accessMode | default "ReadWriteOnce" }} 
   resources:
     requests:
-      storage: {{ .Values.storage.size | default "1G" }}
+      storage: {{ .Values.storage.size | default "1Gi" }}
   storageClassName: {{ .Values.storage.storageClass | default "default" }}
 
 {{- end }}

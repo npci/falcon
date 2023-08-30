@@ -53,6 +53,9 @@ global:
     className: "nginx"
     annotations:
       nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  storageAccessMode: ReadWriteOnce
+  storageSize: "10Gi"
+  storageClass: standard-rwo
   env:
     - name: FABRIC_LOGGING_SPEC
       value: INFO
