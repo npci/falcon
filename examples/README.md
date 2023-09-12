@@ -37,9 +37,17 @@
 1. **Deploy a Filestore server.**
 
 Clone this repository and change your directory to the root directory. First you need to deploy a Filestore server. This is where the helper uploads some of the common artifacts like blockfiles, chain code package, collection config etc. Its basically an Nginx deployment with custom nginx rules to support file uploading over curl. 
+
   ```
   # helm install filestore -n filestore helm-charts/filestore/ -f examples/filestore/values.yaml --create-namespace
   ```
+Create a folder at root with name: test 
+
+Create the Persistent Volume for the PVC to attach
+```
+kubectl apply -f examples/filestore/pv.yaml
+```
+  
   If you have your own domain, image and ingress class. Then update the below mentioned values in the [examples/filestore/values.yaml](./filestore/values.yaml).
   - image
   - global.hlf_domain
