@@ -35,7 +35,7 @@ identities:
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"
-  storageClass: standard-rwo
+  storageClass: standard
 
 imagePullSecrets: []
 

@@ -63,7 +63,7 @@ ingress:
 storage:
   pvc_enabled: true
   accessMode: ReadWriteOnce
-  storageClass: standard-rwo
+  storageClass: standard
   size: 1G
   path: /tmp/hyperledger/fabric-ca/crypto
 
