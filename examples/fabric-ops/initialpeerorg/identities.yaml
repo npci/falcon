@@ -43,7 +43,7 @@ identities:
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"
-  storageClass: standard-rwo
+  storageClass: standard
 
 serviceAccount:
   # Specifies whether a service account should be created

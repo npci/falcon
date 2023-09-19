@@ -6,4 +6,4 @@ peer_internal_service_port: "30002"
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"
-  storageClass: standard-rwo
+  storageClass: standard
