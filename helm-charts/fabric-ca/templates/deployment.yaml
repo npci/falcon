@@ -40,6 +40,7 @@ spec:
       initContainers:
         - name: init
           image: {{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }} 
           command: ["/bin/sh","-c"]
           args:
            - /scripts/init.sh {{ $ParentCaEndpoint }} $CA_ADMIN_USER $CA_ADMIN_PASSWORD {{ .Values.ica.intermediate_tls_cert_dir }}/{{ .Values.ica.intermediate_tls_cert_file }}
