@@ -34,7 +34,7 @@ ca_server:
   container_port: 7051
   debug: true
   tls_enabled: true
-  # You must create this secret outside of this chart for maximum security. Never commit CA user/pass into any charts.
+  # You must create this secret outside of this chart for maximum security. Don't commit CA user/pass into any charts.
   # kubectl -n orderer create secret generic your-secret --from-literal=user=your-admin-user --from-literal=password=your-admin-password
   admin_secret: org1-secret
 

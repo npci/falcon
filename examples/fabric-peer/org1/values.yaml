@@ -38,6 +38,7 @@ global:
   hlf_domain: my-hlf-domain.com
   ica_endpoint: ica-org1.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+  storageClass: standard
   ingressClass: nginx
   ingressPort: 30000
   ingress:
@@ -57,10 +58,25 @@ global:
   couchServicePort: "5984"
   couchDataDir: /opt/couchdb/data
   couchDiskSize: 1G
-  couchDbUser: <your-user-name-here>
-  couchDbUserPass: <your-user-password-here>
+  couchDbUser: "couchDbSampleUser"
+  couchDbUserPass: couchDbSampleUserPassword
   couchPvcAccessMode: ReadWriteOnce
-  
+  couchSecurityContext: {}
+  couchResources: {}
+  #couchStartupProbe: {}
+  couchLivenessProbe:
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    tcpSocket:
+      port: 5984
+  couchReadinessProbe:
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    tcpSocket:
+      port: 5984
+
   peerImageRegistry: docker.io
   peerImageRepo: hyperledger/fabric-peer
   peerImageTag: 2.4
@@ -70,41 +86,91 @@ global:
   peerServicePort: "30002"
   peerDiskSize: 1G
   peerPvcAccessMode: ReadWriteOnce
+  peerSecurityContext: {}
   peerArgs:
     - peer
     - node
     - start
   core_peer_gossip_bootstrap: peer0-org1.my-hlf-domain.com:30000
+  core_ledger_state_couchdbconfig_requesttimeout: "180s"
+  core_ledger_state_couchdbconfig_maxretries: "5"
+  core_ledger_state_couchdbconfig_maxupdatebatchsize: "5000"
+  core_ledger_state_couchdbconfig_internalquerylimit: "5000"
+  core_ledger_state_couchdbconfig_totalquerylimit: "5000"
+  core_ledger_state_couchdbconfig_couchdbaddress: "localhost:5984"
+  peerResources: {}
+  #peerStartupProbe: {}
+  peerLivenessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 9443
+      scheme: HTTP
+    periodSeconds: 10
+    successThreshold: 1
+  peerReadinessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 9443
+      scheme: HTTP
+    periodSeconds: 10
+    successThreshold: 1
 
   dindImageRegistry: docker.io
   dindImageRepo: npcioss/dind
   dindImageTag: dind-20-10-16
   dindDataDir: /var/lib/docker
-  storageClass: standard
   dindDiskSize: 5G
   dindPvcAccessMode: ReadWriteOnce
+  dindDocker_tls_certdir: ""
+  dindSecurityContext:
+    privileged: true
+  dindResources: {}
+  #dindStartupProbe: {}
+  dindLivenessProbe:
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    tcpSocket:
+      port: 2375
+  dindReadinessProbe:
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+    tcpSocket:
+      port: 2375
 
+additonalEnvironmentVars:
+  # couchDb:
+  #   - name: EXTRA_ENV_COUCHDB
+  #     value: Extra_couch_env_value
+  # dind:
+  #   - name: EXTRA_ENV_DIND
+  #     value: Extra_dind_env_value
+  peer:
+    - name: CORE_LEDGER_HISTORY_ENABLEHISTORYDATABASE
+      value: "false"
+    - name: CORE_PEER_GOSSIP_MAXBLOCKCOUNTTOSTORE
+      value: "20"
+    - name: CORE_PEER_GOSSIP_MAXPROPAGATIONBURSTSIZE
+      value: "20"
+    - name: FABRIC_LOGGING_SPEC
+      value: INFO
+    - name: CORE_PEER_CHAINCODELISTENADDRESS
+      value: localhost:7052
+    - name: CORE_PEER_GOSSIP_USELEADERELECTION
+      value: "false"
+    - name: CORE_PEER_GOSSIP_ORGLEADER
+      value: "true"
+    - name: CORE_PEER_PROFILE_ENABLED
+      value: "true"
+    - name: CORE_PEER_TLS_ENABLED
+      value: "true"
+    - name: CORE_VM_ENDPOINT
+      value: http://localhost:2375
+    - name: DOCKER_HOST
+      value: tcp://localhost:2375
+    - name: CORE_OPERATIONS_LISTENADDRESS
+      value: 0.0.0.0:9443
 
-podAnnotations: {}
-podSecurityContext: {}
-  # fsGroup: 2000
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
-resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
-autoscaling:
-nodeSelector: {}
-tolerations: []
-affinity: {}
