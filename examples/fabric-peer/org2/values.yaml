@@ -21,6 +21,7 @@ init:
 ica_tls_cert_file: /root/ica-cert.pem
 tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
+enroll_on_every_pod_recreation: true
 retry_seconds: 60
 
 peers:
@@ -82,6 +83,7 @@ global:
   peerServiceType: ClusterIP
   peerServicePort: "30002"
   peerDiskSize: 1G
+  peerCertDiskSize: 50M
   peerPvcAccessMode: ReadWriteOnce
   peerSecurityContext: {}
   peerArgs:

@@ -30,6 +30,7 @@ csr_names_o: Your Company Name
 
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 require_collection_config: "true"
 collection_config_file: "collection-config.json"
 collection_config_file_hash: "627dd1b8d679dc52475c148e502c576b109796df8495282ba602cc51ec173286"

@@ -20,6 +20,7 @@ ca:
 
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 config_transaction_filename: channel.tx
 channel_block_filename: mychannel.block
 

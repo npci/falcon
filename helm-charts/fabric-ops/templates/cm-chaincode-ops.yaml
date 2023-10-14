@@ -174,11 +174,11 @@ data:
             echo "--------------------------------------------------------------------"
             echo "Atempting to download $file_name from $filestore_download_url"
             echo "--------------------------------------------------------------------"
-            if curl --silent --head --fail "$filestore_download_url"; then
+            if curl --silent --head --fail $filestore_download_url {{- if .Values.filestore_ssl  }} --insecure {{- end }}; then
               echo "--------------------------------------------------------------------"
               echo "Received success http response, downloading $file_name from $filestore_download_url"
               echo "--------------------------------------------------------------------"
-              curl $filestore_download_url -o $file_name
+              curl $filestore_download_url -o $file_name {{- if .Values.filestore_ssl  }} --insecure {{- end }}
               echo "Received file SHA256 value is = $(sha256sum $file_name)"
               break;
             else
@@ -198,7 +198,7 @@ data:
       echo "============================ Creating channel ============================"
       peer channel create -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} -f {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} --tls true --cafile $ORDERER_CA --connTimeout 30s
       echo "============================ Uploading {{ .Values.channel_block_filename }} to Filestore at {{ .Values.filestore_endpoint }} ============================"
-      curl -T {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
+      curl -T {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
       if [ $? -ne 0 ]; then
         echo "========================================= [ERROR] =============================================="
         echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
@@ -224,11 +224,11 @@ data:
             echo "--------------------------------------------------------------------"
             echo "Atempting to download $file_name from $filestore_download_url"
             echo "--------------------------------------------------------------------"
-            if curl --silent --head --fail "$filestore_download_url"; then
+            if curl --silent --head --fail "$filestore_download_url" {{- if .Values.filestore_ssl  }} --insecure {{- end }}; then
               echo "--------------------------------------------------------------------"
               echo "Received success http response, downloading $file_name from $filestore_download_url"
               echo "--------------------------------------------------------------------"
-              curl $filestore_download_url -o $file_name
+              curl $filestore_download_url -o $file_name {{- if .Values.filestore_ssl  }} --insecure {{- end }}
               echo "Received file SHA256 value is = $(sha256sum $file_name)"
               break;
             else
@@ -281,11 +281,11 @@ data:
             echo "--------------------------------------------------------------------"
             echo "Atempting to download $file_name from $filestore_download_url"
             echo "--------------------------------------------------------------------"
-            if curl --silent --head --fail "$filestore_download_url"; then
+            if curl --silent --head --fail "$filestore_download_url" {{- if .Values.filestore_ssl  }} --insecure {{- end }}; then
               echo "--------------------------------------------------------------------"
               echo "Received success http response, downloading $file_name from $filestore_download_url"
               echo "--------------------------------------------------------------------"
-              curl $filestore_download_url -o $file_name
+              curl $filestore_download_url -o $file_name {{- if .Values.filestore_ssl  }} --insecure {{- end }}
               echo "Received file SHA256 value is = $(sha256sum $file_name)"
               break;
             else
@@ -490,11 +490,11 @@ data:
             echo "--------------------------------------------------------------------"
             echo "Atempting to download $file_name from $filestore_download_url"
             echo "--------------------------------------------------------------------"
-            if curl --silent --head --fail "$filestore_download_url"; then
+            if curl --silent --head --fail "$filestore_download_url" {{- if .Values.filestore_ssl  }} --insecure {{- end }}; then
               echo "--------------------------------------------------------------------"
               echo "Received success http response, downloading $file_name from $filestore_download_url"
               echo "--------------------------------------------------------------------"
-              curl $filestore_download_url -o $file_name
+              curl $filestore_download_url -o $file_name {{- if .Values.filestore_ssl  }} --insecure {{- end }}
               echo "Received file SHA256 value is = $(sha256sum $file_name)"
               break;
             else

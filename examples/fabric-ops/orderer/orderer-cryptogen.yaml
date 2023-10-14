@@ -47,6 +47,7 @@ config_transaction_filename: channel.tx
 
 hlf_channel: "mychannel"
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 
 anchorPeers:
    - host: peer0-initialpeerorg.my-hlf-domain.com

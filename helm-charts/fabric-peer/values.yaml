@@ -11,13 +11,12 @@ fullnameOverride: ""
 ica_tls_cert_file: /root/ica-cert.pem
 tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
+enroll_on_every_pod_recreation: true
 retry_seconds: 60
 
 podAnnotations: {}
-
 podSecurityContext: {}
   # fsGroup: 2000
-
 securityContext: {}
   # capabilities:
   #   drop:
@@ -25,7 +24,6 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -37,7 +35,6 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
 autoscaling:
 nodeSelector: {}
 tolerations: []

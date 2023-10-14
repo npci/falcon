@@ -19,6 +19,7 @@ ca:
  tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 channel_block_filename: mychannel.block
 retry_seconds: 10
 

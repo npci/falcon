@@ -23,6 +23,7 @@ csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 block_file: genesis.block
 
 hlf_domain: my-hlf-domain.com
@@ -36,6 +37,7 @@ init:
    tag: 2.4
 
 ica_tls_cert_file: /root/cert.pem
+enroll_on_every_pod_recreation: true
 retry_seconds: 60
 
 global:
@@ -54,7 +56,8 @@ global:
     annotations:
       nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   storageAccessMode: ReadWriteOnce
-  storageSize: "10Gi"
+  dataStorageSize: "10Gi"
+  certStorageSize: "50M"
   storageClass: standard
   env:
     - name: FABRIC_LOGGING_SPEC

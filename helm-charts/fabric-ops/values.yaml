@@ -7,3 +7,4 @@ ttlSecondsAfterFinished: "100"
 retry_seconds: 60
 tls_cert_file: /root/cert.pem
 default_msp_dir: /tmp/fabric
+filestore_ssl: false

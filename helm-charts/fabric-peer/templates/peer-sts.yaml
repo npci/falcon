@@ -48,7 +48,7 @@ spec:
           args:
            - /scripts/enroll.sh {{ $IcaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
           volumeMounts:
-           - name: certs
+           - name: cert-peer
              mountPath: {{ $.Values.fabric_base_dir }}
            - name: config
              mountPath: /scripts/enroll.sh
@@ -172,23 +172,25 @@ spec:
           volumeMounts:
             - name: data-peer
               mountPath: {{ .peerDataDir | default $.Values.global.peerDataDir }}
-            - name: certs
+            - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/msp
               subPath: msp
-            - name: certs
+            - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/tls
               subPath: tls
             - name: config
               mountPath: {{ $.Values.fabric_base_dir }}/msp/config.yaml
               subPath: config.yaml
       volumes:
-        - name: certs
-          emptyDir:
-           sizeLimit: 100Mi
         - name: config
           configMap:
             name: {{ include "fabric-peer.fullname" $ }}-fabric-ops
             defaultMode: 0777
+        {{- if $.Values.enroll_on_every_pod_recreation }}
+        - name: cert-peer
+          emptyDir:
+           sizeLimit: {{ $.Values.global.peerCertDiskSize }}
+        {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -231,4 +233,15 @@ spec:
         requests:
           storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
       storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
+{{- if not $.Values.enroll_on_every_pod_recreation }}
+  - metadata:
+      name: cert-peer
+    spec:
+      accessModes:
+      - {{ .peerPvcAccessMode | default $.Values.global.peerPvcAccessMode }}
+      resources:
+        requests:
+          storage: {{ .peerCertDiskSize | default $.Values.global.peerCertDiskSize }}
+      storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
+{{- end }}
 {{- end }}

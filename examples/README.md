@@ -40,12 +40,11 @@ Clone this repository and change your directory to the root directory. First you
   ```
   helm install filestore -n filestore helm-charts/filestore/ -f examples/filestore/values.yaml --create-namespace
   ```
-  If you have your own domain, image and ingress class. Then update the below mentioned values in the [examples/filestore/values.yaml](./filestore/values.yaml).
-  - image
-  - global.hlf_domain
-  - ingress.className
+  If you have your own HLF domain, then update it under `.Values.global.hlf_domain` in the below mentioned values [examples/filestore/values.yaml](./filestore/values.yaml).
 
-  Once deployed, you will see the resources and an ingress with hostname `filestore.my-hlf-domain.com`. This will be your filestore end point. Exec into any of your running pods in the same cluster and check with a curl request to make sure that everything is working as expected. 
+  Once deployed, you will see the resources and an ingress with hostname `filestore.my-hlf-domain.com`. This will be your filestore end point. Exec into any of your running pods in the same cluster and check with a curl request to make sure that everything is working as expected. If you have your own custom domain/subdomain DNS for the filestore FQDN, then you can use `.Values.hostOverride` to input your own FQDN. Optionally you can add TLS cert to this ingress resource. To do that, you can create a kubenetes secret of tls type and provide it here in `.Values.ingress.tls.secretName`
+
+  ***IMP*** If you're changing the filestore release name/ingress port/host then you will have to update the other values file where it has a reference. 
 
   ```
   curl http://filestore.my-hlf-domain.com:30001
@@ -197,7 +196,7 @@ Once the `Org2` ICA started successfully, you would need to add this `Org2` to t
 ```
 helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examples/fabric-ops/initialpeerorg/configure-org-channel.yaml
 ```
-3. **Create Org1 identities with ica-org1.**
+3. **Create Org2 identities with ica-org2.**
 ```
 helm install org2-ca-ops -n org2 helm-charts/fabric-ops/ -f examples/fabric-ops/org2/identities.yaml 
 ```
