@@ -87,7 +87,7 @@ spec:
             claimName: cert-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
           {{- else }}
           emptyDir:
-           sizeLimit: 50Mi
+           sizeLimit: {{ $.Values.global.certStorageSize | default "50M" }}
           {{- end }}          
         - name: config
           configMap:
