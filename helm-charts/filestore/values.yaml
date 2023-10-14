@@ -45,7 +45,7 @@ global:
  hlf_domain: "my-hlf-domain.com"
 
 # If you want to override the global.hlf_domain FQDN and use your own FQDN, then use this.
-hostOverride: "custom.filestore.com" 
+# hostOverride: "custom.filestore.com" 
 
 ingress:
   enabled: true
