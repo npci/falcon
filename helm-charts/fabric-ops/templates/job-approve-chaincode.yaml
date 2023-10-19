@@ -6,9 +6,10 @@ SPDX-License-Identifier:  GPL-3.0
 {{- if eq "chaincode_ops" .Values.job_type }}
 {{- if .Values.fabric_actions.approve_chaincode | default false }}
 
-{{ $BankName    := .Values.nameOverride }}
-{{ $HlfDomain   := .Values.hlf_domain }}
-{{ $ChannelName := .Values.channel_name }}
+{{ $BankName               := .Values.nameOverride }}
+{{ $HlfDomain              := .Values.hlf_domain }}
+{{ $ChannelName            := .Values.channel_name }}
+{{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
 
 {{- range .Values.identities }}
 {{- if eq "peer" .identity_type }}
@@ -62,7 +63,7 @@ spec:
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
-              value: {{ $.Values.workdir }}/peer/crypto/users/admin/msp
+              value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
             - name: CORE_PEER_TLS_CERT_FILE
               value: {{ $.Values.workdir }}/peer/crypto/users/{{ .identity_name }}/tls/server.crt
             - name: CORE_PEER_TLS_ENABLED

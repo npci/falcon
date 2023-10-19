@@ -3,6 +3,10 @@
 
 workdir: /opt/gopath/src/github.com/hyperledger/fabric
 peer_internal_service_port: "30002"
+# .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
+# This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
+# Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
+core_peer_mspconfigpath_override: ""
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"

@@ -79,7 +79,7 @@ spec:
           ports:
             - containerPort: {{ .couchContainerPort | default $.Values.global.couchContainerPort }}
           volumeMounts:
-            - name: data-couchdb
+            - name: {{ (.couchUseExistingPvcPrefix | default $.Values.global.couchUseExistingPvcPrefix) | default "data-couchdb" }}
               mountPath: {{ .couchDataDir | default $.Values.global.couchDataDir }}
         {{- end }}
         - name: dind-daemon
@@ -106,7 +106,7 @@ spec:
           securityContext:
               {{- toYaml $.Values.global.dindSecurityContext | nindent 12 }}
           volumeMounts:
-            - name: data-graph
+            - name: {{ (.dindUseExistingPvcPrefix | default $.Values.global.dindUseExistingPvcPrefix) | default "data-dind" }}
               mountPath: {{ .dindDataDir | default $.Values.global.dindDataDir }}
         - name: peer
           securityContext:
@@ -170,7 +170,7 @@ spec:
           resources:
             {{- toYaml (.peerResources | default $.Values.global.peerResources) | nindent 12 }}
           volumeMounts:
-            - name: data-peer
+            - name: {{ (.peerUseExistingPvcPrefix | default $.Values.global.peerUseExistingPvcPrefix) | default "data-peer" }}
               mountPath: {{ .peerDataDir | default $.Values.global.peerDataDir }}
             - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/msp
@@ -206,7 +206,7 @@ spec:
   volumeClaimTemplates:
   {{- if .useCouchDB | default $.Values.global.useCouchDB }}
   - metadata:
-      name: data-couchdb
+      name: {{ (.couchUseExistingPvcPrefix | default $.Values.global.couchUseExistingPvcPrefix) | default "data-couchdb" }}
     spec:
       accessModes:
       - {{ .couchPvcAccessMode | default $.Values.global.couchPvcAccessMode }}
@@ -216,7 +216,7 @@ spec:
       storageClassName: {{ .couchStorageClass | default $.Values.global.storageClass }} 
   {{- end }}
   - metadata:
-      name: data-graph
+      name: {{ (.dindUseExistingPvcPrefix | default $.Values.global.dindUseExistingPvcPrefix) | default "data-dind" }}
     spec:
       accessModes:
       - {{ .dindPvcAccessMode | default $.Values.global.dindPvcAccessMode }}
@@ -225,7 +225,7 @@ spec:
           storage: {{ .dindDiskSize | default $.Values.global.dindDiskSize }}
       storageClassName: {{ .dindStorageClass | default $.Values.global.storageClass }}
   - metadata:
-      name: data-peer
+      name: {{ (.peerUseExistingPvcPrefix | default $.Values.global.peerUseExistingPvcPrefix) | default "data-peer" }}
     spec:
       accessModes:
       - {{ .peerPvcAccessMode | default $.Values.global.peerPvcAccessMode }}
