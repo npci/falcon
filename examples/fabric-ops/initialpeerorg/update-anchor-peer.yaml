@@ -40,6 +40,11 @@ identities:
     identity_secret: peer0initialpeerorgSamplePassword
     identity_type: peer
 
+# .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
+# This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
+# Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
+# core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-initialpeerorg/msp
+
 anchor_peers:
    - host: peer0-initialpeerorg.my-hlf-domain.com
      port: "30000"
