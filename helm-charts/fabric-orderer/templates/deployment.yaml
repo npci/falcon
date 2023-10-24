@@ -82,8 +82,13 @@ spec:
           persistentVolumeClaim:
             claimName: data-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
         - name: certs
+          {{- if not $.Values.enroll_on_every_pod_recreation }}
+          persistentVolumeClaim:
+            claimName: cert-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+          {{- else }}
           emptyDir:
-           sizeLimit: 50Mi
+           sizeLimit: {{ $.Values.global.certStorageSize | default "50M" }}
+          {{- end }}          
         - name: config
           configMap:
             name: {{ include "fabric-orderer.fullname" $ }}-conf

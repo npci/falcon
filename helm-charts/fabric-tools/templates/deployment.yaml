@@ -3,7 +3,8 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{ $BankName := .Values.nameOverride }}
+{{ $BankName               := .Values.nameOverride }}
+{{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -52,7 +53,7 @@ spec:
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
-              value: {{ $.Values.workdir }}/peer/crypto/users/admin/msp
+              value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
             - name: CORE_PEER_TLS_CERT_FILE
               value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/server.crt
             - name: CORE_PEER_TLS_ENABLED

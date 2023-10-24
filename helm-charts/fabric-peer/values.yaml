@@ -8,16 +8,24 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# peers:
+#   - name: peer0
+#     identity_name: peer0-org
+#     identity_secret: peer0orgSamplePassword
+#     couchUseExistingPvcPrefix: couch-pvc # If you want to use an existing pvc for Couch. A pvc must exists with name couch-pvc-peer0-org-0
+#     peerUseExistingPvcPrefix: peer-pvc # If you want to use an existing pvc for Peer. A pvc must exists with name peer-pvc-peer0-org-0
+#     dindUseExistingPvcPrefix: dind-pvc # If you want to use an existing pvc for Dind. A pvc must exists with name dind-pvc-peer0-org1-0
+
 ica_tls_cert_file: /root/ica-cert.pem
 tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
+enroll_on_every_pod_recreation: true
+renew_peer_certs: false
 retry_seconds: 60
 
 podAnnotations: {}
-
 podSecurityContext: {}
   # fsGroup: 2000
-
 securityContext: {}
   # capabilities:
   #   drop:
@@ -25,7 +33,6 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -37,7 +44,6 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
 autoscaling:
 nodeSelector: {}
 tolerations: []

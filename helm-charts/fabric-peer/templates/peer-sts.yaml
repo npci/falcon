@@ -48,7 +48,7 @@ spec:
           args:
            - /scripts/enroll.sh {{ $IcaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
           volumeMounts:
-           - name: certs
+           - name: cert-peer
              mountPath: {{ $.Values.fabric_base_dir }}
            - name: config
              mountPath: /scripts/enroll.sh
@@ -79,7 +79,7 @@ spec:
           ports:
             - containerPort: {{ .couchContainerPort | default $.Values.global.couchContainerPort }}
           volumeMounts:
-            - name: data-couchdb
+            - name: {{ (.couchUseExistingPvcPrefix | default $.Values.global.couchUseExistingPvcPrefix) | default "data-couchdb" }}
               mountPath: {{ .couchDataDir | default $.Values.global.couchDataDir }}
         {{- end }}
         - name: dind-daemon
@@ -106,7 +106,7 @@ spec:
           securityContext:
               {{- toYaml $.Values.global.dindSecurityContext | nindent 12 }}
           volumeMounts:
-            - name: data-graph
+            - name: {{ (.dindUseExistingPvcPrefix | default $.Values.global.dindUseExistingPvcPrefix) | default "data-dind" }}
               mountPath: {{ .dindDataDir | default $.Values.global.dindDataDir }}
         - name: peer
           securityContext:
@@ -170,25 +170,27 @@ spec:
           resources:
             {{- toYaml (.peerResources | default $.Values.global.peerResources) | nindent 12 }}
           volumeMounts:
-            - name: data-peer
+            - name: {{ (.peerUseExistingPvcPrefix | default $.Values.global.peerUseExistingPvcPrefix) | default "data-peer" }}
               mountPath: {{ .peerDataDir | default $.Values.global.peerDataDir }}
-            - name: certs
+            - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/msp
               subPath: msp
-            - name: certs
+            - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/tls
               subPath: tls
             - name: config
               mountPath: {{ $.Values.fabric_base_dir }}/msp/config.yaml
               subPath: config.yaml
       volumes:
-        - name: certs
-          emptyDir:
-           sizeLimit: 100Mi
         - name: config
           configMap:
             name: {{ include "fabric-peer.fullname" $ }}-fabric-ops
             defaultMode: 0777
+        {{- if $.Values.enroll_on_every_pod_recreation }}
+        - name: cert-peer
+          emptyDir:
+           sizeLimit: {{ $.Values.global.peerCertDiskSize }}
+        {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -204,7 +206,7 @@ spec:
   volumeClaimTemplates:
   {{- if .useCouchDB | default $.Values.global.useCouchDB }}
   - metadata:
-      name: data-couchdb
+      name: {{ (.couchUseExistingPvcPrefix | default $.Values.global.couchUseExistingPvcPrefix) | default "data-couchdb" }}
     spec:
       accessModes:
       - {{ .couchPvcAccessMode | default $.Values.global.couchPvcAccessMode }}
@@ -214,7 +216,7 @@ spec:
       storageClassName: {{ .couchStorageClass | default $.Values.global.storageClass }} 
   {{- end }}
   - metadata:
-      name: data-graph
+      name: {{ (.dindUseExistingPvcPrefix | default $.Values.global.dindUseExistingPvcPrefix) | default "data-dind" }}
     spec:
       accessModes:
       - {{ .dindPvcAccessMode | default $.Values.global.dindPvcAccessMode }}
@@ -223,7 +225,7 @@ spec:
           storage: {{ .dindDiskSize | default $.Values.global.dindDiskSize }}
       storageClassName: {{ .dindStorageClass | default $.Values.global.storageClass }}
   - metadata:
-      name: data-peer
+      name: {{ (.peerUseExistingPvcPrefix | default $.Values.global.peerUseExistingPvcPrefix) | default "data-peer" }}
     spec:
       accessModes:
       - {{ .peerPvcAccessMode | default $.Values.global.peerPvcAccessMode }}
@@ -231,4 +233,15 @@ spec:
         requests:
           storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
       storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
+{{- if not $.Values.enroll_on_every_pod_recreation }}
+  - metadata:
+      name: cert-peer
+    spec:
+      accessModes:
+      - {{ .peerPvcAccessMode | default $.Values.global.peerPvcAccessMode }}
+      resources:
+        requests:
+          storage: {{ .peerCertDiskSize | default $.Values.global.peerCertDiskSize }}
+      storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
+{{- end }}
 {{- end }}

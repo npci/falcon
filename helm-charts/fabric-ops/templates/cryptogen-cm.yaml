@@ -139,7 +139,7 @@ data:
         echo "--------------------------------------------------------------------"
         echo "Uploading $FABRIC_IDENTITY tls cert file {{ $BaseDir }}/ordererOrganizations/$FABRIC_IDENTITY/tls.tar.gz to filestore {{ .Values.filestore_endpoint }}"
         echo "--------------------------------------------------------------------"
-        curl -T {{ $BaseDir }}/ordererOrganizations/$FABRIC_IDENTITY/tls.tar.gz {{ .Values.filestore_endpoint }}/{{ $Project }}/$FABRIC_IDENTITY-tls-certs.tar.gz
+        curl -T {{ $BaseDir }}/ordererOrganizations/$FABRIC_IDENTITY/tls.tar.gz {{ .Values.filestore_endpoint }}/{{ $Project }}/$FABRIC_IDENTITY-tls-certs.tar.gz {{- if .Values.filestore_ssl  }} --insecure {{- end }}
         if [ $? -eq 0 ]; then
             echo "Successfully uploaded $FABRIC_IDENTITY TLS cert file to filestore."
             sha256sum {{ $BaseDir }}/ordererOrganizations/$FABRIC_IDENTITY/tls.tar.gz
@@ -218,7 +218,7 @@ data:
      echo "--------------------------------"
      echo "Uploading {{ .Values.block_file }} to filestore {{ .Values.filestore_endpoint }}"
      echo "--------------------------------------------------------------------"
-     curl -T {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
+     curl -T {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
       if [ $? -ne 0 ]; then
         echo "[ERROR]::Filestore upload failed, please re-run this job if necessary."
         echo "========================== [ERROR] ================================="
@@ -229,7 +229,7 @@ data:
      echo "--------------------------------------------------------------------"
      echo "Uploading {{ .Values.config_transaction_filename }} to filestore {{ .Values.filestore_endpoint }}"
      echo "--------------------------------------------------------------------"
-     curl -T {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
+     curl -T {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
       if [ $? -ne 0 ]; then        
         echo "[ERROR]::Filestore upload failed, please re-run this job if necessary."
         echo "========================== [ERROR] ================================="

@@ -16,6 +16,22 @@ spec:
   - {{ .storageAccessMode | default ($.Values.global.storageAccessMode | default "ReadWriteOnce") }}
   resources:
     requests:
-      storage: {{ .storageSize | default ($.Values.global.storageSize | default "5Gi") }}
+      storage: {{ .dataStorageSize | default ($.Values.global.storageSize | default "5Gi") }}
   storageClassName: {{ .storageClass | default ($.Values.global.storageClass | default "default") }}
+---
+{{- if not $.Values.enroll_on_every_pod_recreation }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cert-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+  labels:
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+spec:
+  accessModes:
+  - {{ .storageAccessMode | default ($.Values.global.storageAccessMode | default "ReadWriteOnce") }}
+  resources:
+    requests:
+      storage: {{ .certStorageSize | default ($.Values.global.certStorageSize | default "50M") }}
+  storageClassName: {{ .storageClass | default ($.Values.global.storageClass | default "default") }}
+{{- end }}
 {{- end }}

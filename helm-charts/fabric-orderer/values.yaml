@@ -8,6 +8,8 @@ nameOverride: ""
 fullnameOverride: ""
 orderer_cert_base_dir: "/var/hyperledger/orderer"
 orderer_data_dir: "/var/hyperledger/production"
+enroll_on_every_pod_recreation: true
+filestore_ssl: false
 podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000

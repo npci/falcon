@@ -36,22 +36,22 @@ data:
     while true; do
       http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
       if [ "$http_response" -eq "200" ]; then
-        echo "--------------------------------"
+        echo "----------------------------------------------------------"
         echo "Fetching public key cert of https://$FABRIC_CA_URL, received HTTP response with 200."
-        echo "--------------------------------"
+        echo "----------------------------------------------------------"
           if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
-            echo "--------------------------------"
+            echo "----------------------------------------------------------"
             echo "The downloaded public key cert of https://$FABRIC_CA_URL"
-            echo "--------------------------------"
+            echo "----------------------------------------------------------"
             cat $FABRIC_TLS_CERT_FILE
             break;
           else
             echo "There are some issues with fetching the public key using 'jq' OR 'curl' command."
           fi
       else
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         echo "Fetching public key cert of https://$FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert. "
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         sleep {{ .Values.retry_seconds }}
       fi
     done
@@ -65,9 +65,9 @@ data:
     FABRIC_TLS_CERT_FILE=$4
 
     while true; do
-      echo "------------------------------------"
+      echo "----------------------------------------------------------"
       echo "Enrolling $FABRIC_CA_IDENTITY to $FABRIC_CA_URL"
-      echo "------------------------------------"
+      echo "----------------------------------------------------------"
       fabric-ca-client enroll \
             --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
             --mspdir {{ .Values.fabric_base_dir }}/msp \
@@ -75,18 +75,18 @@ data:
             --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
             --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         echo "Identity $FABRIC_CA_IDENTITY is valid and enrollment is successful. Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY"
-        echo "--------------------------------------"
+        echo "----------------------------------------------------------"
         cp {{ .Values.fabric_base_dir }}/msp/intermediatecerts/* {{ .Values.fabric_base_dir }}/msp/intermediatecerts/ca-cert.pem
-        echo "-------------------------------------------------"
+        echo "----------------------------------------------------------"
         echo "MSP directory has been configured successfully."
-        echo "-------------------------------------------------"
+        echo "----------------------------------------------------------"
         break;
       else
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         echo "Cannot login with the given Identity $FABRIC_CA_IDENTITY, will retry in {{ .Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints"
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         sleep {{ .Values.retry_seconds }}
       fi
     done
@@ -100,9 +100,9 @@ data:
     FABRIC_TLS_CERT_FILE=$4
 
     while true; do
-      echo "------------------------------------"
+      echo "----------------------------------------------------------"
       echo "Enrolling $FABRIC_CA_IDENTITY to $FABRIC_CA_URL"
-      echo "------------------------------------"
+      echo "----------------------------------------------------------"
       fabric-ca-client enroll \
             --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
             --mspdir {{ .Values.fabric_base_dir }}/tls \
@@ -111,26 +111,56 @@ data:
             --enrollment.profile tls \
             --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         echo "Identity $FABRIC_CA_IDENTITY is valid and enrollment is successful. Rearranging tls certificate directory structure for $FABRIC_CA_IDENTITY"
-        echo "--------------------------------------"
+        echo "----------------------------------------------------------"
         cp {{ .Values.fabric_base_dir }}/tls/tlscacerts/* {{ .Values.fabric_base_dir }}/tls/ca.crt;
         cp {{ .Values.fabric_base_dir }}/tls/signcerts/* {{ .Values.fabric_base_dir }}/tls/server.crt;
         cp {{ .Values.fabric_base_dir }}/tls/keystore/* /{{ .Values.fabric_base_dir }}/tls/server.key;
-        echo "-------------------------------------------------"
+        echo "----------------------------------------------------------"
         echo "TLS directory has been configured successfully."
-        echo "-------------------------------------------------"
+        echo "----------------------------------------------------------"
         break;
       else
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         echo "Cannot login with the given Identity $FABRIC_CA_IDENTITY, will retry in {{ .Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints"
-        echo "------------------------------------"
+        echo "----------------------------------------------------------"
         sleep {{ .Values.retry_seconds }}
       fi
     done
     }
 
-    fabric_public_key_fetch $1 $5
-    fabric_msp_enroll $1 $3 $4 $5
-    fabric_public_key_fetch $2 $6
-    fabric_tls_enroll $2 $3 $4 $6
+    {{- if .Values.renew_peer_certs }}
+    echo "----------------------------------------------------------"
+    echo "Peer cert renewal is set to true at Values.renew_peer_certs. This will remove the existing peer msp/tls certificates and generate new certs."
+    echo "----------------------------------------------------------"
+    rm -rf {{ .Values.fabric_base_dir }}/msp/
+    rm -rf {{ .Values.fabric_base_dir }}/tls/
+    {{- end }}
+
+    if [ -f "{{ .Values.fabric_base_dir }}/msp/signcerts/cert.pem" ]; then
+      echo "----------------------------------------------------------"
+      echo "Found a client certificate at {{ .Values.fabric_base_dir }}/msp/signcerts/cert.pem. Skipping the cert directory cleanup and enrollment steps. Peer will re-use the existing msp certificates present in the msp directory."
+      echo "----------------------------------------------------------"
+    else
+      echo "----------------------------------------------------------"
+      echo "Cound not find a client certificate at {{ .Values.fabric_base_dir }}/msp/signcerts/cert.pem. Looks like a fresh peer msp cert directory, proceeding to further msp enrollment."
+      echo "----------------------------------------------------------"
+      rm -rf {{ .Values.fabric_base_dir }}/msp/
+      fabric_public_key_fetch $1 $5
+      fabric_msp_enroll $1 $3 $4 $5
+    fi
+
+    if [ -f "{{ .Values.fabric_base_dir }}/tls/signcerts/cert.pem" ]; then
+      echo "----------------------------------------------------------"
+      echo "Found a client certificate at {{ .Values.fabric_base_dir }}/tls/signcerts/cert.pem. Skipping the cert directory cleanup and enrollment steps. Peer will re-use the existing tls certificates present in the tls directory."
+      echo "----------------------------------------------------------"
+    else
+      echo "----------------------------------------------------------"
+      echo "Cound not find a client certificate at {{ .Values.fabric_base_dir }}/tls/signcerts/cert.pem. Looks like a fresh peer tls cert directory, proceeding to further tls enrollment."
+      echo "----------------------------------------------------------"
+      rm -rf {{ .Values.fabric_base_dir }}/tls/
+      fabric_public_key_fetch $2 $6
+      fabric_tls_enroll $2 $3 $4 $6
+    fi
+

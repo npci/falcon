@@ -39,6 +39,14 @@ service:
   type: ClusterIP
   port: 80
 
+# You need to add a resolvable DNS entry here. An ingress resource will be created based on this domain. 
+# Eg; domain.com, then the ingress will be created "filestore.domain.com"
+global:
+ hlf_domain: "my-hlf-domain.com"
+
+# If you want to override the global.hlf_domain FQDN and use your own FQDN, then use this.
+# hostOverride: "custom.filestore.com" 
+
 ingress:
   enabled: true
   className: "nginx"
@@ -47,6 +55,8 @@ ingress:
     - paths:
         - path: /
           pathType: Prefix
+  # tls:
+  #  secretName: my-hlf-domain-ssl-certs
 
 resources: {}
   # limits:
@@ -56,16 +66,10 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
-# You need to add a resolvable DNS entry here. An ingress resource will be created based ont this domain. 
-# Eg; domain.com, then the ingress will be created "filestore.domain.com"
-global:
- hlf_domain: "my-hlf-domain.com"
-
 storage:
  size: 1G
  accessMode: ReadWriteOnce
  storageClass: standard
-
 
 autoscaling:
   enabled: false
