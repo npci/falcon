@@ -1,0 +1,48 @@
+{{- if and (eq "prometheus" $.Values.global.metrics.provider) $.Values.global.metrics.serviceMonitor.enabled }}
+{{- range .Values.peers }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .name }}-{{ include "fabric-peer.name" $ }}
+  labels:
+    peer: {{ .identity_name }}
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+  {{- if $.Values.global.metrics.serviceMonitor.additionalLabels }}
+    {{- toYaml $.Values.global.metrics.serviceMonitor.additionalLabels | nindent 4 }}
+  {{- end }}
+{{- if $.Values.global.metrics.serviceMonitor.namespace }}
+  namespace: {{ .Values.global.metrics.serviceMonitor.namespace | quote }}
+{{- end }}
+spec:
+  endpoints:
+    - port: {{ $.Values.global.metrics.serviceMonitor.portName }}
+      interval: {{ $.Values.global.metrics.serviceMonitor.scrapeInterval }}
+    {{- if $.Values.global.metrics.serviceMonitor.honorLabels }}
+      honorLabels: true
+    {{- end }}
+    {{- if $.Values.global.metrics.serviceMonitor.relabelings }}
+      relabelings: {{ toYaml $.Values.global.metrics.serviceMonitor.relabelings | nindent 8 }}
+    {{- end }}
+    {{- if $.Values.global.metrics.serviceMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml $.Values.global.metrics.serviceMonitor.metricRelabelings | nindent 8 }}
+    {{- end }}
+  jobLabel: {{ .identity_name }}
+{{- if $.Values.global.metrics.serviceMonitor.namespaceSelector }}
+  namespaceSelector: {{ toYaml $.Values.global.metrics.serviceMonitor.namespaceSelector | nindent 4 }}
+{{- else }}
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+{{- end }}
+{{- if $.Values.global.metrics.serviceMonitor.targetLabels }}
+  targetLabels:
+  {{- range $.Values.global.metrics.serviceMonitor.targetLabels }}
+    - {{ $ }}
+  {{- end }}
+{{- end }}
+  selector:
+    matchLabels:
+      peer: {{ .identity_name }}
+{{- end }}
+{{- end }}

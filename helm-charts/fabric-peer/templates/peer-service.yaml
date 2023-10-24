@@ -20,10 +20,6 @@ spec:
       port: {{ .peerServicePort | default $.Values.global.peerServicePort }}
       targetPort: 7051
       protocol: TCP
-    - name: health
-      port: 9443
-      targetPort: 9443
-      protocol: TCP
   selector:
     app: {{ .name }}-{{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
@@ -47,4 +43,22 @@ spec:
     app: {{ .name }}-{{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
 {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operations-{{ .name }}-{{ include "fabric-peer.name" $ }}
+  labels:
+    peer: {{ .identity_name }}
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+spec:
+  type: {{ .operationsServiceType | default $.Values.global.operations.serviceType }}
+  ports:
+    - name: {{ .operationsServiceName | default $.Values.global.operations.serviceName }}
+      port: {{ .operationsServicePort | default $.Values.global.operations.servicePort }}
+      targetPort: 9443
+      protocol: TCP
+  selector:
+    app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+    {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
 {{- end }}

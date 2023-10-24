@@ -158,6 +158,24 @@ spec:
             - name: CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS
               value: {{ .core_ledger_state_couchdbconfig_couchdbaddress | default $.Values.global.core_ledger_state_couchdbconfig_couchdbaddress | quote }}
             {{- end }}
+            - name: CORE_OPERATIONS_LISTENADDRESS
+              value: 0.0.0.0:9443
+            - name: CORE_METRICS_PROVIDER
+            {{- if eq "prometheus" $.Values.global.metrics.provider }}
+              value: "prometheus"
+            {{- else if eq "statsd" $.Values.global.metrics.provider }}
+              value: "statsd"
+            - name: CORE_METRICS_STATSD_NETWORK
+              value: {{ $.Values.global.metrics.statsd.network }}
+            - name: CORE_METRICS_STATSD_ADDRESS
+              value: {{ $.Values.global.metrics.statsd.address }}
+            - name: CORE_METRICS_STATSD_WRITEINTERVAL
+              value: {{ $.Values.global.metrics.statsd.writeInterval }}
+            - name: CORE_METRICS_STATSD_PREFIX
+              value: {{ .identity_name }}
+            {{- else }}
+              value: "disabled"
+            {{- end }}
             {{- if $.Values.additonalEnvironmentVars.peer }}
             {{- tpl (toYaml $.Values.additonalEnvironmentVars.peer) $ | nindent 12 }}
             {{- end }}
