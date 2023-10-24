@@ -64,7 +64,23 @@ spec:
           args:
             - orderer
           env:
+            - name: ORDERER_OPERATIONS_LISTENADDRESS
+              value: 0.0.0.0:8443
             {{- tpl (toYaml $.Values.global.env) $ | nindent 12 }}
+            - name: ORDERER_METRICS_PROVIDER
+            {{- if eq "prometheus" $.Values.global.metrics.provider }}
+              value: "prometheus"
+            {{- else if eq "statsd" $.Values.global.metrics.provider }}
+              value: "statsd"
+            - name: ORDERER_METRICS_STATSD_NETWORK
+              value: {{ $.Values.global.metrics.statsd.network }}
+            - name: ORDERER_METRICS_STATSD_ADDRESS
+              value: {{ $.Values.global.metrics.statsd.address }}
+            - name: ORDERER_METRICS_STATSD_WRITEINTERVAL
+              value: {{ $.Values.global.metrics.statsd.writeInterval }}
+            {{- else }}
+              value: "disabled"
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ $.Values.global.containerPort }}
