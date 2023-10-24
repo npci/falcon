@@ -127,6 +127,7 @@ data:
       echo "--------------------------------------------------------------------"
       echo "Cound not find a client certificate at {{ .Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem. Looks like a fresh orderer msp cert directory, proceeding to further msp enrollment."
       echo "--------------------------------------------------------------------"
+      rm -rf {{ .Values.orderer_cert_base_dir }}/msp
       fabric_public_key_fetch $1 $4
       fabric_enroll $1 $2 $3 $4   
     fi
@@ -139,6 +140,7 @@ data:
       echo "--------------------------------------------------------------------"      
       echo "Cound not find a client certificate at {{ .Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem. Looks like a fresh orderer tls cert directory, proceeding to further tls cert archive download step from filestore."
       echo "--------------------------------------------------------------------"
+      rm -rf {{ .Values.orderer_cert_base_dir }}/tls
       get_file /var/hyperledger/tls.tar.gz {{ .Values.filestore_endpoint }}/{{ $Project }}/$2-tls-certs.tar.gz
       echo "--------------------------------------------------------------------"
       echo "Rearranging tls certificate directory structure for $2"

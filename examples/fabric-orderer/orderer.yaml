@@ -25,6 +25,9 @@ csr_names_o: Your Company Name
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 block_file: genesis.block
+ica_tls_cert_file: /root/cert.pem
+enroll_on_every_pod_recreation: true
+retry_seconds: 60
 
 hlf_domain: my-hlf-domain.com
 ca:
@@ -35,10 +38,6 @@ init:
   image:
    repository: npcioss/hlf-builder
    tag: 2.4
-
-ica_tls_cert_file: /root/cert.pem
-enroll_on_every_pod_recreation: true
-retry_seconds: 60
 
 global:
   containerPort: 7050
