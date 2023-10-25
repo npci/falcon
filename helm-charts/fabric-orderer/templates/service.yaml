@@ -22,4 +22,23 @@ spec:
   selector:
     {{- include "fabric-orderer.selectorLabels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operations-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+  labels:
+    orderer: {{ .identity_name }}
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $.Values.global.operations.servicePort }}
+      targetPort: 8443
+      protocol: TCP
+      name: {{ $.Values.global.operations.serviceName }}
+  selector:
+    {{- include "fabric-orderer.selectorLabels" $ | nindent 4 }}
+    app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
 {{- end }}
