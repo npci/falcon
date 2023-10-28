@@ -39,6 +39,7 @@ ca_server:
   admin_secret: orderer-secret
 
 retry_seconds: 60
+recreate_intermediate_cert: false # Make it true if you want to delete existing parent server public key cert and fetch new one.
 
 ica:
   enabled: true
@@ -55,10 +56,6 @@ ingress:
   className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-  hosts:
-    - paths:
-        - path: /
-          pathType: Prefix
 
 storage:
   pvc_enabled: true

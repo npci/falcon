@@ -109,8 +109,8 @@ spec:
       {{- end }}
         {{- if .Values.ica.enabled }}
         - name: intermediate-ca-cert
-          emptyDir:
-            sizeLimit: 5Mi
+          persistentVolumeClaim:
+            claimName: {{ include "fabric-ca.fullname" . }}-cert
         - name: scripts
           configMap:
             name: {{ include "fabric-ca.fullname" . }}-scripts
