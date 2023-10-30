@@ -72,7 +72,7 @@ global:
     ## Only applicable if provider is "prometheus"
     ## A serviceMonitor will be created for each peer with the configuration provided below
     serviceMonitor:
-      enabled: true
+      enabled: false
       additionalLabels: {}
       namespace: ""
 
