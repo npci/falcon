@@ -33,7 +33,6 @@ ca_server:
   admin_secret: rca-secret
 
 
-
 # Enable the following additional_env for deplyoing root-ca with additional capabilities. 
 # !!!!!!!!! Use these features carefully. 
 # additional_env:
@@ -56,10 +55,6 @@ ingress:
   className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-  hosts:
-    - paths:
-        - path: /
-          pathType: Prefix
 
 storage:
   pvc_enabled: true
