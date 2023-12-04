@@ -21,8 +21,6 @@ init:
 ica_tls_cert_file: /root/ica-cert.pem
 tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
-enroll_on_every_pod_recreation: true
-renew_peer_certs: false
 retry_seconds: 60
 
 peers:
@@ -35,6 +33,8 @@ peers:
   - name: peer2
     identity_name: peer2-initialpeerorg
     identity_secret: peer2initialpeerorgSamplePassword
+    require_certs_dir_persistence: true
+    renew_peer_certs: true
 
 global:
   hlf_domain: my-hlf-domain.com

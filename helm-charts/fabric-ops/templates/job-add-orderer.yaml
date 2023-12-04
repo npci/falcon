@@ -4,12 +4,13 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{- if eq "chaincode_ops" .Values.job_type }}
-{{- if .Values.fabric_actions.update_anchor_peer }}
+{{- if .Values.fabric_actions.add_orderer }}
 
 {{ $BankName               := .Values.nameOverride }}
 {{ $HlfDomain              := .Values.hlf_domain }}
 {{ $ChannelName            := .Values.channel_name }}
 {{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
+{{ $OverrideMspId          := .Values.MspIdOverride }}
 
 {{- range .Values.identities }}
 {{- if eq "peer" .identity_type }}
@@ -17,7 +18,7 @@ SPDX-License-Identifier:  GPL-3.0
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "fabric-ops.fullname" $ }}-rev-{{ $.Release.Revision }}
+  name: {{ include "fabric-ops.fullname" $ }}
   labels:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 spec:
@@ -48,19 +49,21 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_update_anchorpeer.sh;
+           - /scripts/fabric_add_orderer.sh;
           tty: true
           env: 
-            - name: CLUSTER_DOMAIN
-              value: {{ $HlfDomain }}
             - name: FABRIC_LOGGING_SPEC
               value: INFO
             - name: CORE_PEER_ADDRESS
+              {{- if .override_core_peer_address }}
+              value: {{ .override_core_peer_address }}
+              {{- else }}
               value: {{ .identity_name }}:{{ $.Values.peer_internal_service_port }}
+              {{- end }}
             - name: CORE_PEER_ID
               value: cli-{{ $BankName }}
             - name: CORE_PEER_LOCALMSPID
-              value: {{ $BankName }}
+              value: {{ $OverrideMspId | default $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
               value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
             - name: CORE_PEER_TLS_CERT_FILE
@@ -87,11 +90,8 @@ spec:
               subPath: fabric_enroll.sh
               mountPath: /scripts/fabric_enroll.sh
             - name: fabric-ops
-              subPath: fabric_update_anchorpeer.sh
-              mountPath: /scripts/fabric_update_anchorpeer.sh
-            - name: fabric-ops
-              subPath: anchorpeer.json
-              mountPath: {{ $.Values.workdir }}/peer/anchorpeer.json
+              subPath: fabric_add_orderer.sh
+              mountPath: /scripts/fabric_add_orderer.sh
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       volumes:

@@ -49,6 +49,9 @@ spec:
           args:
            - /scripts/enroll.sh {{ $IcaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }}
           volumeMounts:
+           - name: common
+             subPath: functions.sh
+             mountPath: /scripts/functions.sh
            - name: config
              subPath: enroll.sh
              mountPath: /scripts/enroll.sh
@@ -64,6 +67,12 @@ spec:
           args:
             - orderer
           env:
+            - name: ORDERER_GENERAL_GENESISFILE
+              {{- if .block_file }}
+              value: "{{ $.Values.orderer_cert_base_dir }}/{{ .block_file }}"
+              {{- else }}
+              value: "{{ $.Values.orderer_cert_base_dir }}/{{ $.Values.global.block_file }}"
+              {{- end }}
             - name: ORDERER_OPERATIONS_LISTENADDRESS
               value: 0.0.0.0:8443
             {{- tpl (toYaml $.Values.global.env) $ | nindent 12 }}
@@ -90,15 +99,19 @@ spec:
               name: data
             - mountPath: {{ $.Values.orderer_cert_base_dir }}
               name: certs
-            - name: config
+            - name: common
               subPath: config.yaml
               mountPath: {{ $.Values.orderer_cert_base_dir }}/msp/config.yaml
       volumes:
         - name: data
           persistentVolumeClaim:
+            {{- if .use_existing_pvc_data }}
+            claimName: {{ .use_existing_pvc_data }}
+            {{- else }}
             claimName: data-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+            {{- end }}
         - name: certs
-          {{- if not $.Values.enroll_on_every_pod_recreation }}
+          {{- if (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
           persistentVolumeClaim:
             claimName: cert-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
           {{- else }}
@@ -107,7 +120,11 @@ spec:
           {{- end }}          
         - name: config
           configMap:
-            name: {{ include "fabric-orderer.fullname" $ }}-conf
+            name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}-conf
+            defaultMode: 0777
+        - name: common
+          configMap:
+            name: {{ include "fabric-orderer.fullname" $ }}-common
             defaultMode: 0777
       {{- with $.Values.nodeSelector }}
       nodeSelector:

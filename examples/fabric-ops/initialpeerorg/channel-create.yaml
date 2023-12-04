@@ -26,7 +26,7 @@ channel_block_filename: mychannel.block
 
 
 hlf_domain: my-hlf-domain.com
-hlf_channel: "mychannel"
+hlf_channel: mychannel
 fabric_actions: 
  create_channel: true
  

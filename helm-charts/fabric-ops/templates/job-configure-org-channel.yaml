@@ -47,8 +47,7 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_enroll.sh;
-             /scripts/fabric_configure_org_channel.sh {{ .name }} {{ .ica_endpoint }} {{ .ica_username }} {{ .ica_secret }} {{ .msp_dir }};
+           - /scripts/fabric_configure_org_channel.sh {{ .name }} {{ .ica_endpoint }} {{ .ica_username }} {{ .ica_secret }} {{ .msp_dir }};
           tty: true
           env: 
             - name: CLUSTER_DOMAIN

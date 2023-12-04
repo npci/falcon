@@ -3,8 +3,6 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if eq "chaincode_ops" .Values.job_type }}
-
 {{- $Project           := .Values.project }}
 {{- $HlfDomain         := .Values.hlf_domain }}
 {{- $IcaEndpoint       := .Values.ca.ca_endpoint }}
@@ -14,6 +12,8 @@ SPDX-License-Identifier:  GPL-3.0
 {{- $ChannelName       := .Values.hlf_channel }}
 {{- $BankName          := .Values.nameOverride }}
 {{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if eq "chaincode_ops" .Values.job_type }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -69,27 +69,33 @@ data:
 
       enroll() {
 
-      FABRIC_ICA_URL={{ $IcaEndpoint }}
-      FABRIC_TLS_CA_URL={{ $TlsCaEndpoint }}
       FABRIC_IDENTITY=$1
       FABRIC_IDENTITY_SECRET=$2
       FABRIC_IDENTITY_TYPE=$3
       FABRIC_IDENTITY_MSP_DIR=$4
+      FABRIC_ICA_URL=$5
+      FABRIC_TLS_CA_URL=$6
+      FABRIC_ICA_TLS_CERTFILES=$7
+      FABRIC_TLSCA_TLS_CERTFILES=$8
+      FABRIC_HLF_DOMAIN=$9
 
-      if [ $FABRIC_IDENTITY_TYPE = "admin" ] || [ "$IDENTITY_NAME" = "$FABRIC_IDENTITY" ]
+      if [ $FABRIC_IDENTITY_TYPE = "admin" ] || [ $FABRIC_IDENTITY_TYPE = "orderer" ] || [ "$IDENTITY_NAME" = "$FABRIC_IDENTITY" ]
         then
           while true; do
             echo "--------------------------------------------------------------------"
             echo "Enrolling to https://$FABRIC_ICA_URL as $FABRIC_IDENTITY"
             echo "--------------------------------------------------------------------"
-              fabric-ca-client enroll -d \
+              fabric-ca-client enroll \
+                  {{- if .Values.debug_enroll }}
+                  --debug \
+                  {{- end }}
                   --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_ICA_URL \
                   --mspdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp \
-                  --tls.certfiles {{ $IcaTlsCertFile }} \
-                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $HlfDomain }} \
+                  --tls.certfiles $FABRIC_ICA_TLS_CERTFILES \
+                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN \
                   --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
             if [ $? -eq 0 ]; then
-              echo "=============================== Re-arranging the MSP cert directory ==============================="
+              echo "============ Re-arranging the MSP cert directory ============"
               cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/intermediatecerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/intermediatecerts/ca-cert.pem;
               cp /tmp/config.yaml $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/config.yaml;
               break;
@@ -118,15 +124,18 @@ data:
             echo "--------------------------------------------------------------------"
             echo "Initiating TLS enrollment as user $FABRIC_IDENTITY to https://$FABRIC_TLS_CA_URL"
             echo "--------------------------------------------------------------------"
-              fabric-ca-client enroll -d \
+              fabric-ca-client enroll \
+                  {{- if .Values.debug_enroll }}
+                  --debug \
+                  {{- end }}
                   --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_TLS_CA_URL \
                   --mspdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls \
-                  --tls.certfiles {{ $TlsCaTlsCertFile }} \
-                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $HlfDomain }} \
+                  --tls.certfiles $FABRIC_TLSCA_TLS_CERTFILES \
+                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN \
                   --enrollment.profile tls \
                   --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
             if [ $? -eq 0 ]; then
-              echo "========================== Re-arranging the TLS cert directory =================================="
+              echo "============ Re-arranging the TLS cert directory ============"
               cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/tlscacerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/ca.crt;
               cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/signcerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/server.crt;
               cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/keystore/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/server.key;
@@ -141,24 +150,34 @@ data:
           done
       fi
       }
-      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
-      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
-  {{- range .Values.identities }}
-      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }}
-  {{- end }}
-      echo "========================== Creating directory structure for Orderer =========================="
+      function orderer_dir_setup() {
+      echo "============ Creating directory structure for Orderer ============"
       mkdir -p $ORDERER_BASE_PATH
-      echo "========================== Copying Orderer tls cert =========================="
+      echo "============ Copying Orderer tls cert ============"
       cp {{ $TlsCaTlsCertFile }} $ORDERER_BASE_PATH/ca-cert.pem
       if [ $? -ne 0 ]; then
-        echo "========================================= [ERROR] =============================================="
-        echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else
-        echo "========================================= [SUCCESS] =============================================="
-        echo "[SUCCESS]::All enrollment steps have been executed successfully."
+        echo "============ [SUCCESS] Orderer TLS cert has been placed successfully. ============"
       fi
+      }
+{{- end }}  
   {{- if .Values.fabric_actions.create_channel | default false }}
   fabric_create_channel.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.identities }}
+        {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+        {{- end }}
+        {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+        {{- end }}
+      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+    {{- end }}
+
       function get_file() {
 
         file_name=$1
@@ -195,20 +214,31 @@ data:
       echo "Printing the downloaded file {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }}"
       cat {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }}
 
-      echo "============================ Creating channel ============================"
-      peer channel create -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} -f {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} --tls true --cafile $ORDERER_CA --connTimeout 30s
-      echo "============================ Uploading {{ .Values.channel_block_filename }} to Filestore at {{ .Values.filestore_endpoint }} ============================"
+      echo "============ Creating channel ============"
+      peer channel create -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} -f {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} --tls true --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+      echo "============ Uploading {{ .Values.channel_block_filename }} to Filestore at {{ .Values.filestore_endpoint }} ============"
       curl -T {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
       if [ $? -ne 0 ]; then
-        echo "========================================= [ERROR] =============================================="
-        echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else
-        echo "========================================= [SUCCESS] =============================================="
-        echo "[SUCCESS]::All steps have been executed successfully."
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
       fi
   {{- end }}
   {{- if .Values.fabric_actions.install_chaincode | default false }}
   fabric_install_chaincode.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.identities }}
+          {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+          {{- end }}
+          {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+          {{- end }}
+      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+      {{- end }}
       function get_file() {
 
         file_name=$1
@@ -247,25 +277,38 @@ data:
       echo "Listing directory structure before creation."
       echo $PWD
       ls -l
-      echo "============================ Listing the peer joined channels ============================"
+      echo "============ Listing the peer joined channels ============"
       peer channel list
       peer channel list | grep {{ $ChannelName }}
       if [ $? -ne 0 ]; then
         echo "The peer has not joined {{ $ChannelName }} channel yet."
-        echo "============================ Joining channel ============================"
-        peer channel join -b {{ .Values.channel_block_filename }} --connTimeout 30s        
+        echo "============ Joining channel ============"
+        peer channel join -b {{ .Values.channel_block_filename }} --connTimeout {{ .Values.connTimeout }}       
       else
         echo "Peer has already joined {{ $ChannelName }} channel."
       fi
       
-      echo "============================ Installing ChainCode version {{ .Values.cc_tar_file }} ============================"
+      echo "============ Installing ChainCode version {{ .Values.cc_tar_file }} ============"
       sha256sum {{ .Values.cc_tar_file }}
-      peer lifecycle chaincode install {{ .Values.cc_tar_file }} --connTimeout 120s 
-      echo "============================ Print ChainCode installation status ============================"
-      peer lifecycle chaincode queryinstalled --connTimeout 10s
+      peer lifecycle chaincode install {{ .Values.cc_tar_file }} --connTimeout {{ .Values.connTimeout }} 
+      echo "============ Print ChainCode installation status ============"
+      peer lifecycle chaincode queryinstalled --connTimeout {{ .Values.connTimeout }}
   {{- end }}
   {{- if .Values.fabric_actions.approve_chaincode }}
   fabric_approve_chaincode.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.identities }}
+          {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+          {{- end }}
+          {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+          {{- end }}
+      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+      {{- end }}
       function get_file() {
 
         file_name=$1
@@ -325,13 +368,11 @@ data:
       if [ "$get_sha256"  = "$COLLECTION_CONFIG_SHA_VALUE" ]; then
          echo "Downloaded collection-config's SHA is matching. Proceeding to approval process."
          echo "Appproving ChainCode with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $SEQ"
-         peer lifecycle chaincode approveformyorg -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --package-id $CC_PACKAGE_ID --sequence $SEQ --collections-config {{ $.Values.workdir }}/peer/collection-config.json --tls --cafile $ORDERER_CA --connTimeout 60s
+         peer lifecycle chaincode approveformyorg -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --package-id $CC_PACKAGE_ID --sequence $SEQ --collections-config {{ $.Values.workdir }}/peer/collection-config.json --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
           if [ $? -ne 0 ]; then
-           echo "========================================= [ERROR] =============================================="
-           echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+            echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
           else
-           echo "========================================= [SUCCESS] =============================================="
-           echo "[SUCCESS]::All steps have been executed successfully."
+            echo "============ [SUCCESS] All steps have been executed successfully. ============"
           fi
       else
          echo "Downloaded collection-config's SHA is not matching. Aborting the approval process. You may want to check the helm values or the actual file in the filestore"
@@ -340,13 +381,11 @@ data:
 
       {{- if not .Values.require_collection_config }}
       echo "Appproving ChainCode with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $SEQ"
-      peer lifecycle chaincode approveformyorg -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --package-id $CC_PACKAGE_ID --sequence $SEQ --tls --cafile $ORDERER_CA --connTimeout 60s
+      peer lifecycle chaincode approveformyorg -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --package-id $CC_PACKAGE_ID --sequence $SEQ --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
       if [ $? -ne 0 ]; then
-        echo "========================================= [ERROR] =============================================="
-        echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else
-        echo "========================================= [SUCCESS] =============================================="
-        echo "[SUCCESS]::All steps have been executed successfully."
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
       fi
       {{- end }}
   {{- end }}
@@ -376,6 +415,19 @@ data:
               Port: {{ .anchor_peer_port }}
   {{- end }}
   fabric_configure_org_channel.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.identities }}
+          {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+          {{- end }}
+          {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+          {{- end }}
+      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+      {{- end }}
 
       ORG_NAME=$1
       FABRIC_CA_URL=$2
@@ -415,12 +467,15 @@ data:
 
       fabric_public_key_fetch $FABRIC_CA_URL $FABRIC_TLS_CERT_FILE
 
-      echo "============================ Updating channel for $ORG_NAME ============================"
+      echo "============ Updating channel for $ORG_NAME ============"
       echo "------------------------------------"
       echo "Enrolling to ICA https://$FABRIC_CA_URL as $FABRIC_IDENTITY"
       echo "--------------------------------------------------------------------"
       while true; do
         fabric-ca-client enroll \
+          {{- if .Values.debug_enroll }}
+          --debug \
+          {{- end }}
           --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
           --mspdir $FABRIC_IDENTITY_MSP_DIR \
           --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }} \
@@ -446,13 +501,13 @@ data:
         fi
       done
            
-      echo "============================ Generating org material for $ORG_NAME ============================"
+      echo "============ Generating org material for $ORG_NAME ============"
       configtxgen -configPath {{ $.Values.workdir }}/peer -printOrg $ORG_NAME > $ORG_NAME.json
-      echo "============================ Fetching config block ============================"
-      peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout 10s
-      echo "============================ Converting the configuration to JSON ============================"
+      echo "============ Fetching config block ============"
+      peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+      echo "============ Converting the configuration to JSON ============"
       configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
-      echo "============================ Add the new Org $ORG_NAME crypto material ============================"
+      echo "============ Add the new Org $ORG_NAME crypto material ============"
       jq -s '.[0] * {"channel_group":{"groups":{"Application":{"groups": {"'${ORG_NAME}'":.[1]}}}}}' config.json $ORG_NAME.json > modified_config.json
       configtxlator proto_encode --input config.json --type common.Config --output config.pb
       configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
@@ -460,21 +515,32 @@ data:
       configtxlator proto_decode --input org3_update.pb --type common.ConfigUpdate | jq . > org3_update.json
       echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat org3_update.json)'}}}' | jq . > org3_update_in_envelope.json
       configtxlator proto_encode --input org3_update_in_envelope.json --type common.Envelope --output org3_update_in_envelope.pb
-      echo "============================ Signing the Channel Configuration Update ============================"
-      peer channel signconfigtx -f org3_update_in_envelope.pb --connTimeout 30s
-      echo "============================ Updating Channel configuration ============================"
-      peer channel update -f org3_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout 30s
+      echo "============ Signing the Channel Configuration Update ============"
+      peer channel signconfigtx -f org3_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
+      echo "============ Updating Channel configuration ============"
+      peer channel update -f org3_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
       
       if [ $? -ne 0 ]; then
-        echo "========================================= [ERROR] =============================================="
-        echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else
-        echo "========================================= [SUCCESS] =============================================="
-        echo "[SUCCESS]::All steps have been executed successfully."
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
       fi
   {{- end }}
   {{- if .Values.fabric_actions.commit_chaincode }}
   fabric_commit_chaincode.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.identities }}
+          {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+          {{- end }}
+          {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+          {{- end }}
+      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+      {{- end }}
       function get_file() {
 
         file_name=$1
@@ -532,64 +598,71 @@ data:
       if [ "$get_sha256"  = "$COLLECTION_CONFIG_SHA_VALUE" ]; then
          echo "Downloaded collection-config's SHA is matching. Proceeding to the CC commit process."
          echo "Committing ChainCode with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $SEQ"
-         peer lifecycle chaincode commit -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --sequence $SEQ --collections-config {{ $.Values.workdir }}/peer/collection-config.json --tls --cafile $ORDERER_CA --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE --connTimeout 10s
+         peer lifecycle chaincode commit -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --sequence $SEQ --collections-config {{ $.Values.workdir }}/peer/collection-config.json --tls --cafile $ORDERER_CA --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE --connTimeout {{ .Values.connTimeout }}
           if [ $? -ne 0 ]; then
-           echo "========================================= [ERROR] =============================================="
-           echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+           echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
           else
-           echo "========================================= [SUCCESS] =============================================="
-           echo "[SUCCESS]::All steps have been executed successfully."
+           echo "============ [SUCCESS] All steps have been executed successfully. ============"
           fi
       else
-         echo "Downloaded collection-config's SHA is not matching. Aborting the commit process. You may want to check the helm values or the actual file in the filestore"
+         echo "============ [SHAMISMATCH] Downloaded collection-config's SHA is not matching. Aborting the commit process. You may want to check the helm values or the actual file in the filestore"
       fi
       {{- end }}
 
       {{- if not .Values.require_collection_config }}
       echo "Committing ChainCode with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $SEQ"
-      peer lifecycle chaincode commit -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --sequence $SEQ --tls --cafile $ORDERER_CA --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE --connTimeout 10s
+      peer lifecycle chaincode commit -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --sequence $SEQ --tls --cafile $ORDERER_CA --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE --connTimeout {{ .Values.connTimeout }}
 
       if [ $? -ne 0 ]; then
-        echo "========================================= [ERROR] =============================================="
-        echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else
-        echo "========================================= [SUCCESS] =============================================="
-        echo "[SUCCESS]::All steps have been executed successfully."
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
       fi
       {{- end }}
   {{- end }}
   {{- if .Values.fabric_actions.update_anchor_peer | default false }}
   fabric_update_anchorpeer.sh: |
-      echo "============================ Starting anchor peer update ============================"
-      echo "============================ Fetching config block ============================"
-      peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout 10s
-      echo "============================ Converting the configuration to JSON ============================"
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.identities }}
+          {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+          {{- end }}
+          {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+          {{- end }}
+      enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+      {{- end }}
+      echo "============ Starting anchor peer update ============"
+      echo "============ Fetching config block ============"
+      peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+      echo "============ Converting the configuration to JSON (jq) ============"
       configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
-      echo "============================ Add the anchor peer configs ============================"
+      echo "============ Add the anchor peer configs ============"
       jq --argjson hostList "$(cat anchorpeer.json)" '.channel_group.groups.Application.groups.{{ $BankName }}.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": $hostList},"version": "0"}}' config.json > modified_config.json
       echo "Executing configtxlator commands"
-      echo "============================ Executing - configtxlator proto_encode --input config.json --type common.Config --output config.pb ============================"
+      echo "============ Executing - configtxlator proto_encode --input config.json --type common.Config --output config.pb ============"
       configtxlator proto_encode --input config.json --type common.Config --output config.pb
-      echo "============================ Executing - configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb ============================"
+      echo "============ Executing - configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb ============"
       configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
-      echo "============================ Executing - configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb ============================"
+      echo "============ Executing - configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb ============================"
       configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb
-      echo "============================ Executing - configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json ============================"
+      echo "============ Executing - configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json ============"
       configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json
       echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat anchor_update.json)'}}}' | jq . > anchor_update_in_envelope.json
-      echo "============================ configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb ============================"
+      echo "============ configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb ============"
       configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb
-      echo "============================ Signing the Channel Configuration ============================"
-      peer channel signconfigtx -f anchor_update_in_envelope.pb --connTimeout 20s
-      echo "============================ Running peer channel update ============================"
-      peer channel update -f anchor_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout 20s
+      echo "============ Signing the Channel Configuration ============"
+      peer channel signconfigtx -f anchor_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
+      echo "============ Running peer channel update ============"
+      peer channel update -f anchor_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
 
       if [ $? -ne 0 ]; then
-        echo "========================================= [ERROR] =============================================="
-        echo "[ERROR]::One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary"
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else
-        echo "========================================= [SUCCESS] =============================================="
-        echo "[SUCCESS]::All steps have been executed successfully."
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
       fi
   anchorpeer.json: |
       {{- $length := sub (len .Values.anchor_peers) 1 }}
@@ -603,4 +676,205 @@ data:
         {{- end }}
       ]
   {{- end }}
-{{- end }}
+  {{- if .Values.fabric_actions.add_orderer | default false }}
+  fabric_add_orderer.sh: |
+    source /scripts/fabric_enroll.sh
+    export DATE=$(date +"%Y_%m_%d_%H%M%S")
+    fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+    fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+    {{- range .Values.identities }}
+      {{- if .ica_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+      {{- end }}
+      {{- if .tlsca_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+      {{- end }}
+    enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+    {{- end }}
+
+    echo "============ Enrolling orderer identity ============"
+  {{- range .Values.additional_orderers }}
+      {{ $identity_name := .identity_name }}
+      {{ $endpoint      := .endpoint }}
+      {{ $port          := .port }}
+      {{- if .ica_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+      {{- end }}
+      {{- if .tlsca_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+      {{- end }}
+    echo "============ Setting up necessary env variables for {{ .identity_name }} ============"
+    
+    export IDENTITY_NAME={{ .identity_name }}
+    export TLS_FILE={{ .msp_base_dir }}/{{ .identity_name }}/tls/server.crt
+    
+    enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+    echo "-------------------------------------------------------------------"
+    echo "Packing {{ .identity_name }} tls directory for orderer deployment."
+    echo "-------------------------------------------------------------------"
+    tar -zcvf {{ .identity_name }}-tls-certs_$DATE.tar.gz --directory={{ .msp_base_dir | default $Msp_base_dir }}/{{ .identity_name }}/ tls
+    echo "-------------------------------------------------------------------"
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary ============"
+    else
+      echo "============ [SUCCESS] Successfully archived {{ .identity_name }} TLS cert directory ============"
+    fi
+
+    orderer_dir_setup
+  {{- range .update_channels }}
+    echo "============ Adding {{ $identity_name }} to the channel {{ . }} ============"
+    echo "============ Fetching latest block of the channel {{ . }} ============"
+    peer channel fetch config config_block.pb -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA
+    echo "============ Proto decoding the above fetched block file ============"
+    configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+    echo "============ Creating ordererconsenter.json with new TLS cert ============"
+    echo "{\"client_tls_cert\":\"$(cat $TLS_FILE | base64)\",\"host\":\"{{ $endpoint }}\",\"port\":{{ $port }},\"server_tls_cert\":\"$(cat $TLS_FILE | base64)\"}" > ordererconsenter.json
+    echo "============ Creating temp_config.json (jq) ============"
+    jq ".channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters += [$(cat ordererconsenter.json)]" config.json > temp_config.json
+    echo "============ Creating modified_config.json (jq) ============"
+    jq ".channel_group.values.OrdererAddresses.value.addresses += [\"{{ $endpoint }}:{{ $port }}\"]" temp_config.json > modified_config.json
+    echo "============ configtxlator proto_encode --input config.json --type common.Config --output config.pb ============"
+    configtxlator proto_encode --input config.json --type common.Config --output config.pb
+    echo "============ configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb ============"
+    configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
+    echo "============ configtxlator compute_update --channel_id {{ . }} --original config.pb --updated modified_config.pb --output orderer_update.pb ============"
+    configtxlator compute_update --channel_id {{ . }} --original config.pb --updated modified_config.pb --output orderer_update.pb
+    echo "============ configtxlator proto_decode --input orderer_update.pb --type common.ConfigUpdate | jq . > orderer_update.json ============"
+    configtxlator proto_decode --input orderer_update.pb --type common.ConfigUpdate | jq . > orderer_update.json
+    echo "============ Creating orderer_update_in_envelope.json with updated values. ============"
+    echo '{"payload":{"header":{"channel_header":{"channel_id":"'{{ . }}'", "type":2}},"data":{"config_update":'$(cat orderer_update.json)'}}}' | jq . > orderer_update_in_envelope.json
+    echo "============ configtxlator proto_encode --input orderer_update_in_envelope.json --type common.Envelope --output orderer_update_in_envelope.pb ============"
+    configtxlator proto_encode --input orderer_update_in_envelope.json --type common.Envelope --output orderer_update_in_envelope.pb
+    
+    echo "============ Updating channel {{ . }} config with new orderer information ============"
+    peer channel update -f orderer_update_in_envelope.pb -c {{ . }} -o {{ $.Values.orderer_endpoint }} --tls --cafile $ORDERER_CA
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] Channel update failed for {{ $identity_name }} on channel {{ . }}. Please debug it manually using cli pod and re-run this job if necessary. ============"
+    else
+      echo "============ [UPDATE SUCCESS] Successfuly added {{ $identity_name }} on the channel"
+      echo "============ [CLEANUP] ============"
+      rm -f *.json
+      rm -f *.pb
+      sleep 10
+      echo "============ [CLEANUP COMPLETED] ============"
+    fi
+  {{- end }}
+    
+  {{- range .upload_latest_channel_block_to_filestore }}
+    echo "============ Fetching latest block file from {{ . }}. I'm pausing for a while to propagate the new channel changes. ============"
+    sleep 30
+    peer channel fetch config {{ $identity_name }}-{{ . }}_$DATE.block -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+    echo "============ Uploading {{ $identity_name }}-{{ . }}_$DATE.block for {{ $identity_name }} to filestore. ============"
+    curl -T {{ $identity_name }}-{{ . }}_$DATE.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+    curl -T {{ $identity_name }}-tls-certs_$DATE.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR]One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+    else
+      echo "============ [SUCCESS] Successfully uploaded artifacts of {{ $identity_name }} to filestore. ============"
+      echo "File hash =" $(sha256sum {{ $identity_name }}-{{ . }}_$DATE.block)
+      echo "File hash =" $(sha256sum {{ $identity_name }}-tls-certs_$DATE.tar.gz)
+    fi
+  {{- end }}
+  {{- end }}
+
+  {{- end }}
+  {{- if .Values.fabric_actions.renew_orderer_tls | default false }}
+  fabric_renew_orderer_tls.sh: |
+    source /scripts/fabric_enroll.sh
+    export DATE=$(date +"%Y_%m_%d_%H%M%S")
+    fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+    fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+  {{- range .Values.identities }}
+      {{- if .ica_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+      {{- end }}
+      {{- if .tlsca_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+      {{- end }}
+    enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }} {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+  {{- end }}
+
+    echo "============================ Enrolling orderer identity ============================"
+    {{- range .Values.orderers_to_renew_tls_cert }}
+    {{ $identity_name := .identity_name }}
+    {{ $endpoint      := .endpoint }}
+    {{ $port          := .port }}
+      {{- if .ica_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+      {{- end }}
+      {{- if .tlsca_endpoint }}
+    fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+      {{- end }}
+    echo "============================ Setting up necessary env variables for {{ .identity_name }} ============================"
+    
+    export IDENTITY_NAME={{ .identity_name }}       
+    enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }} {{ .ica_endpoint | default $IcaEndpoint }} {{ .tlsca_endpoint | default $TlsCaEndpoint }} {{ .ica_tlscertfile | default $IcaTlsCertFile }}  {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} {{ .hlf_domain | default $.Values.hlf_domain }}
+    TLS_FILE={{ .msp_base_dir }}/{{ .identity_name }}/tls/server.crt
+    TLS_CERT_BASE64=$(base64 -w 0 $TLS_FILE)
+    
+    echo "-------------------------------------------------------------------"
+    echo "Archiving {{ .identity_name }} tls directory for orderer deployment."
+    echo "-------------------------------------------------------------------"
+    tar -zcvf {{ .identity_name }}-renewed-tls-certs_$DATE.tar.gz --directory={{ .msp_base_dir | default $Msp_base_dir }}/{{ .identity_name }}/ tls
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+    else
+      echo "============ [SUCCESS] Successfully archived {{ .identity_name }} TLS cert directory ============"
+    fi
+
+    orderer_dir_setup
+
+  {{- range .update_channels }}
+    echo "============ Starting channel update on {{ . }} ============"
+    echo "============ Fetching latest block of the channel {{ . }} for adding new TLS cert. ============"
+    peer channel fetch config config_block.pb -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA
+    echo "============ Proto decoding the above fetched block file ============"
+    configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+    echo "============ Updating the above .json with new TLS cert (jq) ============"
+    jq --arg client_cert_value "$TLS_CERT_BASE64" '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters[] |= if .host == "{{ $endpoint }}" then .client_tls_cert = $client_cert_value else . end' config.json  > client_cert_updated.json
+    jq --arg server_cert_value "$TLS_CERT_BASE64" '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters[] |= if .host == "{{ $endpoint }}" then .server_tls_cert = $server_cert_value else . end' client_cert_updated.json  > final_cert_updated.json
+    
+    echo "============ configtxlator proto_encode --input config.json --type common.Config --output config.pb ============"
+    configtxlator proto_encode --input config.json --type common.Config --output config.pb
+    echo "============ configtxlator proto_encode --input final_cert_updated.json --type common.Config --output modified_config.pb ============"
+    configtxlator proto_encode --input final_cert_updated.json --type common.Config --output modified_config.pb
+    echo "============ configtxlator compute_update --channel_id {{ . }} --original config.pb --updated modified_config.pb --output orderer_update.pb ============"
+    configtxlator compute_update --channel_id {{ . }} --original config.pb --updated modified_config.pb --output orderer_update.pb
+    echo "============ configtxlator proto_decode --input orderer_update.pb --type common.ConfigUpdate | jq . > orderer_update.json ============"
+    configtxlator proto_decode --input orderer_update.pb --type common.ConfigUpdate | jq . > orderer_update.json
+    echo "============ Creating orderer_update_in_envelope.json with updated values. ============"
+    echo '{"payload":{"header":{"channel_header":{"channel_id":"'{{ . }}'", "type":2}},"data":{"config_update":'$(cat orderer_update.json)'}}}' | jq . > orderer_update_in_envelope.json
+    echo "============ configtxlator proto_encode --input orderer_update_in_envelope.json --type common.Envelope --output orderer_update_in_envelope.pb ============"
+    configtxlator proto_encode --input orderer_update_in_envelope.json --type common.Envelope --output orderer_update_in_envelope.pb
+
+    echo "============ Updating channel {{ . }} with new {{ $identity_name }} tls cert ============"
+    peer channel update -f orderer_update_in_envelope.pb -c {{ . }} -o {{ $.Values.orderer_endpoint }} --tls --cafile $ORDERER_CA
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] Channel update failed for {{ $identity_name }} on channel {{ . }}. Please debug it manually using cli pod and re-run this job if necessary ============"
+    else
+      echo "============ [UPDATE SUCCESS] Successfuly updated TLS cert on the channel {{ . }} for {{ $identity_name }}"
+      echo "============ [CLEANUP] ============"
+      rm -f *.json
+      rm -f *.pb
+      sleep 10
+      echo "============ [CLEANUP COMPLETED] ============"
+    fi
+  {{- end }}
+
+  {{- range .upload_latest_channel_block_to_filestore }}
+    echo "============ Fetching latest block file from channel {{ . }} for new Genesis block. I'm pausing for a while to propagate the previous channel updates. ============"
+    sleep 30
+    peer channel fetch config {{ $identity_name }}-{{ . }}_$DATE.block -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+    echo "============ Uploading artifacts for {{ $identity_name }} to filestore ============"
+    curl -T {{ $identity_name }}-{{ . }}_$DATE.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+    curl -T {{ $identity_name }}-renewed-tls-certs_$DATE.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary ============"
+    else
+      echo "============ [SUCCESS] Successfully uploaded artifacts of {{ $identity_name }} to filestore. ============"
+      echo "File hash =" $(sha256sum {{ $identity_name }}-{{ . }}_$DATE.block)
+      echo "File hash =" $(sha256sum {{ $identity_name }}-renewed-tls-certs_$DATE.tar.gz)            
+    fi
+  {{- end }}
+  {{- end }}
+  {{- end }}

@@ -9,11 +9,12 @@ SPDX-License-Identifier:  GPL-3.0
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "fabric-orderer.fullname" $ }}-conf
+  name: {{ include "fabric-orderer.fullname" $ }}-common
   labels:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    app: {{ include "fabric-orderer.fullname" $ }}
 data:
-  enroll.sh: |
+  functions.sh: |
     function fabric_public_key_fetch() {
 
     FABRIC_CA_URL=$1
@@ -36,9 +37,9 @@ data:
           fi
       else
         echo "------------------------------------"
-        echo "Fetching public key cert of $FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert. "
+        echo "Fetching public key cert of $FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert."
         echo "------------------------------------"
-        sleep {{ .Values.retry_seconds }}
+        sleep {{ $.Values.retry_seconds }}
       fi
     done
     }
@@ -53,25 +54,25 @@ data:
     while true; do
       fabric-ca-client enroll \
             --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
-            --mspdir {{ .Values.orderer_cert_base_dir }}/msp \
+            --mspdir {{ $.Values.orderer_cert_base_dir }}/msp \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
             --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
-            --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
+            --csr.names O='{{ $.Values.csr_names_o }}',L={{ $.Values.csr_names_l }},ST={{ $.Values.csr_names_st }},C={{ $.Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
         echo "------------------------------------"
         echo "Identity is valid and enrollment is successful. Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY"
         echo "--------------------------------------"
-        cp {{ .Values.orderer_cert_base_dir }}/msp/intermediatecerts/* {{ .Values.orderer_cert_base_dir }}/msp/intermediatecerts/ca-cert.pem
+        cp {{ $.Values.orderer_cert_base_dir }}/msp/intermediatecerts/* {{ $.Values.orderer_cert_base_dir }}/msp/intermediatecerts/ca-cert.pem
         echo "-------------------------------------------------"
         echo "MSP directory has been configured successfully."
         echo "-------------------------------------------------"
         break;
       else
         echo "------------------------------------"
-        echo "Cannot login with the given Identity, will retry in {{ .Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints"
+        echo "Cannot login with the given Identity, will retry in {{ $.Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints"
         echo "------------------------------------"
-        rm -rf {{ .Values.orderer_cert_base_dir }}/msp
-        sleep {{ .Values.retry_seconds }}
+        rm -rf {{ $.Values.orderer_cert_base_dir }}/msp
+        sleep {{ $.Values.retry_seconds }}
       fi
     done
     }
@@ -91,71 +92,22 @@ data:
           echo "--------------------------------------------------------------------"
           echo "Atempting to download $FILE_NAME from $FILESTORE_DOWNLOAD_URL"
           echo "--------------------------------------------------------------------"
-          if curl --silent --head --fail "$FILESTORE_DOWNLOAD_URL" {{- if .Values.filestore_ssl  }} --insecure {{- end }}; then
+          if curl --silent --head --fail "$FILESTORE_DOWNLOAD_URL" {{- if $.Values.filestore_ssl  }} --insecure {{- end }}; then
             echo "--------------------------------------------------------------------"
             echo "Received success http response, downloading $FILE_NAME from $FILESTORE_DOWNLOAD_URL"
             echo "--------------------------------------------------------------------"
-            curl $FILESTORE_DOWNLOAD_URL -o $FILE_NAME {{- if .Values.filestore_ssl  }} --insecure {{- end }}
+            curl $FILESTORE_DOWNLOAD_URL -o $FILE_NAME {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
             echo "Received file SHA256 value is = $(sha256sum $FILE_NAME)"
             break;
           else
             echo "--------------------------------------------------------------------"
-            echo "Received non success http response for $FILESTORE_DOWNLOAD_URL, will retry in {{ .Values.retry_seconds }} seconds."
+            echo "Received non success http response for $FILESTORE_DOWNLOAD_URL, will retry in {{ $.Values.retry_seconds }} seconds."
             echo "--------------------------------------------------------------------"
-            sleep {{ .Values.retry_seconds }}
+            sleep {{ $.Values.retry_seconds }}
           fi
         fi
       done
     }
-
-    if [ -f "{{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }}" ]; then
-      echo "--------------------------------------------------------------------"
-      echo "Found a blockfile at {{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }}. Will not attempt to download the blockfile from filestore. This orderer will re-use the existing blockfile present."
-      echo "--------------------------------------------------------------------"
-    else
-      echo "--------------------------------------------------------------------"
-      echo "Cound not find a blockfile at {{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }}. Looks like a fresh orderer, proceeding to further blockfile download step from filestore."
-      echo "--------------------------------------------------------------------"
-      get_file {{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.block_file }}
-    fi
-
-    if [ -f "{{ .Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem" ]; then
-      echo "--------------------------------------------------------------------"
-      echo "Found a client certificate at {{ .Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem. Skipping the cert directory cleanup and enrollment steps. This orderer will re-use the existing msp certificates present in the msp directory."
-      echo "--------------------------------------------------------------------"
-    else
-      echo "--------------------------------------------------------------------"
-      echo "Cound not find a client certificate at {{ .Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem. Looks like a fresh orderer msp cert directory, proceeding to further msp enrollment."
-      echo "--------------------------------------------------------------------"
-      rm -rf {{ .Values.orderer_cert_base_dir }}/msp
-      fabric_public_key_fetch $1 $4
-      fabric_enroll $1 $2 $3 $4   
-    fi
-
-    if [ -f "{{ .Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem" ]; then
-      echo "--------------------------------------------------------------------"
-      echo "Found a client certificate at {{ .Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem. This orderer will re-use the existing tls certificates present in the tls directory."
-      echo "--------------------------------------------------------------------"
-    else
-      echo "--------------------------------------------------------------------"      
-      echo "Cound not find a client certificate at {{ .Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem. Looks like a fresh orderer tls cert directory, proceeding to further tls cert archive download step from filestore."
-      echo "--------------------------------------------------------------------"
-      rm -rf {{ .Values.orderer_cert_base_dir }}/tls
-      get_file /var/hyperledger/tls.tar.gz {{ .Values.filestore_endpoint }}/{{ $Project }}/$2-tls-certs.tar.gz
-      echo "--------------------------------------------------------------------"
-      echo "Rearranging tls certificate directory structure for $2"
-      echo "--------------------------------------------------------------------"
-       if tar -xvf /var/hyperledger/tls.tar.gz -C {{ .Values.orderer_cert_base_dir }}/; then
-         echo "-------------------------------------------------"
-         echo "TLS directory has been configured successfully."
-         echo "-------------------------------------------------"
-       else
-         echo "----------------------------------------------------------------------------------------------------------------------"
-         echo "Something went wrong, please verify the identity, make sure the tls cert for this identity is avaiable in filestore."
-         echo "----------------------------------------------------------------------------------------------------------------------"
-       fi
-    fi
-
   config.yaml: |
       NodeOUs:
         Enable: true
@@ -171,3 +123,55 @@ data:
         OrdererOUIdentifier:
           Certificate: intermediatecerts/ca-cert.pem
           OrganizationalUnitIdentifier: orderer
+
+{{- range .Values.orderers }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}-conf
+  labels:
+    {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+data:
+  enroll.sh: |
+    source /scripts/functions.sh
+
+    if [ -f "{{ $.Values.orderer_cert_base_dir }}/{{ (.block_file | default $.Values.global.block_file) }}" ]; then
+      echo "======== Found a blockfile at {{ $.Values.orderer_cert_base_dir }}/{{ (.block_file | default $.Values.global.block_file) }}. Will not attempt to download the blockfile from filestore. This orderer will re-use the existing blockfile present ========"
+    else
+      echo "======== Cound not find a blockfile at {{ $.Values.orderer_cert_base_dir }}/{{ (.block_file | default $.Values.global.block_file) }}. Proceeding to further blockfile download step from filestore ========"
+      get_file {{ $.Values.orderer_cert_base_dir }}/{{ (.block_file | default $.Values.global.block_file) }} {{ $.Values.filestore_endpoint }}/{{ $Project }}/{{ (.block_file | default $.Values.global.block_file) }}
+    fi
+
+
+    {{- if .renew_orderer_certs }}
+    echo "======== Orderer cert renewal is set to true. This will remove the existing orderer msp/tls certificates and generate new certs ========"
+    rm -rf {{ $.Values.orderer_cert_base_dir }}/msp/
+    rm -rf {{ $.Values.orderer_cert_base_dir }}/tls/
+    echo "Cleanup finished."
+    {{- end }}
+
+    if [ -f "{{ $.Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem" ]; then
+      echo "======== Found a client certificate at {{ $.Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem. This orderer will re-use the existing msp certificates present in the msp directory ========"
+    else
+      echo "======== Cound not find a client certificate at {{ $.Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem. Proceeding to further msp enrollment ========"
+      rm -rf {{ $.Values.orderer_cert_base_dir }}/msp
+      fabric_public_key_fetch $1 $4
+      fabric_enroll $1 $2 $3 $4   
+    fi
+
+    if [ -f "{{ $.Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem" ]; then
+      echo "======== Found a client certificate at {{ $.Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem. This orderer will re-use the existing tls certificates present in the tls directory ========"
+    else
+      echo "======== Cound not find a client certificate at {{ $.Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem. Proceeding to further tls cert archive download step from filestore ========"
+      rm -rf {{ $.Values.orderer_cert_base_dir }}/tls
+      get_file /var/hyperledger/tls.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/{{- (.tls_cert_archive) | default "$2-tls-certs.tar.gz" }}
+      echo "======== Rearranging tls certificate directory structure for $2 ========"
+       if tar -xvf /var/hyperledger/tls.tar.gz -C {{ $.Values.orderer_cert_base_dir }}/; then
+         echo "======== TLS directory has been configured successfully ========"
+       else
+         echo "======== Something went wrong, please verify the identity, make sure the tls cert for this identity is avaiable in filestore ========"
+       fi
+    fi
+{{- end }}

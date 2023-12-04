@@ -1,0 +1,116 @@
+# Default values for ca-user.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+job_type: chaincode_ops
+nameOverride: "add-orderer"
+fullnameOverride: ""
+project: yourproject
+
+imagePullSecrets: []
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+ca:
+ ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+ tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
+
+orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
+
+MspIdOverride: OrdererMSP
+core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users/admin/msp
+filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
+
+fabric_actions:
+ add_orderer: true
+
+hlf_domain: my-hlf-domain.com
+
+# The identities mentioned below are used to fetch the channel blocks. Be sure to specify the identities with necessary permissions. 
+identities:
+  - identity_name: admin
+    identity_secret: adminpassword
+    identity_type: admin
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tlscertfile: /tmp/orderer-ica.cert
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+  - identity_name: peer0-initialpeerorg
+    identity_secret: peer0initialpeerorgSamplePassword
+    identity_type: peer
+    override_core_peer_address: peer0-initialpeerorg.my-hlf-domain.com:30000
+
+# additional_orderers are the list of new orderers you want to add. Only specify one item at a time.
+additional_orderers:
+  # - identity_name: orderer101-orderer
+  #   identity_secret: orderer101ordererSamplePassword
+  #   identity_type: orderer
+  #   endpoint: orderer101-orderer.my-hlf-domain.com
+  #   port: 30000
+  #   msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+  #   ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+  #   #tlsca_endpoint: tlsca-endpoint:30000
+  #   ica_tlscertfile: /tmp/orderer-ica.cert
+  #   channels:
+  #     - orderer-sys-channel
+  #     - mychannel
+  - identity_name: orderer102-orderer
+    identity_secret: orderer102ordererSamplePassword
+    identity_type: orderer
+    endpoint: orderer102-orderer.my-hlf-domain.com
+    port: 30000
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    #tlsca_endpoint: tlsca-endpoint:30000
+    ica_tlscertfile: /tmp/orderer-ica.cert
+    update_channels:
+      - orderer-sys-channel
+      - mychannel
+    upload_latest_channel_block_to_filestore:
+      - orderer-sys-channel
+
+# # .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
+# # Not required for identity registration, but we use the same values file for deploying fabric-tools helm chart. 
+# # This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
+# # Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
+# # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-initialpeerorg/msp
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

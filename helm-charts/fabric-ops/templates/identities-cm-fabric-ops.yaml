@@ -57,6 +57,9 @@ data:
       echo "Enrolling $FABRIC_CA_ADMIN_IDENTITY to $FABRIC_CA_URL"
       echo "------------------------------------"
       fabric-ca-client enroll \
+            {{- if .Values.debug_enroll }}
+            --debug \
+            {{- end }}
             --url https://$FABRIC_CA_ADMIN_IDENTITY:$FABRIC_CA_ADMIN_SECRET@$FABRIC_CA_URL \
             --mspdir {{ .Values.default_msp_dir }} \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
@@ -102,7 +105,10 @@ data:
               echo "------------------------------------"
               echo "The Identity $FABRIC_IDENTITY_NAME does not exists. Proceeding to registration at https://$FABRIC_CA_URL"
               echo "------------------------------------"
-                fabric-ca-client register -d \
+              fabric-ca-client register \
+                    {{- if .Values.debug_enroll }}
+                    --debug \
+                    {{- end }}
                     --id.name $FABRIC_IDENTITY_NAME \
                     --id.secret $FABRIC_IDENTITY_SECRET \
                     --id.type $FABRIC_IDENTITY_TYPE \
@@ -115,7 +121,7 @@ data:
                   echo "Registered identity $FABRIC_IDENTITY_NAME successfully at https://$FABRIC_CA_URL"
                   echo "------------------------------------"
                   break;
-                else
+              else
                   echo "Previous registration command was not successful and returned a non-zero exit code. Will retry after {{ .Values.retry_seconds }}"
                   sleep {{ .Values.retry_seconds }}
               fi
@@ -140,7 +146,10 @@ data:
               echo "------------------------------------"
               echo "The Identity $FABRIC_IDENTITY_NAME does not exists. Proceeding to registration at https://$FABRIC_CA_URL"
               echo "------------------------------------"
-                 fabric-ca-client register -d \
+                 fabric-ca-client register \
+                    {{- if .Values.debug_enroll }}
+                    --debug \
+                    {{- end }}
                     --id.name $FABRIC_IDENTITY_NAME \
                     --id.secret $FABRIC_IDENTITY_SECRET \
                     --id.attrs '"hf.Registrar.Roles=client,peer,admin,orderer",hf.Revoker=true,hf.IntermediateCA=true' \
@@ -179,7 +188,10 @@ data:
               echo "------------------------------------"
               echo "The Identity $FABRIC_IDENTITY_NAME does not exists. Proceeding to registration at https://$FABRIC_CA_URL"
               echo "------------------------------------"
-                fabric-ca-client register -d \
+                fabric-ca-client register \
+                    {{- if .Values.debug_enroll }}
+                    --debug \
+                    {{- end }}
                     --id.name $FABRIC_IDENTITY_NAME \
                     --id.secret $FABRIC_IDENTITY_SECRET \
                     --id.type $FABRIC_IDENTITY_TYPE \

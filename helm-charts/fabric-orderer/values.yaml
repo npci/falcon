@@ -8,8 +8,17 @@ nameOverride: ""
 fullnameOverride: ""
 orderer_cert_base_dir: "/var/hyperledger/orderer"
 orderer_data_dir: "/var/hyperledger/production"
-enroll_on_every_pod_recreation: true
 filestore_ssl: false
+# orderers:
+#   - name: orderer0
+#     identity_name: orderer0-orderer
+#     identity_secret: orderer0ordererSamplePassword
+#     block_file: orderer0-orderer-orderer-sys-channel_2023_11_23_080452.block
+#     tls_cert_archive: orderer0-orderer-renewed-tls-certs_2023_11_23_080452.tar.gz
+#     renew_orderer_certs: true
+#     require_certs_dir_persistence: true
+#     use_existing_pvc_data: existingPvcName
+
 podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000

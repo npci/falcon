@@ -78,6 +78,9 @@ data:
       echo "Enrolling to ICA https://$FABRIC_CA_URL as $FABRIC_IDENTITY"
       echo "--------------------------------------------------------------------"
       fabric-ca-client enroll \
+       {{- if .Values.debug_enroll }}
+       --debug \
+       {{- end }}
        --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
        --mspdir $FABRIC_IDENTITY_MSP_DIR \
        --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }} \
@@ -117,6 +120,9 @@ data:
       echo "Enrolling to ICA https://$FABRIC_CA_URL as $FABRIC_IDENTITY"
       echo "--------------------------------------------------------------------"
       fabric-ca-client enroll \
+        {{- if .Values.debug_enroll }}
+        --debug \
+        {{- end }}
         --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
         --mspdir $FABRIC_IDENTITY_MSP_DIR \
         --enrollment.profile tls \

@@ -15,12 +15,12 @@ fullnameOverride: ""
 #     couchUseExistingPvcPrefix: couch-pvc # If you want to use an existing pvc for Couch. A pvc must exists with name couch-pvc-peer0-org-0
 #     peerUseExistingPvcPrefix: peer-pvc # If you want to use an existing pvc for Peer. A pvc must exists with name peer-pvc-peer0-org-0
 #     dindUseExistingPvcPrefix: dind-pvc # If you want to use an existing pvc for Dind. A pvc must exists with name dind-pvc-peer0-org1-0
+#     require_certs_dir_persistence: true # If you want PVC to store the msp/tls certs.
+#     renew_peer_certs: true # If you want to generate new msp/tls certificates on the next reboot.
 
 ica_tls_cert_file: /root/ica-cert.pem
 tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
-enroll_on_every_pod_recreation: true
-renew_peer_certs: false
 retry_seconds: 60
 
 podAnnotations: {}

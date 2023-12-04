@@ -20,8 +20,12 @@ csr_names_o: Your Company Name
 ca:
  ca_endpoint: ica-orderer.my-hlf-domain.com:30000
  admin_secret: orderer-secret
+ tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:
+  - identity_name: admin
+    identity_secret: adminpassword
+    identity_type: admin
   - identity_name: orderer0-orderer
     identity_secret: orderer0ordererSamplePassword
     identity_type: orderer

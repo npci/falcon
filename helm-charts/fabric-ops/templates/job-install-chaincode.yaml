@@ -48,8 +48,7 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_enroll.sh;
-             /scripts/fabric_install_chaincode.sh;
+           - /scripts/fabric_install_chaincode.sh;
           tty: true
           env: 
             - name: CLUSTER_DOMAIN

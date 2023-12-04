@@ -53,6 +53,9 @@ spec:
            - name: config
              mountPath: /scripts/enroll.sh
              subPath: enroll.sh
+           - name: common
+             mountPath: /scripts/functions.sh
+             subPath: functions.sh
       containers:
         {{- if .useCouchDB | default $.Values.global.useCouchDB }}
         - name: couchdb
@@ -196,15 +199,19 @@ spec:
             - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/tls
               subPath: tls
-            - name: config
+            - name: common
               mountPath: {{ $.Values.fabric_base_dir }}/msp/config.yaml
               subPath: config.yaml
       volumes:
+        - name: common
+          configMap:
+            name: {{ include "fabric-peer.fullname" $ }}-common
+            defaultMode: 0777
         - name: config
           configMap:
-            name: {{ include "fabric-peer.fullname" $ }}-fabric-ops
+            name: {{ .name }}-{{ include "fabric-peer.fullname" $ }}-conf
             defaultMode: 0777
-        {{- if $.Values.enroll_on_every_pod_recreation }}
+        {{- if not .require_certs_dir_persistence }}
         - name: cert-peer
           emptyDir:
            sizeLimit: {{ $.Values.global.peerCertDiskSize }}
@@ -251,7 +258,7 @@ spec:
         requests:
           storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
       storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
-{{- if not $.Values.enroll_on_every_pod_recreation }}
+{{- if .require_certs_dir_persistence }}
   - metadata:
       name: cert-peer
     spec:
