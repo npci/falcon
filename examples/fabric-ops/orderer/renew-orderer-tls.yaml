@@ -2,10 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-job_type: chaincode_ops
 nameOverride: "renew-orderer-tls"
 fullnameOverride: ""
 project: yourproject
+
+fabric_actions:
+ renew_orderer_tls: true
 
 imagePullSecrets: []
 image:
@@ -19,59 +21,43 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-ca:
- ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
- tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
-
-orderer_endpoint: orderer1-orderer.my-hlf-domain.com:30000
-
 MspIdOverride: OrdererMSP
-core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users/admin/msp
+orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
-
-fabric_actions:
- renew_orderer_tls: true
 
 hlf_domain: my-hlf-domain.com
 
 # The identities mentioned below are used to fetch the channel blocks. Be sure to specify the identities with necessary permissions. 
-identities:
+admin_identity:
   - identity_name: admin
-    identity_secret: adminpassword
+    identity_secret: ordererAdminpassword
     identity_type: admin
     ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-    ica_tlscertfile: /tmp/orderer-cert.pem
+    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+    ica_tlscertfile: /tmp/orderer-ica.cert
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
-  - identity_name: peer0-initialpeerorg
-    identity_secret: peer0initialpeerorgSamplePassword
-    identity_type: peer
-    override_core_peer_address: peer0-initialpeerorg.my-hlf-domain.com:30000
+    require_msp_enrollment: true
+    require_tls_enrollment: false
 
 # orderers_to_update_tls are the list of orderers you want to renew the certs.
 orderers_to_renew_tls_cert:
-  - identity_name: orderer0-orderer
-    identity_secret: orderer0ordererSamplePassword
+  - identity_name: orderer1-orderer
+    identity_secret: orderer1ordererSamplePassword
     identity_type: orderer
     upload_sys_channel_block: true
-    endpoint: orderer0-orderer.my-hlf-domain.com # This must match to the existing endpoint of the orderer in the channel. 
+    endpoint: orderer1-orderer.my-hlf-domain.com # This must match to the existing endpoint of the orderer in the channel. 
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
     ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-    #tlsca_endpoint: tlsca-endpoint:30000
-    #hlf_domain: hello-world.com
+    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
     ica_tlscertfile: /tmp/orderer-cert.pem
+    require_msp_enrollment: true
+    require_tls_enrollment: true
     update_channels:
       - orderer-sys-channel
       - mychannel
     upload_latest_channel_block_to_filestore:
       - orderer-sys-channel
-
-
-# # .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
-# # Not required for identity registration, but we use the same values file for deploying fabric-tools helm chart. 
-# # This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
-# # Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
-# # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-initialpeerorg/msp
 
 serviceAccount:
   # Specifies whether a service account should be created

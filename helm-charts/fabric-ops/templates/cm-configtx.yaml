@@ -3,7 +3,7 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if eq "crypto" .Values.job_type  }}
+{{- if .Values.fabric_actions.cryptogen }}
 
 {{- $HlfDomain      := .Values.hlf_domain }}
 {{- $BaseDir        := .Values.base_dir }}
@@ -29,7 +29,7 @@ data:
         ID: OrdererMSP
 
         # MSPDir is the filesystem path which contains the MSP configuration
-        MSPDir: {{ printf "%s/%s/%s" $BaseDir "ordererOrganizations" $OrdererOrgName }}/msp
+        MSPDir: {{ .Values.configtx_override_orderer_org_admin_msp_dir }}
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -57,7 +57,7 @@ data:
         # ID to load the MSP definition as
         ID: {{ $PeerOrgName | quote }}
 
-        MSPDir: {{ printf "%s/%s/%s" $BaseDir "peerOrganizations" $PeerOrgName }}/msp
+        MSPDir: {{ .Values.configtx_override_peer_org_admin_msp_dir }}
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -274,7 +274,7 @@ data:
             EtcdRaft:
                 Consenters:
                 {{- range .Values.orderer_identities }}
-                {{- $msp_dir := printf "%s/%s/%s/%s" $BaseDir "ordererOrganizations" .identity_name "tls" }}
+                {{- $msp_dir := printf "%s/%s/%s/%s" $BaseDir $.Values.orderer_org_name .identity_name "tls" }}
                 - Host: {{ printf "%s.%s" .identity_name $HlfDomain }}
                   Port: {{ .port }}
                   ClientTLSCert: {{ $msp_dir }}/server.crt

@@ -2,10 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-job_type: identity
 nameOverride: "tlsca"
 fullnameOverride: ""
 project: yourproject
+
+fabric_actions:
+  identity: true
 
 image:
   repository: npcioss/hlf-builder
@@ -22,6 +24,7 @@ ca:
  ca_endpoint: tls-ca.my-hlf-domain.com:30000
  admin_secret: tlsca-secret
 
+hlf_domain: my-hlf-domain.com
 identities:
   - identity_name: orderer0-orderer
     identity_secret: orderer0ordererSamplePassword
@@ -31,6 +34,12 @@ identities:
     identity_type: orderer
   - identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
+    identity_type: orderer
+  - identity_name: orderer3-orderer
+    identity_secret: orderer3ordererSamplePassword
+    identity_type: orderer
+  - identity_name: orderer4-orderer
+    identity_secret: orderer4ordererSamplePassword
     identity_type: orderer
   - identity_name: peer0-initialpeerorg
     identity_secret: peer0initialpeerorgSamplePassword
@@ -55,6 +64,9 @@ identities:
     identity_type: peer
   - identity_name: peer1-org2
     identity_secret: peer1org2SamplePassword
+    identity_type: peer
+  - identity_name: peer2-org2
+    identity_secret: peer2org2SamplePassword
     identity_type: peer
 
 ttlSecondsAfterFinished: "100"

@@ -2,10 +2,12 @@
 # # This is a YAML-formatted file.
 # # Declare variables to be passed into your templates.
 
-job_type: identity
 nameOverride: "org2"
 fullnameOverride: ""
 project: yourproject
+
+fabric_actions:
+  identity: true
 
 imagePullSecrets: []
 image:
@@ -19,16 +21,15 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
+hlf_domain: my-hlf-domain.com
 ca:
  ca_endpoint: ica-org2.my-hlf-domain.com:30000
  admin_secret: org2-secret
- tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
-
-hlf_domain: my-hlf-domain.com
+ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:
   - identity_name: admin
-    identity_secret: adminSamplePassword
+    identity_secret: org2AdminSamplePassword
     identity_type: admin
   - identity_name: peer0-org2
     identity_secret: peer0org2SamplePassword

@@ -16,6 +16,7 @@ orderers:
   - name: orderer2
     identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
+
 csr_names_cn: IN
 csr_names_st: Maharashtra
 csr_names_l: Mumbai

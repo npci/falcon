@@ -2,7 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-job_type: chaincode_ops
 nameOverride: "initialpeerorg"
 fullnameOverride: ""
 project: yourproject
@@ -16,7 +15,7 @@ image:
 
 ca:
  ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
- tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
+ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
@@ -35,19 +34,17 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-identities:
+admin_identity:
   - identity_name: admin
-    identity_secret: adminSamplePassword
+    identity_secret: initialpeerorgAdminSamplePassword
     identity_type: admin
-  - identity_name: peer0-initialpeerorg
-    identity_secret: peer0initialpeerorgSamplePassword
-    identity_type: peer
-  - identity_name: peer1-initialpeerorg
-    identity_secret: peer1initialpeerorgSamplePassword
-    identity_type: peer
-  - identity_name: peer2-initialpeerorg
-    identity_secret: peer2initialpeerorgSamplePassword
-    identity_type: peer
+    require_msp_enrollment: true
+    require_tls_enrollment: false
+
+peer_identities:
+ - identity_name: peer0-initialpeerorg
+ - identity_name: peer1-initialpeerorg
+ - identity_name: peer2-initialpeerorg
 
 # .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
 # This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/

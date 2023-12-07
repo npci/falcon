@@ -2,10 +2,12 @@
 # # This is a YAML-formatted file.
 # # Declare variables to be passed into your templates.
 
-job_type: identity
 nameOverride: "initialpeerorg"
 fullnameOverride: ""
 project: yourproject
+
+fabric_actions:
+  identity: true
 
 imagePullSecrets: []
 image:
@@ -18,17 +20,17 @@ csr_names_cn: IN
 csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
-
+hlf_domain: my-hlf-domain.com
 ca:
  ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
  admin_secret: initialpeerorg-secret
- tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
+ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 hlf_domain: my-hlf-domain.com
 
 identities:
   - identity_name: admin
-    identity_secret: adminSamplePassword
+    identity_secret: initialpeerorgAdminSamplePassword
     identity_type: admin
   - identity_name: peer0-initialpeerorg
     identity_secret: peer0initialpeerorgSamplePassword

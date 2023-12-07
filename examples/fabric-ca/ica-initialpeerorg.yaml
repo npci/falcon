@@ -39,7 +39,7 @@ ca_server:
   admin_secret: initialpeerorg-secret
 
 retry_seconds: 60
-recreate_intermediate_cert: false # Make it true if you want to delete existing parent server public key cert and fetch new one.
+recreate_intermediate_cert: false # Make it true if you want to delete existing parent server public key cert and fetch new one on the next restart.
 
 ica:
   enabled: true

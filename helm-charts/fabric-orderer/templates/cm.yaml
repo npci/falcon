@@ -23,22 +23,16 @@ data:
     while true; do
       http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
       if [ "$http_response" -eq "200" ]; then
-        echo "--------------------------------"
-        echo "Fetching public key cert of $FABRIC_CA_URL, received HTTP response with 200."
-        echo "--------------------------------"
+        echo "======== Fetching public key cert of $FABRIC_CA_URL, received HTTP response with 200. ========"
           if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
-            echo "--------------------------------"
-            echo "The downloaded public key cert of $FABRIC_CA_URL"
-            echo "--------------------------------"
+            echo "======== The downloaded public key cert of $FABRIC_CA_URL ========"
             cat $FABRIC_TLS_CERT_FILE
             break;
           else
-            echo "There are some issues with fetching the public key using 'jq' and 'curl' command."
+            echo "======== There are some issues with fetching the public key using 'jq' and 'curl' command. ========"
           fi
       else
-        echo "------------------------------------"
-        echo "Fetching public key cert of $FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert."
-        echo "------------------------------------"
+        echo "======== Fetching public key cert of $FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert. ========"
         sleep {{ $.Values.retry_seconds }}
       fi
     done
@@ -59,18 +53,13 @@ data:
             --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
             --csr.names O='{{ $.Values.csr_names_o }}',L={{ $.Values.csr_names_l }},ST={{ $.Values.csr_names_st }},C={{ $.Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
-        echo "------------------------------------"
-        echo "Identity is valid and enrollment is successful. Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY"
-        echo "--------------------------------------"
+        echo "======== Identity is valid and enrollment is successful. ========"
+        echo "======== Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY ========"
         cp {{ $.Values.orderer_cert_base_dir }}/msp/intermediatecerts/* {{ $.Values.orderer_cert_base_dir }}/msp/intermediatecerts/ca-cert.pem
-        echo "-------------------------------------------------"
-        echo "MSP directory has been configured successfully."
-        echo "-------------------------------------------------"
+        echo "======== MSP directory has been configured successfully. ========"
         break;
       else
-        echo "------------------------------------"
-        echo "Cannot login with the given Identity, will retry in {{ $.Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints"
-        echo "------------------------------------"
+        echo "======== Cannot login with the given Identity, will retry in {{ $.Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints ========"
         rm -rf {{ $.Values.orderer_cert_base_dir }}/msp
         sleep {{ $.Values.retry_seconds }}
       fi
@@ -84,25 +73,19 @@ data:
               
       while true; do
         if [ -e "$FILE_NAME" ]; then
-          echo "--------------------------------------------------------------------"
-          echo "File $FILE_NAME available. Proceeding to next stage."
-          echo "--------------------------------------------------------------------"
+          echo "======== File $FILE_NAME available. Proceeding to next stage. ========"
           break;
         else
-          echo "--------------------------------------------------------------------"
-          echo "Atempting to download $FILE_NAME from $FILESTORE_DOWNLOAD_URL"
-          echo "--------------------------------------------------------------------"
+          echo "======== Atempting to download $FILE_NAME from $FILESTORE_DOWNLOAD_URL ========"
           if curl --silent --head --fail "$FILESTORE_DOWNLOAD_URL" {{- if $.Values.filestore_ssl  }} --insecure {{- end }}; then
-            echo "--------------------------------------------------------------------"
             echo "Received success http response, downloading $FILE_NAME from $FILESTORE_DOWNLOAD_URL"
-            echo "--------------------------------------------------------------------"
             curl $FILESTORE_DOWNLOAD_URL -o $FILE_NAME {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+            echo "--------------------------------------------------------"
             echo "Received file SHA256 value is = $(sha256sum $FILE_NAME)"
+            echo "--------------------------------------------------------"
             break;
           else
-            echo "--------------------------------------------------------------------"
-            echo "Received non success http response for $FILESTORE_DOWNLOAD_URL, will retry in {{ $.Values.retry_seconds }} seconds."
-            echo "--------------------------------------------------------------------"
+            echo "======== Received non success http response for $FILESTORE_DOWNLOAD_URL, will retry in {{ $.Values.retry_seconds }} seconds. ========"
             sleep {{ $.Values.retry_seconds }}
           fi
         fi

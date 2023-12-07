@@ -1,0 +1,132 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- if .Values.fabric_actions.cryptogen }}
+
+{{- $TlsCaEndPoint     := .Values.tlsca.endpoint }}
+{{- $TlsCaPubCert      := .Values.tlsca.cert_path }}
+{{- $OrdererCaEndPoint := .Values.orderer_ca.endpoint }}
+{{- $OrdererCaPubCert  := .Values.orderer_ca.cert_path }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $BaseDir           := .Values.base_dir }}
+{{- $Project           := .Values.project }}
+{{- $ChannelName       := .Values.hlf_channel }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  cryptogen.sh: |
+
+    source /scripts/fabric_enroll.sh 
+    fabric_public_key_fetch {{ $TlsCaEndPoint }} {{ $TlsCaPubCert }}
+    fabric_public_key_fetch {{ $OrdererCaEndPoint }} {{ $OrdererCaPubCert }}
+     
+    {{- range .Values.orderer_identities }}
+    {{- $msp_dir := printf "%s/%s" $BaseDir $.Values.orderer_org_name }}
+    echo "============ Starting orderer enrollments. ============"
+    enroll \
+       {{ .identity_name }} \
+       {{ .identity_secret }} \
+       {{ .identity_type | default "orderer" }} \
+       {{ $msp_dir }} \
+       {{ $OrdererCaEndPoint }} \
+       {{ $TlsCaEndPoint }} \
+       {{ $OrdererCaPubCert }} \
+       {{ $TlsCaPubCert }} \
+       {{ $HlfDomain }} \
+       {{ .require_msp_enrollment | default "true" }} \
+       {{ .require_tls_enrollment | default "true" }}
+    mkdir -p {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts
+    cp {{ $TlsCaPubCert }} {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts/ca.crt
+
+    echo "============ Archiving {{ .identity_name }} tls directory ============"
+    tar -czvf {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz --directory={{ $msp_dir }}/{{ .identity_name }}/ tls
+    sleep 5
+    echo "============ Uploading {{ .identity_name }} tls cert file {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz to filestore {{ $.Values.filestore_endpoint }} ============"
+    curl -T {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/{{ .identity_name }}-tls-certs.tar.gz {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+    if [ $? -eq 0 ]; then
+        echo "Successfully uploaded {{ .identity_name }} TLS cert file to filestore."
+        sha256sum {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz
+        echo "============ [SUCCESS] ============"
+        break;
+    else
+        echo "[ERROR]::Filestore upload failed, please re-run this job if necessary."
+        echo "============ [ERROR] ============"
+    fi
+    {{- end }}
+
+     echo "============ Starting Org admin enrollments. ============"
+
+     {{- range .Values.organizations }}
+     {{- $msp_dir := printf "%s/%s" $BaseDir .org_name }}
+     fabric_public_key_fetch {{ .ca_endpoint }} {{ .cert_path }}
+    
+     enroll \
+        {{ .admin_identity }} \
+        {{ .admin_secret }} \
+        {{ .identity_type | default "admin" }} \
+        {{ $msp_dir }} \
+        {{ .ca_endpoint }} \
+        {{ "null" }} \
+        {{ .cert_path }} \
+        {{ "null" }} \
+        {{ $HlfDomain }} \
+        {{ .require_msp_enrollment | default "true" }} \
+        {{ .require_tls_enrollment | default "false" }}
+     
+     mkdir -p {{ $msp_dir }}/{{ .admin_identity }}/msp/tlscacerts
+     cp {{ $TlsCaPubCert }} {{ $msp_dir }}/{{ .admin_identity }}/msp/tlscacerts/ca.crt
+     {{- end }}
+
+     echo "--------------------------------------------------------------------"
+     echo "Generating Genesis block file {{ .Values.block_file }} at {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }}";
+     echo "--------------------------------------------------------------------"
+     configtxgen -profile SampleMultiNodeEtcdRaft -channelID {{ .Values.orderer_system_channel }} -outputBlock {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }};
+     sleep 5;
+     echo "--------------------------------"
+     echo "Printing generated {{ .Values.block_file }}"     
+     echo "--------------------------------"
+     cat {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }}
+     echo "--------------------------------"
+     GENESIS_SHA=$(sha256sum {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }})
+     echo "SHA256 value = $GENESIS_SHA"
+     echo "--------------------------------"
+
+     echo "--------------------------------------------------------------------"
+     echo "Generating Configuration transaction file {{ .Values.config_transaction_filename }} at {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }}";
+     echo "--------------------------------------------------------------------"
+     configtxgen -profile TwoOrgsChannel -outputCreateChannelTx {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }} -channelID {{ $ChannelName }};
+     sleep 5
+     echo "--------------------------------"
+     echo "Printing generated {{ .Values.config_transaction_filename }}"
+     echo "--------------------------------"
+     cat {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }}
+     echo "\n"
+     echo "--------------------------------------------------------------------"
+     CHANNELTX_SHA=$(sha256sum {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }})
+     echo "SHA256 value = $CHANNELTX_SHA"
+     echo "============ Uploading {{ .Values.block_file }} to filestore {{ .Values.filestore_endpoint }} ============"
+     curl -T {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
+      if [ $? -ne 0 ]; then
+        echo "[ERROR]::Filestore upload failed, please re-run this job if necessary."
+        echo "============ [ERROR] ============"
+      else
+        echo "Successfully uploaded {{ .Values.block_file }} to filestore."
+        echo "============ [SUCCESS] ============"
+      fi
+     echo "============ Uploading {{ .Values.config_transaction_filename }} to filestore {{ .Values.filestore_endpoint }} ============"
+     curl -T {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
+      if [ $? -ne 0 ]; then        
+        echo "[ERROR]::Filestore upload failed, please re-run this job if necessary."
+        echo "============ [ERROR] ============"
+      else
+        echo "Successfully uploaded {{ .Values.config_transaction_filename }} to filestore."
+        echo "============ [SUCCESS] ============"
+      fi
+{{- end }}
