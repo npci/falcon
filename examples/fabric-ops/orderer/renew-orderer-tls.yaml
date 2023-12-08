@@ -25,6 +25,7 @@ MspIdOverride: OrdererMSP
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
+seconds_to_wait_after_channel_update: 15
 
 hlf_domain: my-hlf-domain.com
 

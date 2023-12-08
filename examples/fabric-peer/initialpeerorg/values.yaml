@@ -33,8 +33,6 @@ peers:
   - name: peer2
     identity_name: peer2-initialpeerorg
     identity_secret: peer2initialpeerorgSamplePassword
-    require_certs_dir_persistence: true
-    renew_peer_certs: true
 
 global:
   hlf_domain: my-hlf-domain.com

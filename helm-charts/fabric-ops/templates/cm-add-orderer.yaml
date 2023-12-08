@@ -116,14 +116,14 @@ data:
       echo "============ [CLEANUP] ============"
       rm -f *.json
       rm -f *.pb
-      sleep 10
+      sleep {{ $.Values.seconds_to_wait_after_channel_update }}
       echo "============ [CLEANUP COMPLETED] ============"
     fi
   {{- end }}
     
   {{- range .upload_latest_channel_block_to_filestore }}
     echo "============ Fetching latest block file from {{ . }}. I'm pausing for a while to propagate the new channel changes. ============"
-    sleep 30
+    sleep {{ $.Values.seconds_to_wait_after_channel_update }}
     peer channel fetch config {{ $identity_name }}-{{ . }}_$DATE.block -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA --connTimeout {{ $.Values.connTimeout }}
     echo "============ Uploading {{ $identity_name }}-{{ . }}_$DATE.block for {{ $identity_name }} to filestore. ============"
     curl -T {{ $identity_name }}-{{ . }}_$DATE.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}

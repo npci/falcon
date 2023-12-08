@@ -21,8 +21,6 @@ init:
 ica_tls_cert_file: /root/ica-cert.pem
 tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
-require_certs_dir_persistence: true
-renew_peer_certs: false
 retry_seconds: 60
 
 peers:

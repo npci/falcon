@@ -9,6 +9,7 @@ fullnameOverride: ""
 orderer_cert_base_dir: "/var/hyperledger/orderer"
 orderer_data_dir: "/var/hyperledger/production"
 filestore_ssl: false
+ica_tls_cert_file: /root/ica-cert.pem
 # orderers:
 #   - name: orderer0
 #     identity_name: orderer0-orderer
