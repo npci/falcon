@@ -22,7 +22,7 @@ csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
 MspIdOverride: OrdererMSP
-orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
+orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000 # This orderer should not be the one you're trying to update.
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 seconds_to_wait_after_channel_update: 15
