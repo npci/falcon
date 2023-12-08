@@ -45,7 +45,7 @@ global:
   require_certs_dir_persistence: true
   image:
     repository: hyperledger/fabric-orderer
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     imagePullSecrets: []
     tag: "2.4"
   serviceAccount:

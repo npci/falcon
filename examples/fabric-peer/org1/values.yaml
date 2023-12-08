@@ -45,7 +45,7 @@ global:
     annotations:
       nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   imageRegistry: hyperledger
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   serviceAccount:
     annotations: []
 
