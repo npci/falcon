@@ -35,12 +35,6 @@ identities:
   - identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
     identity_type: orderer
-  - identity_name: orderer3-orderer
-    identity_secret: orderer3ordererSamplePassword
-    identity_type: orderer
-  - identity_name: orderer4-orderer
-    identity_secret: orderer4ordererSamplePassword
-    identity_type: orderer
   - identity_name: peer0-initialpeerorg
     identity_secret: peer0initialpeerorgSamplePassword
     identity_type: peer
@@ -64,9 +58,6 @@ identities:
     identity_type: peer
   - identity_name: peer1-org2
     identity_secret: peer1org2SamplePassword
-    identity_type: peer
-  - identity_name: peer2-org2
-    identity_secret: peer2org2SamplePassword
     identity_type: peer
 
 ttlSecondsAfterFinished: "100"

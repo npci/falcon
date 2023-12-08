@@ -38,12 +38,6 @@ identities:
     identity_secret: peer1org2SamplePassword
     identity_type: peer
 
-# .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
-# Not required for identity registration, but we use the same values file for deploying fabric-tools helm chart. 
-# This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
-# Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
-# core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-org2/msp
-
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"
