@@ -41,20 +41,21 @@ data:
     function fabric_enroll() {
 
     FABRIC_CA_URL=$1
-    FABRIC_CA_IDENTITY=$2
-    FABRIC_CA_SECRET=$3
+    FABRIC_IDENTITY=$2
+    FABRIC_IDENTITY_SECRET=$3
     FABRIC_TLS_CERT_FILE=$4
 
     while true; do
+      echo "======== Enrolling to https://$FABRIC_CA_URL as $FABRIC_IDENTITY ========"
       fabric-ca-client enroll \
-            --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
+            --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
             --mspdir {{ $.Values.orderer_cert_base_dir }}/msp \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
-            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
+            --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $HlfDomain }} \
             --csr.names O='{{ $.Values.csr_names_o }}',L={{ $.Values.csr_names_l }},ST={{ $.Values.csr_names_st }},C={{ $.Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
         echo "======== Identity is valid and enrollment is successful. ========"
-        echo "======== Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY ========"
+        echo "======== Rearranging msp certificate directory structure for $FABRIC_IDENTITY ========"
         cp {{ $.Values.orderer_cert_base_dir }}/msp/intermediatecerts/* {{ $.Values.orderer_cert_base_dir }}/msp/intermediatecerts/ca-cert.pem
         echo "======== MSP directory has been configured successfully. ========"
         break;

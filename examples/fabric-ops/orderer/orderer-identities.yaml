@@ -38,12 +38,7 @@ identities:
   - identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
     identity_type: orderer
-  - identity_name: orderer3-orderer
-    identity_secret: orderer3ordererSamplePassword
-    identity_type: orderer
-  - identity_name: orderer4-orderer
-    identity_secret: orderer4ordererSamplePassword
-    identity_type: orderer  
+
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"
