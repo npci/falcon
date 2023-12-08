@@ -4,7 +4,9 @@
 nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
-job_type: identity
+
+fabric_actions:
+  identity: true
 
 image:
   repository: npcioss/hlf-builder
@@ -17,11 +19,16 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
+hlf_domain: my-hlf-domain.com
 ca:
  ca_endpoint: ica-orderer.my-hlf-domain.com:30000
  admin_secret: orderer-secret
+ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:
+  - identity_name: admin
+    identity_secret: ordererAdminpassword
+    identity_type: admin
   - identity_name: orderer0-orderer
     identity_secret: orderer0ordererSamplePassword
     identity_type: orderer
@@ -31,7 +38,12 @@ identities:
   - identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
     identity_type: orderer
-
+  - identity_name: orderer3-orderer
+    identity_secret: orderer3ordererSamplePassword
+    identity_type: orderer
+  - identity_name: orderer4-orderer
+    identity_secret: orderer4ordererSamplePassword
+    identity_type: orderer  
 tools:
   storageAccessMode: ReadWriteOnce
   storageSize: "5Gi"

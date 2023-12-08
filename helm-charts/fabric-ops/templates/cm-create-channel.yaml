@@ -1,0 +1,64 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Project           := .Values.project }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndpoint       := .Values.ca.ca_endpoint }}
+{{- $TlsCaEndpoint     := .Values.ca.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ca.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.ca.ica_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $ChannelName       := .Values.hlf_channel }}
+{{- $BankName          := .Values.nameOverride }}
+{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if .Values.fabric_actions.create_channel | default false }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  fabric_create_channel.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.admin_identity }}
+        {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+        {{- end }}
+        {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+        {{- end }}
+      enroll \
+        {{ .identity_name }} \
+        {{ .identity_secret }} \
+        {{ .identity_type }} \
+        {{ .msp_base_dir | default $Msp_base_dir }} \
+        {{ .ica_endpoint | default $IcaEndpoint }} \
+        {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+        {{ .ica_tlscertfile | default $IcaTlsCertFile }} \
+        {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} \
+        {{ .hlf_domain | default $.Values.hlf_domain }} \
+        {{ .require_msp_enrollment }} \
+        {{ .require_tls_enrollment }}
+    {{- end }}
+
+      get_file {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.config_transaction_filename }}
+      echo "Printing the downloaded file {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }}"
+      cat {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }}
+
+      echo "============ Creating channel ============"
+      peer channel create -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} -f {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} --tls true --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+      echo "============ Uploading {{ .Values.channel_block_filename }} to Filestore at {{ .Values.filestore_endpoint }} ============"
+      curl -T {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
+      if [ $? -ne 0 ]; then
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+      else
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
+      fi
+  {{- end }}

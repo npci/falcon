@@ -1,0 +1,93 @@
+# Default values for ca-user.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: "add-orderer"
+fullnameOverride: ""
+project: yourproject
+
+fabric_actions:
+ add_orderer: true
+
+imagePullSecrets: []
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"
+
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
+
+MspIdOverride: OrdererMSP
+orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
+filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
+seconds_to_wait_after_channel_update: 15
+
+hlf_domain: my-hlf-domain.com
+
+admin_identity:
+  - identity_name: admin
+    identity_secret: ordererAdminpassword
+    identity_type: admin
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+    ica_tlscertfile: /tmp/orderer-ica.cert
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    require_msp_enrollment: true
+    require_tls_enrollment: false
+
+# additional_orderers are the list of new orderers you want to add. Only specify one item at a time.
+additional_orderers:
+  - identity_name: orderer3-orderer
+    identity_secret: orderer3ordererSamplePassword
+    identity_type: orderer
+    require_msp_enrollment: true
+    require_tls_enrollment: true
+    endpoint: orderer3-orderer.my-hlf-domain.com
+    port: 30000
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+    ica_tlscertfile: /tmp/orderer-ica.cert
+    # hlf_domain: If you want to register this orderer with a different hlf domain other than .Values.hlf_domain. Useful when adding new orderers on a different DC and you want to assign a different sub domain for it.
+    update_channels:
+      - orderer-sys-channel
+      - mychannel
+    upload_latest_channel_block_to_filestore:
+      - orderer-sys-channel
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+  # fsGroup: 2000
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

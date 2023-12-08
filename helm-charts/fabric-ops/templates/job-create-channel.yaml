@@ -3,19 +3,19 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if .Values.fabric_actions.approve_chaincode | default false }}
+{{- if .Values.fabric_actions.create_channel | default false }}
 
-{{ $BankName      := .Values.nameOverride }}
-{{ $HlfDomain     := .Values.hlf_domain }}
-{{ $ChannelName   := .Values.channel_name }}
-{{ $Msp_base_dir  := printf "%s%s" .Values.workdir "/peer/crypto/users/" }}
+{{ $BankName          := .Values.nameOverride }}
+{{ $HlfDomain         := .Values.hlf_domain }}
+{{ $ChannelName       := .Values.channel_name }}
+{{ $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users/" }}
 
 {{- range .Values.admin_identity }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "fabric-ops.fullname" $ }}-rev-{{ $.Release.Revision }}
+  name: {{ include "fabric-ops.fullname" $ }}
   labels:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 spec:
@@ -46,21 +46,17 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_approve_chaincode.sh;
+           - /scripts/fabric_create_channel.sh;
           tty: true
           env: 
             - name: FABRIC_LOGGING_SPEC
               value: INFO
-            - name: CORE_PEER_ADDRESS
-              value: {{ $.Values.core_peer_address }}
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
               value: {{ $.Values.core_peer_mspconfigpath_override | default (printf "%s%s%s" $Msp_base_dir .identity_name "/msp") }}
             - name: CORE_PEER_TLS_ENABLED
               value: "true"
-            - name: CORE_PEER_TLS_ROOTCERT_FILE
-              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
             - name: GOPATH
               value: /opt/gopath
             - name: ORDERER_CA
@@ -75,8 +71,8 @@ spec:
               subPath: fabric_enroll.sh
               mountPath: /scripts/fabric_enroll.sh
             - name: scripts
-              subPath: fabric_approve_chaincode.sh
-              mountPath: /scripts/fabric_approve_chaincode.sh
+              subPath: fabric_create_channel.sh
+              mountPath: /scripts/fabric_create_channel.sh
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       volumes:

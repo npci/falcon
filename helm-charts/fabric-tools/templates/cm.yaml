@@ -5,7 +5,7 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $HlfDomain     := .Values.hlf_domain }}
 {{- $IcaEndpoint   := .Values.ca.ca_endpoint }}
-{{- $TlsCaEndpoint := .Values.ca.tlss_ca_endpoint }}
+{{- $TlsCaEndpoint := .Values.ca.tlsca_endpoint }}
 {{- $Msp_base_dir  := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
 
 apiVersion: v1

@@ -3,7 +3,6 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if eq "chaincode_ops" .Values.job_type }}
 {{- if .Values.fabric_actions.install_chaincode }}
 
 {{ $BankName               := .Values.nameOverride }}
@@ -11,8 +10,8 @@ SPDX-License-Identifier:  GPL-3.0
 {{ $ChannelName            := .Values.channel_name }}
 {{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
 
-{{- range .Values.identities }}
-{{- if eq "peer" .identity_type }}
+{{- range .Values.peer_identities }}
+
 ---
 apiVersion: batch/v1
 kind: Job
@@ -48,38 +47,27 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_enroll.sh;
-             /scripts/fabric_install_chaincode.sh;
+           - /scripts/fabric_install_chaincode.sh;
           tty: true
           env: 
-            - name: CLUSTER_DOMAIN
-              value: {{ $HlfDomain }}
             - name: FABRIC_LOGGING_SPEC
               value: INFO
             - name: CORE_PEER_ADDRESS
               value: {{ .identity_name }}:{{ $.Values.peer_internal_service_port }}
-            - name: CORE_PEER_ID
-              value: cli-{{ $BankName }}
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
               value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
-            - name: CORE_PEER_TLS_CERT_FILE
-              value: {{ $.Values.workdir }}/peer/crypto/users/{{ .identity_name }}/tls/server.crt
             - name: CORE_PEER_TLS_ENABLED
               value: "true"
-            - name: CORE_PEER_TLS_KEY_FILE
-              value: {{ $.Values.workdir }}/peer/crypto/users/{{ .identity_name }}/tls/server.key
             - name: CORE_PEER_TLS_ROOTCERT_FILE
-              value: {{ $.Values.workdir }}/peer/crypto/users/{{ .identity_name }}/tls/ca.crt
+              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
             - name: GOPATH
               value: /opt/gopath
             - name: ORDERER_CA
               value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
             - name: ORDERER_BASE_PATH
               value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca
-            - name: IDENTITY_NAME
-              value: {{ .identity_name }}
           volumeMounts:
             - name: fabric-ops
               subPath: config.yaml
@@ -87,15 +75,19 @@ spec:
             - name: fabric-ops
               subPath: fabric_enroll.sh
               mountPath: /scripts/fabric_enroll.sh
-            - name: fabric-ops
+            - name: scripts
               subPath: fabric_install_chaincode.sh
               mountPath: /scripts/fabric_install_chaincode.sh
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       volumes:
-        - name: fabric-ops
+        - name: scripts
           configMap:
             name: {{ include "fabric-ops.fullname" $ }}
+            defaultMode: 0777
+        - name: fabric-ops
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-functions
             defaultMode: 0777
       {{- with $.Values.nodeSelector }}
       nodeSelector:
@@ -109,7 +101,6 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- end }}
-{{- end }}
+
 {{- end }}
 {{- end }}

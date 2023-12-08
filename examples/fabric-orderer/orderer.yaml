@@ -24,9 +24,7 @@ csr_names_o: Your Company Name
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
-block_file: genesis.block
-ica_tls_cert_file: /root/cert.pem
-enroll_on_every_pod_recreation: true
+ica_tls_cert_file: /root/ica-cert.pem
 retry_seconds: 60
 
 hlf_domain: my-hlf-domain.com
@@ -43,6 +41,8 @@ global:
   containerPort: 7050
   servicePort: 7050
   replicaCount: 1
+  block_file: genesis.block
+  require_certs_dir_persistence: true
   image:
     repository: hyperledger/fabric-orderer
     pullPolicy: Always
@@ -109,8 +109,6 @@ global:
       value: OrdererMSP
     - name: ORDERER_GENERAL_TLS_ENABLED
       value: "true"
-    - name: ORDERER_GENERAL_GENESISFILE
-      value: "{{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }}"
     - name: ORDERER_GENERAL_LOCALMSPDIR
       value: "{{ .Values.orderer_cert_base_dir }}/msp"
     - name: ORDERER_GENERAL_TLS_CERTIFICATE

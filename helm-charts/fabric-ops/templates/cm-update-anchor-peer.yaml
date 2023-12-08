@@ -1,0 +1,91 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Project           := .Values.project }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndpoint       := .Values.ca.ca_endpoint }}
+{{- $TlsCaEndpoint     := .Values.ca.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ca.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.ca.ica_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $ChannelName       := .Values.hlf_channel }}
+{{- $BankName          := .Values.nameOverride }}
+{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if .Values.fabric_actions.update_anchor_peer | default false }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  fabric_update_anchorpeer.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      orderer_dir_setup
+      {{- range .Values.admin_identity }}
+          {{- if .ica_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
+          {{- end }}
+          {{- if .tlsca_endpoint }}
+      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
+          {{- end }}
+      enroll \
+        {{ .identity_name }} \
+        {{ .identity_secret }} \
+        {{ .identity_type }} \
+        {{ .msp_base_dir | default $Msp_base_dir }} \
+        {{ .ica_endpoint | default $IcaEndpoint }} \
+        {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+        {{ .ica_tlscertfile | default $IcaTlsCertFile }} \
+        {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} \
+        {{ .hlf_domain | default $.Values.hlf_domain }} \
+        {{ .require_msp_enrollment }} \
+        {{ .require_tls_enrollment }}
+
+      {{- end }}
+      echo "============ Starting anchor peer update ============"
+      echo "============ Fetching config block ============"
+      peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+      echo "============ Converting the configuration to JSON (jq) ============"
+      configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+      echo "============ Add the anchor peer configs ============"
+      jq --argjson hostList "$(cat anchorpeer.json)" '.channel_group.groups.Application.groups.{{ $BankName }}.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": $hostList},"version": "0"}}' config.json > modified_config.json
+      echo "Executing configtxlator commands"
+      echo "============ Executing - configtxlator proto_encode --input config.json --type common.Config --output config.pb ============"
+      configtxlator proto_encode --input config.json --type common.Config --output config.pb
+      echo "============ Executing - configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb ============"
+      configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
+      echo "============ Executing - configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb ============================"
+      configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb
+      echo "============ Executing - configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json ============"
+      configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json
+      echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat anchor_update.json)'}}}' | jq . > anchor_update_in_envelope.json
+      echo "============ configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb ============"
+      configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb
+      echo "============ Signing the Channel Configuration ============"
+      peer channel signconfigtx -f anchor_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
+      echo "============ Running peer channel update ============"
+      peer channel update -f anchor_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+
+      if [ $? -ne 0 ]; then
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+      else
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
+      fi
+  anchorpeer.json: |
+      {{- $length := sub (len .Values.anchor_peers) 1 }}
+      [
+        {{- range $index, $element := .Values.anchor_peers }}
+        {{- $Member := ( printf "%s%s%s%s%s%s%s%s%s" "{" ("host" | quote)  ":" (.host | quote) "," ("port" | quote) ":" .port "}" ) }}
+           {{ $Member }}
+           {{- if lt $index $length }}
+           {{","}}
+           {{- end }}
+        {{- end }}
+      ]
+{{- end }}
