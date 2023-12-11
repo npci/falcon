@@ -10,6 +10,10 @@ orderers:
   - name: orderer0
     identity_name: orderer0-orderer
     identity_secret: orderer0ordererSamplePassword
+    ## Add additional env variables unique to this orderer
+    # additionalEnvironmentVariables:
+    # - name: ORDERER_ENV_VAR
+    #   value: orderer_env_var
   - name: orderer1
     identity_name: orderer1-orderer
     identity_secret: orderer1ordererSamplePassword

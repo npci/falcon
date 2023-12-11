@@ -183,7 +183,7 @@ global:
     tcpSocket:
       port: 2375
 
-additonalEnvironmentVars:
+additionalEnvironmentVars:
   # couchDb:
   #   - name: EXTRA_ENV_COUCHDB
   #     value: Extra_couch_env_value

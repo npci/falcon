@@ -81,6 +81,9 @@ spec:
             {{- else }}
               value: "disabled"
             {{- end }}
+            {{- if .additionalEnvironmentVariables }}
+            {{- tpl (toYaml .additionalEnvironmentVariables) $ | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ $.Values.global.containerPort }}
