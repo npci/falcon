@@ -61,6 +61,7 @@ data:
       done
       }
 
+
       enroll() {
 
       FABRIC_IDENTITY="${1}"
@@ -157,6 +158,31 @@ data:
             fi
           fi
         done
+      }
+
+      function upload_file() {
+
+        file_name=$1
+        filestore_upload_url=$2
+
+        if [ -e "$file_name" ]; then
+          echo "============ File $file_name available. Proceeding to next step ============"
+          echo "============ Uploading $file_name to filestore ============"
+          curl --fail -T $file_name $filestore_upload_url {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+            if [ $? -eq 0 ]; then
+              echo "Successfully uploaded $file_name to filestore."
+              sha256sum $file_name
+              echo "============ [SUCCESS] ============"
+              break;
+            else
+              echo "============ [ERROR] Filestore upload failed, please re-run this job if necessary. ============"
+              exit
+            fi
+        else
+          echo "============ [ERROR] Could not find the file $file_name. Exiting. ============"
+          exit
+        fi
+
       }
 
       function orderer_dir_setup() {

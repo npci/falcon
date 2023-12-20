@@ -55,7 +55,7 @@ data:
       echo "============ Creating channel ============"
       peer channel create -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} -f {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} --tls true --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
       echo "============ Uploading {{ .Values.channel_block_filename }} to Filestore at {{ .Values.filestore_endpoint }} ============"
-      curl -T {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ {{- if .Values.filestore_ssl  }} --insecure {{- end }}
+      upload_file {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
       if [ $? -ne 0 ]; then
         echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else

@@ -126,8 +126,8 @@ data:
     sleep {{ $.Values.seconds_to_wait_after_channel_update }}
     peer channel fetch config {{ $identity_name }}-{{ . }}_$DATE.block -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA --connTimeout {{ $.Values.connTimeout }}
     echo "============ Uploading {{ $identity_name }}-{{ . }}_$DATE.block for {{ $identity_name }} to filestore. ============"
-    curl -T {{ $identity_name }}-{{ . }}_$DATE.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
-    curl -T {{ $identity_name }}-tls-certs_$DATE.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/ {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+    upload_file {{ $identity_name }}-{{ . }}_$DATE.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/
+    upload_file {{ $identity_name }}-tls-certs_$DATE.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/
     if [ $? -ne 0 ]; then
       echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
     else
