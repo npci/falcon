@@ -72,7 +72,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `storage.accessMode` | PVC accessmode | `""` |
 | `storage.storageClass` | Storageclass name | `""` |
 | `storage.size` | PVC size | `""` |
-| `storage.path` | The path on which where the home directory should be mounted and backed by PVC | `""` |
+| `storage.path` | The path on where the home directory should be mounted and backed by PVC | `""` |
 | `serviceAccount.create` | Whether to create serviceAccount | `""` |
 | `serviceAccount.annotations` | ServiceAccount annotations | `""` |
 | `serviceAccount.name` | ServiceAccount name override | `""` |
