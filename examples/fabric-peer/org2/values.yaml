@@ -33,7 +33,7 @@ peers:
 
 global:  
   hlf_domain: my-hlf-domain.com
-  ica_endpoint: ica-org2.my-hlf-domain.com:30000
+  mspca_endpoint: ica-org2.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
   storageClass: standard
   ingressClass: nginx

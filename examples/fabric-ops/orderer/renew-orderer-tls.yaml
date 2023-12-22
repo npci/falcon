@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "renew-orderer-tls"
+nameOverride: "abcorg"
 fullnameOverride: ""
 project: yourproject
 
@@ -21,22 +21,21 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-MspIdOverride: OrdererMSP
+#MspIdOverride: OrdererMSP
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000 # This orderer should not be the one you're trying to update.
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 seconds_to_wait_after_channel_update: 15
 
 hlf_domain: my-hlf-domain.com
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 # The identities mentioned below are used to fetch the channel blocks. Be sure to specify the identities with necessary permissions. 
 admin_identity:
   - identity_name: admin
     identity_secret: ordererAdminpassword
-    identity_type: admin
-    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-    ica_tlscertfile: /tmp/orderer-ica.cert
+    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    mspca_tlscertfile: /tmp/orderer-cert.pem
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
     require_msp_enrollment: true
     require_tls_enrollment: false
@@ -45,13 +44,11 @@ admin_identity:
 orderers_to_renew_tls_cert:
   - identity_name: orderer1-orderer
     identity_secret: orderer1ordererSamplePassword
-    identity_type: orderer
     upload_sys_channel_block: true
     endpoint: orderer1-orderer.my-hlf-domain.com # This must match to the existing endpoint of the orderer in the channel. 
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
-    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-    ica_tlscertfile: /tmp/orderer-cert.pem
+    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    mspca_tlscertfile: /tmp/orderer-cert.pem
     require_msp_enrollment: true
     require_tls_enrollment: true
     update_channels:

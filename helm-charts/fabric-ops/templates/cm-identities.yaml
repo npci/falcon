@@ -15,12 +15,9 @@ metadata:
 data:
   fabric_register_identity.sh: |
       source /scripts/fabric_enroll.sh 
-      fabric_public_key_fetch {{ .Values.ca.ca_endpoint }} {{ .Values.tls_cert_file }}
-
       enroll \
         $CA_ADMIN_USER \
         $CA_ADMIN_PASSWORD \
-        ica \
         {{ .Values.default_msp_dir }} \
         {{ .Values.ca.ca_endpoint }} \
         {{ "null" }} \

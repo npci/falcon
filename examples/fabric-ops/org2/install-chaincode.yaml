@@ -13,9 +13,8 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
-ca:
- ca_endpoint: ica-org2.my-hlf-domain.com:30000
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+mspca_endpoint: ica-org2.my-hlf-domain.com:30000
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
@@ -37,7 +36,6 @@ csr_names_o: Your Company Name
 admin_identity:
   - identity_name: admin
     identity_secret: org2AdminSamplePassword
-    identity_type: admin
     require_msp_enrollment: true
     require_tls_enrollment: false
 

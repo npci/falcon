@@ -16,9 +16,8 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
-ca:
- ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 
@@ -28,7 +27,6 @@ hlf_channel: "mychannel"
 admin_identity:
   - identity_name: admin
     identity_secret: initialpeerorgAdminSamplePassword
-    identity_type: admin
     require_msp_enrollment: true
     require_tls_enrollment: false
 
@@ -41,16 +39,14 @@ admin_identity:
 organizatons:
  - name: org1
    ica_endpoint: ica-org1.my-hlf-domain.com:30000
-   ica_username: ica-org1
-   ica_secret: icaorg1SamplePassword
-   msp_dir: /crypto-config/peerOrganizations/msp
+   admin_user: admin
+   admin_password: org1AdminSamplePassword
    anchor_peer: peer0-org1.my-hlf-domain.com
    anchor_peer_port: 30000
  - name: org2
    ica_endpoint: ica-org2.my-hlf-domain.com:30000
-   ica_username: ica-org2
-   ica_secret: icaorg2SamplePassword
-   msp_dir: /crypto-config/peerOrganizations/msp
+   admin_user: admin
+   admin_password: org2AdminSamplePassword
    anchor_peer: peer0-org2.my-hlf-domain.com
    anchor_peer_port: 30000
 

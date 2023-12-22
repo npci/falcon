@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "add-orderer"
+nameOverride: "abcorg"
 fullnameOverride: ""
 project: yourproject
 
@@ -21,21 +21,20 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-MspIdOverride: OrdererMSP
+#MspIdOverride: ordererorg
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 seconds_to_wait_after_channel_update: 15
 
 hlf_domain: my-hlf-domain.com
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 admin_identity:
   - identity_name: admin
     identity_secret: ordererAdminpassword
-    identity_type: admin
-    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-    ica_tlscertfile: /tmp/orderer-ica.cert
+    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    mspca_tlscertfile: /tmp/orderer-ica.cert
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
     require_msp_enrollment: true
     require_tls_enrollment: false
@@ -44,15 +43,13 @@ admin_identity:
 additional_orderers:
   - identity_name: orderer3-orderer
     identity_secret: orderer3ordererSamplePassword
-    identity_type: orderer
     require_msp_enrollment: true
     require_tls_enrollment: true
     endpoint: orderer3-orderer.my-hlf-domain.com
     port: 30000
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
-    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-    tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-    ica_tlscertfile: /tmp/orderer-ica.cert
+    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    mspca_tlscertfile: /tmp/orderer-ica.cert
     # hlf_domain: If you want to register this orderer with a different hlf domain other than .Values.hlf_domain. Useful when adding new orderers on a different DC and you want to assign a different sub domain for it.
     update_channels:
       - orderer-sys-channel

@@ -13,9 +13,8 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
-ca:
- ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
@@ -37,12 +36,12 @@ csr_names_o: Your Company Name
 admin_identity:
   - identity_name: admin
     identity_secret: initialpeerorgAdminSamplePassword
-    identity_type: admin
     require_msp_enrollment: true
     require_tls_enrollment: false
 
 peer_identities:
  - identity_name: peer0-initialpeerorg
+   # peer_endpoint: peer0-initialpeerorg.my-hlf-domain.com:30000 # By default it will use identity_name:peer_internal_service_port
  - identity_name: peer1-initialpeerorg
  - identity_name: peer2-initialpeerorg
 

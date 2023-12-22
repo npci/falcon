@@ -18,9 +18,8 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-ca:
- ca_endpoint: ica-org1.my-hlf-domain.com:30000
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+mspca_endpoint: ica-org1.my-hlf-domain.com:30000
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
@@ -37,7 +36,6 @@ fabric_actions:
 admin_identity:
   - identity_name: admin
     identity_secret: org1AdminSamplePassword
-    identity_type: admin
     require_msp_enrollment: true
     require_tls_enrollment: false
 

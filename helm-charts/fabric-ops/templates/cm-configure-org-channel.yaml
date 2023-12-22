@@ -5,10 +5,10 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $Project           := .Values.project }}
 {{- $HlfDomain         := .Values.hlf_domain }}
-{{- $IcaEndpoint       := .Values.ca.ca_endpoint }}
-{{- $TlsCaEndpoint     := .Values.ca.tlsca_endpoint }}
-{{- $IcaTlsCertFile    := .Values.ca.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
-{{- $TlsCaTlsCertFile  := .Values.ca.ica_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $MspCaEndpoint     := .Values.mspca_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $MspCaTlsCertFile  := .Values.mspca_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 {{- $ChannelName       := .Values.hlf_channel }}
 {{- $BankName          := .Values.nameOverride }}
 {{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
@@ -28,7 +28,8 @@ data:
         - &{{ .name }}
           Name: {{ .name }}
           ID: {{ .name }}
-          MSPDir: {{ .msp_dir | default "/crypto-config/peerOrganizations/msp" }}
+          {{- $MSPDir := printf "%s/%s/%s" (.msp_dir | default "/crypto-config/peerOrganizations" ) .admin_user "msp" }}
+          MSPDir: {{ $MSPDir }}
           Policies:
             Readers:
               Type: Signature
@@ -48,28 +49,19 @@ data:
 {{- end }}
   fabric_configure_org_channel.sh: |
       source /scripts/fabric_enroll.sh
-      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
       fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
-      orderer_dir_setup
       {{- range .Values.admin_identity }}
-          {{- if .ica_endpoint }}
-      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
-          {{- end }}
-          {{- if .tlsca_endpoint }}
-      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
-          {{- end }}
-      enroll \
-        {{ .identity_name }} \
-        {{ .identity_secret }} \
-        {{ .identity_type }} \
-        {{ .msp_base_dir | default $Msp_base_dir }} \
-        {{ .ica_endpoint | default $IcaEndpoint }} \
-        {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
-        {{ .ica_tlscertfile | default $IcaTlsCertFile }} \
-        {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} \
-        {{ .hlf_domain | default $.Values.hlf_domain }} \
-        {{ .require_msp_enrollment }} \
-        {{ .require_tls_enrollment }}
+        enroll \
+          {{ .identity_name }} \
+          {{ .identity_secret }} \
+          {{ .msp_base_dir | default $Msp_base_dir }} \
+          {{ .mspca_endpoint | default $MspCaEndpoint }} \
+          {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+          {{ .mspca_tlscertfile | default $MspCaTlsCertFile }} \
+          {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} \
+          {{ .hlf_domain | default $.Values.hlf_domain }} \
+          {{ .require_msp_enrollment }} \
+          {{ .require_tls_enrollment }}
       {{- end }}
 
       ORG_NAME=$1
@@ -79,38 +71,24 @@ data:
       FABRIC_IDENTITY_MSP_DIR=$5
       FABRIC_TLS_CERT_FILE=/tmp/$ORG_NAME-cert.pem
 
-      fabric_public_key_fetch $FABRIC_CA_URL $FABRIC_TLS_CERT_FILE
-
       echo "============ Updating channel for $ORG_NAME ============"
-      echo "------------------------------------"
-      echo "Enrolling to ICA https://$FABRIC_CA_URL as $FABRIC_IDENTITY"
-      echo "--------------------------------------------------------------------"
-      while true; do
-        fabric-ca-client enroll \
-          {{- if .Values.debug_enroll }}
-          --debug \
-          {{- end }}
-          --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
-          --mspdir $FABRIC_IDENTITY_MSP_DIR \
-          --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }} \
-          --tls.certfiles $FABRIC_TLS_CERT_FILE
-        
-        if [ $? -eq 0 ]; then
-          mkdir $FABRIC_IDENTITY_MSP_DIR/tlscacerts
-          cp -pr $FABRIC_IDENTITY_MSP_DIR/intermediatecerts/* $FABRIC_IDENTITY_MSP_DIR/intermediatecerts/ca-cert.pem
-          cp -pr $FABRIC_IDENTITY_MSP_DIR/cacerts/* $FABRIC_IDENTITY_MSP_DIR/cacerts/ca-cert.pem      
-          cp {{ $TlsCaTlsCertFile }} $FABRIC_IDENTITY_MSP_DIR/tlscacerts/ca.crt
-          cp /tmp/config.yaml $FABRIC_IDENTITY_MSP_DIR/config.yaml
-          echo "============ Displaying the msp dir directory $FABRIC_IDENTITY_MSP_DIR structure after rearrangements. ============"
-          find $FABRIC_IDENTITY_MSP_DIR/ -type f
-          break;
-        else
-          echo "============ Cannot login with the given identity $FABRIC_IDENTITY ============"
-          rm -rf $FABRIC_IDENTITY_MSP_DIR/*
-          sleep {{ .Values.retry_seconds  | default 10 }}
-        fi
-      done
-           
+      enroll \
+        $FABRIC_IDENTITY \
+        $FABRIC_IDENTITY_SECRET \
+        $FABRIC_IDENTITY_MSP_DIR \
+        $FABRIC_CA_URL \
+        null \
+        $FABRIC_TLS_CERT_FILE \
+        null \
+        {{ .Values.hlf_domain }} \
+        {{ .require_msp_enrollment | default "true" }} \
+        {{ .require_tls_enrollment | default "false" }}
+      
+      echo "Rearranging Org specific msp directory"
+      mkdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/tlscacerts
+      cp -pr $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/cacerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/cacerts/ca-cert.pem      
+      cp {{ $TlsCaTlsCertFile }} $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/tlscacerts/ca.crt
+
       echo "============ Generating org material for $ORG_NAME ============"
       configtxgen -configPath {{ $.Values.workdir }}/peer -printOrg $ORG_NAME > $ORG_NAME.json
       echo "============ Fetching config block ============"
@@ -129,7 +107,7 @@ data:
       peer channel signconfigtx -f org3_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
       echo "============ Updating Channel configuration ============"
       peer channel update -f org3_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
-      
+
       if [ $? -ne 0 ]; then
         echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
       else

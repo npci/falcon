@@ -5,10 +5,10 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $Project           := .Values.project }}
 {{- $HlfDomain         := .Values.hlf_domain }}
-{{- $IcaEndpoint       := .Values.ca.ca_endpoint }}
-{{- $TlsCaEndpoint     := .Values.ca.tlsca_endpoint }}
-{{- $IcaTlsCertFile    := .Values.ca.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
-{{- $TlsCaTlsCertFile  := .Values.ca.ica_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $MspCaEndpoint     := .Values.mspca_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $MspCaTlsCertFile  := .Values.mspca_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 {{- $ChannelName       := .Values.hlf_channel }}
 {{- $BankName          := .Values.nameOverride }}
 {{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
@@ -24,24 +24,15 @@ metadata:
 data:
   fabric_update_anchorpeer.sh: |
       source /scripts/fabric_enroll.sh
-      fabric_public_key_fetch {{ $IcaEndpoint }} {{ $IcaTlsCertFile }}
       fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
-      orderer_dir_setup
       {{- range .Values.admin_identity }}
-          {{- if .ica_endpoint }}
-      fabric_public_key_fetch {{ .ica_endpoint }} {{ .ica_tlscertfile }}
-          {{- end }}
-          {{- if .tlsca_endpoint }}
-      fabric_public_key_fetch {{ .ica_endpoint }} {{ .tlsca_tlscertfile }}
-          {{- end }}
       enroll \
         {{ .identity_name }} \
         {{ .identity_secret }} \
-        {{ .identity_type }} \
         {{ .msp_base_dir | default $Msp_base_dir }} \
-        {{ .ica_endpoint | default $IcaEndpoint }} \
+        {{ .mspca_endpoint | default $MspCaEndpoint }} \
         {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
-        {{ .ica_tlscertfile | default $IcaTlsCertFile }} \
+        {{ .mspca_tlscertfile | default $MspCaTlsCertFile }} \
         {{ .tlsca_tlscertfile | default $TlsCaTlsCertFile }} \
         {{ .hlf_domain | default $.Values.hlf_domain }} \
         {{ .require_msp_enrollment }} \

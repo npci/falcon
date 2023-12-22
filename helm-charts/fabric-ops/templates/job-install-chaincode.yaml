@@ -53,7 +53,11 @@ spec:
             - name: FABRIC_LOGGING_SPEC
               value: INFO
             - name: CORE_PEER_ADDRESS
+              {{- if .peer_endpoint }}
+              value: {{ .peer_endpoint }}
+              {{- else }}
               value: {{ .identity_name }}:{{ $.Values.peer_internal_service_port }}
+              {{- end }}
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
@@ -61,13 +65,11 @@ spec:
             - name: CORE_PEER_TLS_ENABLED
               value: "true"
             - name: CORE_PEER_TLS_ROOTCERT_FILE
-              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
+              value: {{ $.Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
             - name: GOPATH
               value: /opt/gopath
             - name: ORDERER_CA
-              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
-            - name: ORDERER_BASE_PATH
-              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca
+              value: {{ $.Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
           volumeMounts:
             - name: fabric-ops
               subPath: config.yaml

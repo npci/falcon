@@ -5,10 +5,8 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- if .Values.fabric_actions.cryptogen }}
 
-{{- $TlsCaEndPoint     := .Values.tlsca.endpoint }}
-{{- $TlsCaPubCert      := .Values.tlsca.cert_path }}
-{{- $OrdererCaEndPoint := .Values.orderer_ca.endpoint }}
-{{- $OrdererCaPubCert  := .Values.orderer_ca.cert_path }}
+{{- $TlsCaEndPoint     := .Values.tlsca_endpoint }}
+{{- $TlsCaPubCert      := .Values.tlsca_cert_path }}
 {{- $HlfDomain         := .Values.hlf_domain }}
 {{- $BaseDir           := .Values.base_dir }}
 {{- $Project           := .Values.project }}
@@ -25,43 +23,46 @@ data:
 
     source /scripts/fabric_enroll.sh 
     fabric_public_key_fetch {{ $TlsCaEndPoint }} {{ $TlsCaPubCert }}
-    fabric_public_key_fetch {{ $OrdererCaEndPoint }} {{ $OrdererCaPubCert }}
      
-    {{- range .Values.orderer_identities }}
-    {{- $msp_dir := printf "%s/%s" $BaseDir $.Values.orderer_org_name }}
-    echo "============ Starting orderer enrollments. ============"
-    enroll \
-       {{ .identity_name }} \
-       {{ .identity_secret }} \
-       {{ .identity_type | default "orderer" }} \
-       {{ $msp_dir }} \
-       {{ $OrdererCaEndPoint }} \
-       {{ $TlsCaEndPoint }} \
-       {{ $OrdererCaPubCert }} \
-       {{ $TlsCaPubCert }} \
-       {{ $HlfDomain }} \
-       {{ .require_msp_enrollment | default "true" }} \
-       {{ .require_tls_enrollment | default "true" }}
-    mkdir -p {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts
-    cp {{ $TlsCaPubCert }} {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts/ca.crt
+    {{- range .Values.organizations }}
+      {{- if eq "orderer" .org_type }}
+        {{ $org_name    := .org_name }}
+        {{ $ca_endpoint := .ca_endpoint }}
+        {{ $cert_path   := .cert_path }}
+          {{- range .orderer_identities }}
+          
+          {{- $msp_dir := printf "%s/%s" $BaseDir $org_name }}
+        enroll \
+          {{ .identity_name }} \
+          {{ .identity_secret }} \
+          {{ $msp_dir | default .msp_dir }} \
+          {{ $ca_endpoint }} \
+          {{ $TlsCaEndPoint }} \
+          {{ $cert_path }} \
+          {{ $TlsCaPubCert }} \
+          {{ .hlf_domain | default $HlfDomain }} \
+          {{ .require_msp_enrollment | default "true" }} \
+          {{ .require_tls_enrollment | default "true" }}
+        mkdir -p {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts
+        cp {{ $TlsCaPubCert }} {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts/ca.crt
 
-    echo "============ Archiving {{ .identity_name }} tls directory ============"
-    tar -czvf {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz --directory={{ $msp_dir }}/{{ .identity_name }}/ tls
-    sleep 5
-    upload_file {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/{{ .identity_name }}-tls-certs.tar.gz
-    {{- end }}
+        echo "============ Archiving {{ .identity_name }} tls directory ============"
+        tar -czvf {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz --directory={{ $msp_dir }}/{{ .identity_name }}/ tls
+        sleep 5
+        upload_file {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/{{ .identity_name }}-tls-certs.tar.gz
+        {{- end }}
+      {{- end }}
+    {{- end }}  
 
      echo "============ Starting Org admin enrollments. ============"
 
      {{- range .Values.organizations }}
      {{- $msp_dir := printf "%s/%s" $BaseDir .org_name }}
-     fabric_public_key_fetch {{ .ca_endpoint }} {{ .cert_path }}
     
      enroll \
         {{ .admin_identity }} \
-        {{ .admin_secret }} \
-        {{ .identity_type | default "admin" }} \
-        {{ $msp_dir }} \
+        {{ .admin_password }} \
+        {{ $msp_dir | default .msp_dir }} \
         {{ .ca_endpoint }} \
         {{ "null" }} \
         {{ .cert_path }} \

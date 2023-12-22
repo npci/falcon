@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "orderer"
+nameOverride: "abcorg"
 fullnameOverride: ""
 project: yourproject
 
@@ -13,9 +13,17 @@ orderers:
   - name: orderer1
     identity_name: orderer1-orderer
     identity_secret: orderer1ordererSamplePassword
+    # renew_orderer_certs: true
+    # block_file: orderer1-orderer-orderer-sys-channel_2023_12_22_085152.block
+    # tls_cert_archive: orderer1-orderer-renewed-tls-certs_2023_12_22_085152.tar.gz
   - name: orderer2
     identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
+  # - name: orderer3
+  #   identity_name: orderer3-orderer
+  #   identity_secret: orderer3ordererSamplePassword
+  #   block_file: orderer3-orderer-orderer-sys-channel_2023_12_22_084746.block
+  #   tls_cert_archive: orderer3-orderer-tls-certs_2023_12_22_084746.tar.gz
 
 csr_names_cn: IN
 csr_names_st: Maharashtra
@@ -28,9 +36,8 @@ ica_tls_cert_file: /root/ica-cert.pem
 retry_seconds: 60
 
 hlf_domain: my-hlf-domain.com
-ca:
- ica_endpoint: ica-orderer.my-hlf-domain.com:30000
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 init:
   image:
@@ -105,8 +112,6 @@ global:
       value: file
     - name: ORDERER_GENERAL_LISTENADDRESS
       value: 0.0.0.0
-    - name: ORDERER_GENERAL_LOCALMSPID
-      value: OrdererMSP
     - name: ORDERER_GENERAL_TLS_ENABLED
       value: "true"
     - name: ORDERER_GENERAL_LOCALMSPDIR

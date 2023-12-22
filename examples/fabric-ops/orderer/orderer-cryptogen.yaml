@@ -16,65 +16,53 @@ image:
   tag: "2.4"
 imagePullSecrets: []
 
-# This organizations is the list of CAs required to generate the genesis.block file creation. 
-# Usually, the orderer organization and initial peer organization's ICA credentials.
+# These organizations are the list of initial organizations required to generate the genesis.block file. 
+
 organizations:
- - org_name: orderer
-   ca_endpoint: ica-orderer.my-hlf-domain.com:30000
-   admin_identity: admin
-   admin_secret: ordererAdminpassword
-   cert_path: /root/orderer.pem
-   dir_suffix: ordererOrganizations
- - org_name: initialpeerorg
-   ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
-   admin_identity: admin
-   admin_secret: initialpeerorgAdminSamplePassword
-   cert_path: /root/peerorg.pem
-   dir_suffix: peerOrganizations
+  - org_type: orderer
+    org_name: abcorg
+    ca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    cert_path: /root/orderer.pem
+    admin_identity: admin
+    admin_password: ordererAdminpassword
+    orderer_identities:
+    - identity_name: orderer0-orderer
+      identity_secret: orderer0ordererSamplePassword
+      port: "30000"
+    - identity_name: orderer1-orderer
+      identity_secret: orderer1ordererSamplePassword
+      port: "30000"
+    - identity_name: orderer2-orderer
+      identity_secret: orderer2ordererSamplePassword
+      port: "30000"
+  - org_type: peerorg
+    org_name: initialpeerorg
+    ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+    cert_path: /root/peerorg.pem
+    admin_identity: admin
+    admin_password: initialpeerorgAdminSamplePassword
+    anchor_peers:
+    - host: peer0-initialpeerorg.my-hlf-domain.com
+      port: "30000"
 
-csr_names_cn: IN
-csr_names_st: Maharashtra
-csr_names_l: Mumbai
-csr_names_o: Your Company Name
-
-orderer_ca:
- endpoint: ica-orderer.my-hlf-domain.com:30000
- cert_path: /root/orderer.pem
-tlsca:
- endpoint: tls-ca.my-hlf-domain.com:30000
- cert_path: /tmp/tlsca.pem
-
-configtx_override_orderer_org_admin_msp_dir: /scripts/crypto-config/orderer/admin/msp # Update the username 'admin' if your admin_identity username is different in 'Values.organizations' array.
-configtx_override_peer_org_admin_msp_dir: /scripts/crypto-config/initialpeerorg/admin/msp    # Update the username 'admin' if your admin_identity username is different in 'Values.organizations' array.
-orderer_org_name: orderer # This name should match with the above .Values.organizations.org_name of orderer organization
-peer_org_name: initialpeerorg # This name should match with the above .Values.organizations.org_name of peer organization
 channel_artifact_dir: /scripts/channel-artifacts
+base_dir: /scripts/crypto-config
+hlf_domain: my-hlf-domain.com
 orderer_system_channel: "orderer-sys-channel"
 hlf_channel: "mychannel"
 block_file: genesis.block
 config_transaction_filename: channel.tx
 
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+tlsca_cert_path: /tmp/tlsca.pem
+
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 
-anchorPeers:
-   - host: peer0-initialpeerorg.my-hlf-domain.com
-     port: "30000"
-
-base_dir: /scripts/crypto-config
-hlf_domain: my-hlf-domain.com
-
-orderer_port: "30000"
-orderer_identities:
-  - identity_name: orderer0-orderer
-    identity_secret: orderer0ordererSamplePassword
-    port: "30000"
-  - identity_name: orderer1-orderer
-    identity_secret: orderer1ordererSamplePassword
-    port: "30000"
-  - identity_name: orderer2-orderer
-    identity_secret: orderer2ordererSamplePassword
-    port: "30000"
+csr_names_cn: IN
+csr_names_st: Maharashtra
+csr_names_l: Mumbai
+csr_names_o: Your Company Name
 
 serviceAccount:
   # Specifies whether a service account should be created

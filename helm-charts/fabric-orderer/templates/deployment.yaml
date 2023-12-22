@@ -3,7 +3,8 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $IcaEndpoint := .Values.ca.ica_endpoint }}
+{{ $IcaEndpoint    := .Values.mspca_endpoint }}
+{{ $OverrideMspId  := .Values.MspIdOverride }}
 
 {{- range .Values.orderers }}
 
@@ -73,6 +74,8 @@ spec:
               {{- else }}
               value: "{{ $.Values.orderer_cert_base_dir }}/{{ $.Values.global.block_file }}"
               {{- end }}
+            - name: ORDERER_GENERAL_LOCALMSPID
+              value: {{ $OverrideMspId | default $.Values.nameOverride }}
             - name: ORDERER_OPERATIONS_LISTENADDRESS
               value: 0.0.0.0:8443
             {{- tpl (toYaml $.Values.global.env) $ | nindent 12 }}

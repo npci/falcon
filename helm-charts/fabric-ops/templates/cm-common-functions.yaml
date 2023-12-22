@@ -5,10 +5,10 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $Project           := .Values.project }}
 {{- $HlfDomain         := .Values.hlf_domain }}
-{{- $IcaEndpoint       := .Values.ca.ca_endpoint }}
-{{- $TlsCaEndpoint     := .Values.ca.tlsca_endpoint }}
-{{- $IcaTlsCertFile    := .Values.ca.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
-{{- $TlsCaTlsCertFile  := .Values.ca.ica_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $MspCaEndpoint     := .Values.mspca_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $MspCaTlsCertFile  := .Values.mspca_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 {{- $ChannelName       := .Values.hlf_channel }}
 {{- $BankName          := .Values.nameOverride }}
 {{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
@@ -66,18 +66,18 @@ data:
 
       FABRIC_IDENTITY="${1}"
       FABRIC_IDENTITY_SECRET="${2}"
-      FABRIC_IDENTITY_TYPE="${3}"
-      FABRIC_IDENTITY_MSP_DIR="${4}"
-      FABRIC_ICA_URL="${5}"
-      FABRIC_TLS_CA_URL="${6}"
-      FABRIC_ICA_TLS_CERTFILES="${7}"
-      FABRIC_TLSCA_TLS_CERTFILES="${8}"
-      FABRIC_HLF_DOMAIN="${9}"
-      REQUIRE_MSP_ENROLLMENT="${10}"
-      REQUIRE_TLS_ENROLLMENT="${11}"
+      FABRIC_IDENTITY_MSP_DIR="${3}"
+      FABRIC_ICA_URL="${4}"
+      FABRIC_TLS_CA_URL="${5}"
+      FABRIC_ICA_TLS_CERTFILES="${6}"
+      FABRIC_TLSCA_TLS_CERTFILES="${7}"
+      FABRIC_HLF_DOMAIN="${8}"
+      REQUIRE_MSP_ENROLLMENT="${9}"
+      REQUIRE_TLS_ENROLLMENT="${10}"
 
       if [[ $REQUIRE_MSP_ENROLLMENT == "true" ]]
         then
+          fabric_public_key_fetch $FABRIC_ICA_URL $FABRIC_ICA_TLS_CERTFILES
           while true; do
             echo "============ Enrolling to https://$FABRIC_ICA_URL as $FABRIC_IDENTITY ============"
               fabric-ca-client enroll \
@@ -107,6 +107,7 @@ data:
 
       if [[ $REQUIRE_TLS_ENROLLMENT == "true" ]]
         then
+          fabric_public_key_fetch $FABRIC_TLS_CA_URL $FABRIC_TLSCA_TLS_CERTFILES
           while true; do
             echo "============ Enrolling to https://$FABRIC_TLS_CA_URL as $FABRIC_IDENTITY ============"
               fabric-ca-client enroll \
@@ -183,16 +184,4 @@ data:
           exit
         fi
 
-      }
-
-      function orderer_dir_setup() {
-      echo "============ Creating directory structure for Orderer ============"
-      mkdir -p $ORDERER_BASE_PATH
-      echo "============ Copying Orderer tls cert ============"
-      cp {{ $TlsCaTlsCertFile }} $ORDERER_BASE_PATH/ca-cert.pem
-      if [ $? -ne 0 ]; then
-        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
-      else
-        echo "============ [SUCCESS] Orderer TLS cert has been placed successfully. ============"
-      fi
       }

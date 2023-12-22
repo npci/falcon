@@ -20,71 +20,64 @@ metadata:
 data:
  configtx.yaml: |
   Organizations:
-    - &OrdererOrg
+  {{- range .Values.organizations }}
+    - &{{ .org_name }}
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: OrdererOrg 
+        Name: {{ .org_name }} 
 
         # ID to load the MSP definition as
-        ID: OrdererMSP
+        ID: {{ .org_name }}
 
         # MSPDir is the filesystem path which contains the MSP configuration
-        MSPDir: {{ .Values.configtx_override_orderer_org_admin_msp_dir }}
+        {{- $Msp_dir := printf "%s/%s/%s/%s" $BaseDir .org_name .admin_identity "msp" }}
+        MSPDir: {{ .msp_dir | default $Msp_dir }}
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
         #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+      {{- if eq "orderer" .org_type }}
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('OrdererMSP.member')"
+                Rule: "OR('{{ .org_name }}.member')"
             Writers:
                 Type: Signature
-                Rule: "OR('OrdererMSP.member')"
+                Rule: "OR('{{ .org_name }}.member')"
             Admins:
                 Type: Signature
-                Rule: "OR('OrdererMSP.admin')"
+                Rule: "OR('{{ .org_name }}.admin')"
         OrdererEndpoints:
-        {{- range .Values.orderer_identities }}
+        {{- range .orderer_identities }}
             - {{ printf "%s.%s:%s" .identity_name $HlfDomain .port }}
-        {{- end }}
-
-    - &{{ $PeerOrgName }}
-        # DefaultOrg defines the organization which is used in the sampleconfig
-        # of the fabric.git development environment
-        Name: {{ $PeerOrgName | quote }}
-
-        # ID to load the MSP definition as
-        ID: {{ $PeerOrgName | quote }}
-
-        MSPDir: {{ .Values.configtx_override_peer_org_admin_msp_dir }}
-
-        # Policies defines the set of policies at this level of the config tree
-        # For organization policies, their canonical path is usually
-        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        {{- end }}        
+      {{- end }}
+      {{- if eq "peerorg" .org_type }}
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('{{ $PeerOrgName }}.admin', '{{ $PeerOrgName }}.peer', '{{ $PeerOrgName }}.client')"
+                Rule: "OR('{{ .org_name }}.admin', '{{ .org_name }}.peer', '{{ .org_name }}.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('{{ $PeerOrgName }}.admin', '{{ $PeerOrgName }}.client')"
+                Rule: "OR('{{ .org_name }}.admin', '{{ .org_name }}.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('{{ $PeerOrgName }}.admin')"
+                Rule: "OR('{{ .org_name }}.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('{{ $PeerOrgName }}.peer')"
+                Rule: "OR('{{ .org_name }}.peer')"
 
         # leave this flag set to true.
         AnchorPeers:
             # AnchorPeers defines the location of peers which can be used
             # for cross org gossip communication.  Note, this value is only
             # encoded in the genesis block in the Application section context
-            {{- range .Values.anchorPeers }}
+            {{- range .anchor_peers }}
             - Host: {{ .host }}
               Port: {{ .port }}
-            {{- end }}
+            {{- end }}       
+      {{- end }}
+  {{- end }}
   Capabilities:
     # Channel capabilities apply to both the orderers and the peers and must be
     # supported by both.
@@ -254,47 +247,59 @@ data:
     ################################################################################
   Profiles:
 
+  {{- range .Values.organizations }}
+    {{- if eq "peerorg" .org_type }}
     TwoOrgsChannel:
         Consortium: SampleConsortium
         <<: *ChannelDefaults
         Application:
             <<: *ApplicationDefaults
             Organizations:
-                - *{{ $PeerOrgName }}
+                - *{{ .org_name }}
             Capabilities:
                 <<: *ApplicationCapabilities
-
+    {{- end }}
+  {{- end }}
     SampleMultiNodeEtcdRaft:
         <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
+    {{- range .Values.organizations }}
+    {{ $Org_name := .org_name }}
+      {{- if eq "orderer" .org_type }}
         Orderer:
             <<: *OrdererDefaults
             OrdererType: etcdraft
             EtcdRaft:
                 Consenters:
-                {{- range .Values.orderer_identities }}
-                {{- $msp_dir := printf "%s/%s/%s/%s" $BaseDir $.Values.orderer_org_name .identity_name "tls" }}
+                {{- range .orderer_identities }}
+                {{- $msp_dir  := printf "%s/%s/%s/%s" $BaseDir $Org_name .identity_name "tls" }}
                 - Host: {{ printf "%s.%s" .identity_name $HlfDomain }}
                   Port: {{ .port }}
                   ClientTLSCert: {{ $msp_dir }}/server.crt
                   ServerTLSCert: {{ $msp_dir }}/server.crt
                 {{- end }}
             Addresses:
-            {{- range .Values.orderer_identities }}
+            {{- range .orderer_identities }}
                - {{ printf "%s.%s:%s" .identity_name $HlfDomain .port }}
             {{- end }}
             Organizations:
-            - *OrdererOrg
+            - *{{ $Org_name }}
             Capabilities:
                 <<: *OrdererCapabilities
         Application:
             <<: *ApplicationDefaults
             Organizations:
-            - <<: *OrdererOrg
+            - <<: *{{ $Org_name }}
+      {{- end }}
+    {{- end }}
+    {{- range .Values.organizations }}
+        {{- if eq "peerorg" .org_type }}    
         Consortiums:
             SampleConsortium:
                 Organizations:
-                - *{{ $PeerOrgName }}
+                - *{{ .org_name }}
+        {{- end }}
+    {{- end }}
 
 {{- end }}

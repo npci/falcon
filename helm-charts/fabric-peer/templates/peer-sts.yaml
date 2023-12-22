@@ -5,7 +5,7 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $BankName      := .Values.nameOverride }}
 {{- $HlfDomain     := .Values.global.hlf_domain }}
-{{- $IcaEndpoint   := .Values.global.ica_endpoint }}
+{{- $MspCaEndpoint   := .Values.global.mspca_endpoint }}
 {{- $TlsCaEndpoint := .Values.global.tlsca_endpoint }}
 
 {{- range .Values.peers }}
@@ -46,7 +46,7 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/enroll.sh {{ $IcaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
+           - /scripts/enroll.sh {{ $MspCaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
           volumeMounts:
            - name: cert-peer
              mountPath: {{ $.Values.fabric_base_dir }}
