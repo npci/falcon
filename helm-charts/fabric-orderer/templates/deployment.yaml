@@ -3,7 +3,7 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{ $IcaEndpoint    := .Values.mspca_endpoint }}
+{{ $IcaEndpoint    := .Values.global.mspca_endpoint }}
 {{ $OverrideMspId  := .Values.MspIdOverride }}
 
 {{- range .Values.orderers }}

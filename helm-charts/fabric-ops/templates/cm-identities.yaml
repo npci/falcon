@@ -19,7 +19,7 @@ data:
         $CA_ADMIN_USER \
         $CA_ADMIN_PASSWORD \
         {{ .Values.default_msp_dir }} \
-        {{ .Values.ca.ca_endpoint }} \
+        {{ .Values.mspca_endpoint }} \
         {{ "null" }} \
         {{ .Values.tls_cert_file }} \
         {{ "null" }} \
@@ -27,7 +27,7 @@ data:
         {{ "true" }} \
         {{ "false" }}
 
-      FABRIC_CA_URL={{ .Values.ca.ca_endpoint }}
+      FABRIC_CA_URL={{ .Values.mspca_endpoint }}
       FABRIC_IDENTITY_NAME=$3
       FABRIC_IDENTITY_SECRET=$4
       FABRIC_IDENTITY_TYPE=$5

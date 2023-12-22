@@ -87,7 +87,7 @@ helm install tls-ca -n orderer helm-charts/fabric-ca -f examples/fabric-ca/tls-c
 You can verify it with the similar way we verified the root-ca end-point above.
 
 4. **Create ROOTCA identities**
-* Note:- Every identity registration job must be executed in the same namespace where the respective CA's are running. And the admin credentials secret name must be supplied to the values file at `Values.ca.admin_secret`
+* Note:- Every identity registration job must be executed in the same namespace where the respective CA's are running. And the admin credentials secret name must be supplied to the values file at `Values.mspca_ica_secret`
 ```
 helm install rootca-ops -n orderer helm-charts/fabric-ops/ -f examples/fabric-ops/rootca/rootca-identities.yaml
 ```
@@ -159,15 +159,15 @@ You need to create a kubernetes secret with the one registered with rootca ident
 ```
 helm install ica-org1 -n org1 helm-charts/fabric-ca -f examples/fabric-ca/ica-org1.yaml
 ```
-2. **Add Org1 to the network**
+2. **Create Org1 identities with ica-org1**
+```
+helm install org1-ca-ops -n org1 helm-charts/fabric-ops/ -f examples/fabric-ops/org1/identities.yaml 
+```
+3. **Add Org1 to the network**
 
 Once the `Org1` ICA started successfully, you would need to add this `Org1` to the network. For that, you need to run the following Job in `initialpeerorg`. Comment out the `org2` section from the `Values.organizatons` array in the values file [examples/fabric-ops/initialpeerorg/configure-org-channel.yaml](./fabric-ops/initialpeerorg/configure-org-channel.yaml) for now since we have not deployed the `Org2` yet.
 ```
 helm install configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examples/fabric-ops/initialpeerorg/configure-org-channel.yaml
-```
-3. **Create Org1 identities with ica-org1**
-```
-helm install org1-ca-ops -n org1 helm-charts/fabric-ops/ -f examples/fabric-ops/org1/identities.yaml 
 ```
 4. **Deploy Peers on Org1**
 ```
@@ -190,15 +190,15 @@ You need to create a kubernetes secret with the one registered with rootca ident
 ```
 helm install ica-org2 -n org2 helm-charts/fabric-ca -f examples/fabric-ca/ica-org2.yaml
 ```
-2. **Add Org2 to network**
+2. **Create Org2 identities with ica-org2.**
+```
+helm install org2-ca-ops -n org2 helm-charts/fabric-ops/ -f examples/fabric-ops/org2/identities.yaml 
+```
+3. **Add Org2 to network**
 
 Once the `Org2` ICA started successfully, you would need to add this `Org2` to the network. For that, you need to upgrade the following `configorgchannel` Job in `initialpeerorg`. This time, uncomment the `org2` section in the `Values.organizatons` array in the values file [examples/fabric-ops/initialpeerorg/configure-org-channel.yaml](./fabric-ops/initialpeerorg/configure-org-channel.yaml).
 ```
 helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examples/fabric-ops/initialpeerorg/configure-org-channel.yaml
-```
-3. **Create Org2 identities with ica-org2.**
-```
-helm install org2-ca-ops -n org2 helm-charts/fabric-ops/ -f examples/fabric-ops/org2/identities.yaml 
 ```
 4. **Deploy Peers on Org2**
 ```

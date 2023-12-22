@@ -34,10 +34,7 @@ filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 ica_tls_cert_file: /root/ica-cert.pem
 retry_seconds: 60
-
 hlf_domain: my-hlf-domain.com
-mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
-tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 init:
   image:
@@ -48,6 +45,8 @@ global:
   containerPort: 7050
   servicePort: 7050
   replicaCount: 1
+  mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+  tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
   block_file: genesis.block
   require_certs_dir_persistence: true
   image:

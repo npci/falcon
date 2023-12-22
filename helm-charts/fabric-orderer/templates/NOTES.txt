@@ -15,8 +15,8 @@ You have deployed the following Orderers and endpoints;
 ---------------------------------------------
 Other endpoints these Orderers enrolled with;
 ---------------------------------------------
-ICA Endpoint    : {{ .Values.mspca_endpoint }}
-TLSCA Endpoint  : {{ .Values.tlsca_endpoint }}
+ICA Endpoint    : {{ .Values.global.mspca_endpoint }}
+TLSCA Endpoint  : {{ .Values.global.tlsca_endpoint }}
 ------------------------------------------------------
 
 Get the list of pods by executing:

@@ -21,10 +21,9 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 hlf_domain: my-hlf-domain.com
-ca:
- ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
- admin_secret: initialpeerorg-secret
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+mspca_ica_secret: initialpeerorg-secret
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 hlf_domain: my-hlf-domain.com
 
