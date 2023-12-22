@@ -28,7 +28,7 @@ data:
         - &{{ .name }}
           Name: {{ .name }}
           ID: {{ .name }}
-          {{- $MSPDir := printf "%s/%s/%s" (.msp_dir | default "/crypto-config/peerOrganizations" ) .admin_user "msp" }}
+          {{- $MSPDir := printf "%s/%s/%s" (.msp_dir | default "/crypto-config/peerOrganizations" ) .identity_name "msp" }}
           MSPDir: {{ $MSPDir }}
           Policies:
             Readers:

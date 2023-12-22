@@ -27,7 +27,7 @@ data:
     {{- range .Values.organizations }}
       {{- if eq "orderer" .org_type }}
         {{ $org_name    := .org_name }}
-        {{ $ca_endpoint := .ca_endpoint }}
+        {{ $ca_endpoint := .mspca_endpoint }}
         {{ $cert_path   := .cert_path }}
           {{- range .orderer_identities }}
           
@@ -61,9 +61,9 @@ data:
     
      enroll \
         {{ .admin_identity }} \
-        {{ .admin_password }} \
+        {{ .admin_secret }} \
         {{ $msp_dir | default .msp_dir }} \
-        {{ .ca_endpoint }} \
+        {{ .mspca_endpoint }} \
         {{ "null" }} \
         {{ .cert_path }} \
         {{ "null" }} \

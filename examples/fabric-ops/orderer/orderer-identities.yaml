@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "ordererorg"
+nameOverride: "abcorg"
 fullnameOverride: ""
 project: yourproject
 
@@ -38,9 +38,6 @@ identities:
     identity_type: orderer
   - identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
-    identity_type: orderer
-  - identity_name: orderer3-orderer
-    identity_secret: orderer3ordererSamplePassword
     identity_type: orderer
 
 tools:

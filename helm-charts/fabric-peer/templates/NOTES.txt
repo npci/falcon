@@ -15,7 +15,7 @@ You have deployed the following Peers and endpoints;
 ---------------------------------------------
 Other endpoints these peers enrolled with;
 ---------------------------------------------
-ICA Endpoint    : {{ .Values.global.mspca_endpoint }}
+MSPCA Endpoint  : {{ .Values.global.mspca_endpoint }}
 TLSCA Endpoint  : {{ .Values.global.tlsca_endpoint }}
 ------------------------------------------------------
 

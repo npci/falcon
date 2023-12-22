@@ -13,17 +13,9 @@ orderers:
   - name: orderer1
     identity_name: orderer1-orderer
     identity_secret: orderer1ordererSamplePassword
-    # renew_orderer_certs: true
-    # block_file: orderer1-orderer-orderer-sys-channel_2023_12_22_085152.block
-    # tls_cert_archive: orderer1-orderer-renewed-tls-certs_2023_12_22_085152.tar.gz
   - name: orderer2
     identity_name: orderer2-orderer
     identity_secret: orderer2ordererSamplePassword
-  # - name: orderer3
-  #   identity_name: orderer3-orderer
-  #   identity_secret: orderer3ordererSamplePassword
-  #   block_file: orderer3-orderer-orderer-sys-channel_2023_12_22_084746.block
-  #   tls_cert_archive: orderer3-orderer-tls-certs_2023_12_22_084746.tar.gz
 
 csr_names_cn: IN
 csr_names_st: Maharashtra

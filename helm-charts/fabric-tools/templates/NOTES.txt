@@ -14,7 +14,7 @@ You have deployed the tools for the following identities;
 ---------------------------------------------
 Other endpoints these identities enrolled with;
 ---------------------------------------------
-ICA Endpoint    : {{ .Values.mspca_endpoint }}
+MSPCA Endpoint  : {{ .Values.mspca_endpoint }}
 TLSCA Endpoint  : {{ .Values.tlsca_endpoint }}
 ------------------------------------------------------
 This helm will only render the necessary scripts to enroll with the given identities. You would need to run the script manually to generate the certs.

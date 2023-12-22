@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: ""
+nameOverride: "abcorg"
 fullnameOverride: ""
 project: yourproject
 
@@ -21,10 +21,10 @@ imagePullSecrets: []
 organizations:
   - org_type: orderer
     org_name: abcorg
-    ca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
     cert_path: /root/orderer.pem
     admin_identity: admin
-    admin_password: ordererAdminpassword
+    admin_secret: ordererAdminpassword
     orderer_identities:
     - identity_name: orderer0-orderer
       identity_secret: orderer0ordererSamplePassword
@@ -37,10 +37,10 @@ organizations:
       port: "30000"
   - org_type: peerorg
     org_name: initialpeerorg
-    ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+    mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
     cert_path: /root/peerorg.pem
     admin_identity: admin
-    admin_password: initialpeerorgAdminSamplePassword
+    admin_secret: initialpeerorgAdminSamplePassword
     anchor_peers:
     - host: peer0-initialpeerorg.my-hlf-domain.com
       port: "30000"
