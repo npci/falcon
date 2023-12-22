@@ -76,7 +76,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.ca_server.container_port }}
+              containerPort: {{ .Values.ca_server.container_port | default "7051" }}
               protocol: TCP
           env:
             {{- include "fabric-ca.fabricEnv" . | nindent 12 }}

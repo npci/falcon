@@ -48,3 +48,13 @@ The command removes all the Kubernetes components associated with the chart and 
 | `image.repository` | Image repository url | `""` |
 | `image.pullPolicy` | Image pull policy | `""` |
 | `image.tag` | Image tag | `""` |
+| `tls_domain` | TLS domain name for the CSR generation & Ingress | `""` |
+| `ca_server.csr_names_country` | Country name abbreviation in TWO letter  | `""` |
+| `ca_server.csr_names_st` | State | `""` |
+| `ca_server.csr_names_l` | Locality | `""` |
+| `ca_server.csr_names_o` | Organization | `""` |
+| `ca_server.csr_names_ou` | Organizational unit | `""` |
+| `ca_server.container_port` | Container port of fabric ca | `""` |
+| `ca_server.debug` | Whether to enable debug logs | `""` |
+| `ca_server.tls_enabled` | Whether to enable tls for endpoint | `""` |
+| `ca_server.admin_secret` | A kubernetes secret with bootstrap username/password | `""` |
