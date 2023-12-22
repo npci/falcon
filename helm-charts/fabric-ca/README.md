@@ -60,6 +60,9 @@ The command removes all the Kubernetes components associated with the chart and 
 | `ca_server.admin_secret` | A kubernetes secret with bootstrap username/password | `""` |
 | `additional_env` | Additional env variables | `[]` |
 | `ica.enabled` | A value of `true` or `false` for determine whether the fabric should be deployed as Standlone mode or Intermediate CA | `true/false` |
+| `ica.parent_ca_endpoint` | Only if ica.enabled is `true` | `""` |
+| `ica.intermediate_tls_cert_dir` | Only if ica.enabled is `true` | `""` |
+| `ica.intermediate_tls_cert_file` | Only if ica.enabled is `true` | `""` |
 | `service.type` | Type of k8s service | `""` |
 | `service.port` | Service port | `""` |
 | `ingress.enabled` | To enable ingress | `""` |
