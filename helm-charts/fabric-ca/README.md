@@ -44,3 +44,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `nameOverride` | To partially override the release name | `""` |
 | `fullnameOverride` | To completely override the release name | `""` |
 | `project` | Any name for your project | `""` |
+| `replicaCount` | Number of replicas | `""` |
+| `image.repository` | Image repository url | `""` |
+| `image.pullPolicy` | Image pull policy | `""` |
+| `image.tag` | Image tag | `""` |
