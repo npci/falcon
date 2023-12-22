@@ -58,3 +58,31 @@ The command removes all the Kubernetes components associated with the chart and 
 | `ca_server.debug` | Whether to enable debug logs | `""` |
 | `ca_server.tls_enabled` | Whether to enable tls for endpoint | `""` |
 | `ca_server.admin_secret` | A kubernetes secret with bootstrap username/password | `""` |
+| `additional_env` | Additional env variables | `[]` |
+| `ica.enabled` | A value of `true` or `false` for determine whether the fabric should be deployed as Standlone mode or Intermediate CA | `true/false` |
+| `service.type` | Type of k8s service | `""` |
+| `service.port` | Service port | `""` |
+| `ingress.enabled` | To enable ingress | `""` |
+| `ingress.className` | Ingress classname of your choice | `""` |
+| `ingress.annotations` | Ingress annotations | `""` |
+| `storage.pvc_enabled` | To enable peristence for your home directory | `""` |
+| `storage.accessMode` | PVC accessmode | `""` |
+| `storage.storageClass` | Storageclass name | `""` |
+| `storage.size` | PVC size | `""` |
+| `storage.path` | The path on which where the home directory should be mounted and backed by PVC | `""` |
+| `serviceAccount.create` | Whether to create serviceAccount | `""` |
+| `serviceAccount.annotations` | ServiceAccount annotations | `""` |
+| `serviceAccount.name` | ServiceAccount name override | `""` |
+| `resources` | CPU/Mem resources | `[]` |
+| `affinity` | Various affinities | `[]` |
+| `startupProbe` | Pod startupProbe | `[]` |
+| `livenessProbe` | Pod livenessProbe | `[]` |
+| `readinessProbe` | Pod readinessProbe | `[]` |
+| `podAnnotations` | Pod Annotations | `[]` |
+| `podSecurityContext` | Pod SecurityContext | `[]` |
+| `securityContext` | Pod securityContext | `[]` |
+| `nodeSelector` | Pod nodeSelector | `[]` |
+| `tolerations` | Pod tolerations | `[]` |
+| `autoscaling` | Pod autoscaling | `[]` |
+
+
