@@ -7,7 +7,8 @@ ttlSecondsAfterFinished: "100"
 retry_seconds: 60
 connTimeout: 60s
 debug_enroll: false
-tls_cert_file: /root/cert.pem
+ica_tls_certfile: /tmp/ca-cert.pem
+tlsca_tls_certfile: /tmp/tlsca-cert.pem
 default_msp_dir: /tmp/fabric
 filestore_ssl: false
 # .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
@@ -18,18 +19,8 @@ filestore_ssl: false
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
-fabric_actions: 
- install_chaincode: false
- approve_chaincode: false
- create_channel: false
- commit_chaincode: false
- configure_org_channel: false
- update_anchor_peer: false
-
  image:
   repository: npcioss/hlf-builder
   pullPolicy: Never
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
-ca:
- ca_endpoint:
