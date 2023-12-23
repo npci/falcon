@@ -18,7 +18,7 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-mspca_endpoint: ica-org1.my-hlf-domain.com:30000
+ica_endpoint: ica-org1.my-hlf-domain.com:30000
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001

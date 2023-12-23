@@ -15,7 +15,7 @@ You have deployed the following Orderers and endpoints;
 ---------------------------------------------
 Other endpoints these Orderers enrolled with;
 ---------------------------------------------
-MSPCA Endpoint  : {{ .Values.global.mspca_endpoint }}
+MSPCA Endpoint  : {{ .Values.global.ica_endpoint }}
 TLSCA Endpoint  : {{ .Values.global.tlsca_endpoint }}
 ------------------------------------------------------
 

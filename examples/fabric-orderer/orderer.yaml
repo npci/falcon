@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "abcorg"
+nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
 
@@ -37,7 +37,7 @@ global:
   containerPort: 7050
   servicePort: 7050
   replicaCount: 1
-  mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+  ica_endpoint: ica-orderer.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
   block_file: genesis.block
   require_certs_dir_persistence: true

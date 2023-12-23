@@ -18,8 +18,8 @@ init:
    repository: npcioss/hlf-builder
    tag: 2.4
 
-ica_tls_cert_file: /root/ica-cert.pem
-tlsca_tls_cert_file: /root/tlsca-cert.pem
+ica_tls_certfile: /tmp/ca-cert.pem
+tlsca_tls_certfile: /tmp/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
 retry_seconds: 60
 
@@ -36,7 +36,7 @@ peers:
 
 global:
   hlf_domain: my-hlf-domain.com
-  mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+  ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
   storageClass: standard
   ingressClass: nginx

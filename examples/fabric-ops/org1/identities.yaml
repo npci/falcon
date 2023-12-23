@@ -23,8 +23,8 @@ csr_names_o: Your Company Name
 
 hlf_domain: my-hlf-domain.com
 
-mspca_endpoint: ica-org1.my-hlf-domain.com:30000
-mspca_ica_secret: org1-secret
+ica_endpoint: ica-org1.my-hlf-domain.com:30000
+ica_secret: org1-secret
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:

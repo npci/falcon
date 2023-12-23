@@ -4,7 +4,8 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{ $BankName               := .Values.nameOverride }}
-{{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
+{{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/crypto/users/admin/msp" }}
+{{ $TlsCaTlsCertFile       := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -46,28 +47,18 @@ spec:
               value: {{ .Values.hlf_domain }}
             - name: FABRIC_LOGGING_SPEC
               value: INFO
-            - name: CORE_PEER_ADDRESS
-              value: peer0-{{ $BankName }}:{{ .Values.peer_internal_service_port }}
-            - name: CORE_PEER_ID
-              value: cli-{{ $BankName }}
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
               value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
-            - name: CORE_PEER_TLS_CERT_FILE
-              value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/server.crt
             - name: CORE_PEER_TLS_ENABLED
               value: "true"
-            - name: CORE_PEER_TLS_KEY_FILE
-              value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/server.key
             - name: CORE_PEER_TLS_ROOTCERT_FILE
-              value: {{ $.Values.workdir }}/peer/crypto/users/peer0-{{ $BankName }}/tls/ca.crt
+              value: {{ $TlsCaTlsCertFile }}
             - name: GOPATH
               value: /opt/gopath
             - name: ORDERER_CA
-              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca/ca-cert.pem
-            - name: ORDERER_BASE_PATH
-              value: {{ $.Values.workdir }}/peer/orderer-crypto/orderer/tlsca
+              value: {{ $TlsCaTlsCertFile }}
           volumeMounts:
             - name: data
               mountPath: {{ $.Values.workdir }}

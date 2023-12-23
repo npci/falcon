@@ -3,16 +3,6 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $Project           := .Values.project }}
-{{- $HlfDomain         := .Values.hlf_domain }}
-{{- $MspCaEndpoint     := .Values.mspca_endpoint }}
-{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
-{{- $MspCaTlsCertFile  := .Values.mspca_tls_certfile | default "/tmp/ca-cert.pem" }}
-{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
-{{- $ChannelName       := .Values.hlf_channel }}
-{{- $BankName          := .Values.nameOverride }}
-{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
-
 apiVersion: v1
 kind: ConfigMap
 metadata:

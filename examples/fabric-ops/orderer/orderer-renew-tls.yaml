@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "abcorg"
+nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
 
@@ -34,8 +34,8 @@ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 admin_identity:
   - identity_name: admin
     identity_secret: ordererAdminpassword
-    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
-    mspca_tlscertfile: /tmp/orderer-cert.pem
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-cert.pem
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
     require_msp_enrollment: true
     require_tls_enrollment: false
@@ -47,8 +47,8 @@ orderers_to_renew_tls_cert:
     upload_sys_channel_block: true
     endpoint: orderer1-orderer.my-hlf-domain.com # This must match to the existing endpoint of the orderer in the channel. 
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
-    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
-    mspca_tlscertfile: /tmp/orderer-cert.pem
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-cert.pem
     require_msp_enrollment: true
     require_tls_enrollment: true
     update_channels:

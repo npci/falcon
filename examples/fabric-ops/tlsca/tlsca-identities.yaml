@@ -20,8 +20,8 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: "Your Company Name"
 
-mspca_endpoint: tls-ca.my-hlf-domain.com:30000
-mspca_ica_secret: tlsca-secret
+ica_endpoint: tls-ca.my-hlf-domain.com:30000
+ica_secret: tlsca-secret
 
 hlf_domain: my-hlf-domain.com
 identities:

@@ -5,11 +5,11 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- if .Values.fabric_actions.cryptogen }}
 
-{{- $TlsCaEndPoint     := .Values.tlsca_endpoint }}
-{{- $TlsCaPubCert      := .Values.tlsca_cert_path }}
-{{- $HlfDomain         := .Values.hlf_domain }}
 {{- $BaseDir           := .Values.base_dir }}
 {{- $Project           := .Values.project }}
+{{- $TlsCaEndPoint     := .Values.tlsca_endpoint }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $HlfDomain         := .Values.hlf_domain }}
 {{- $ChannelName       := .Values.hlf_channel }}
 ---
 apiVersion: v1
@@ -22,29 +22,29 @@ data:
   cryptogen.sh: |
 
     source /scripts/fabric_enroll.sh 
-    fabric_public_key_fetch {{ $TlsCaEndPoint }} {{ $TlsCaPubCert }}
+    fabric_public_key_fetch {{ $TlsCaEndPoint }} {{ $TlsCaTlsCertFile }}
      
     {{- range .Values.organizations }}
       {{- if eq "orderer" .org_type }}
-        {{ $org_name    := .org_name }}
-        {{ $ca_endpoint := .mspca_endpoint }}
-        {{ $cert_path   := .cert_path }}
-          {{- range .orderer_identities }}
+        {{ $org_name     := .org_name }}
+        {{ $ica_endpoint := .ica_endpoint }}
+        {{ $cert_path    := .cert_path }}
+        {{- range .orderer_identities }}
           
           {{- $msp_dir := printf "%s/%s" $BaseDir $org_name }}
         enroll \
           {{ .identity_name }} \
           {{ .identity_secret }} \
           {{ $msp_dir | default .msp_dir }} \
-          {{ $ca_endpoint }} \
+          {{ $ica_endpoint }} \
           {{ $TlsCaEndPoint }} \
           {{ $cert_path }} \
-          {{ $TlsCaPubCert }} \
+          {{ $TlsCaTlsCertFile }} \
           {{ .hlf_domain | default $HlfDomain }} \
           {{ .require_msp_enrollment | default "true" }} \
           {{ .require_tls_enrollment | default "true" }}
         mkdir -p {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts
-        cp {{ $TlsCaPubCert }} {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts/ca.crt
+        cp {{ $TlsCaTlsCertFile }} {{ $msp_dir }}/{{ .identity_name }}/msp/tlscacerts/ca.crt
 
         echo "============ Archiving {{ .identity_name }} tls directory ============"
         tar -czvf {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz --directory={{ $msp_dir }}/{{ .identity_name }}/ tls
@@ -52,7 +52,7 @@ data:
         upload_file {{ $msp_dir }}/{{ .identity_name }}/tls.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/{{ .identity_name }}-tls-certs.tar.gz
         {{- end }}
       {{- end }}
-    {{- end }}  
+    {{- end }}
 
      echo "============ Starting Org admin enrollments. ============"
 
@@ -63,7 +63,7 @@ data:
         {{ .admin_identity }} \
         {{ .admin_secret }} \
         {{ $msp_dir | default .msp_dir }} \
-        {{ .mspca_endpoint }} \
+        {{ .ica_endpoint }} \
         {{ "null" }} \
         {{ .cert_path }} \
         {{ "null" }} \
@@ -72,7 +72,7 @@ data:
         {{ .require_tls_enrollment | default "false" }}
      
      mkdir -p {{ $msp_dir }}/{{ .admin_identity }}/msp/tlscacerts
-     cp {{ $TlsCaPubCert }} {{ $msp_dir }}/{{ .admin_identity }}/msp/tlscacerts/ca.crt
+     cp {{ $TlsCaTlsCertFile }} {{ $msp_dir }}/{{ .admin_identity }}/msp/tlscacerts/ca.crt
      {{- end }}
 
      echo "--------------------------------------------------------------------"

@@ -21,8 +21,8 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: "Your Company Name"
 
-mspca_endpoint: root-ca.my-hlf-domain.com:30000
-mspca_ica_secret: rca-secret # It's a reference to the Kubernetes secret. 
+ica_endpoint: root-ca.my-hlf-domain.com:30000
+ica_secret: rca-secret # It's a reference to the Kubernetes secret. 
 hlf_domain: my-hlf-domain.com
 
 identities:
@@ -41,7 +41,6 @@ identities:
 
 ttlSecondsAfterFinished: "100"
 retry_seconds: 60
-tls_cert_file: /root/cert.pem
 
 serviceAccount:
   # Specifies whether a service account should be created

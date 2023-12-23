@@ -13,7 +13,7 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
-mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000

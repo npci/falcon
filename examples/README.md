@@ -87,7 +87,7 @@ helm install tls-ca -n orderer helm-charts/fabric-ca -f examples/fabric-ca/tls-c
 You can verify it with the similar way we verified the root-ca end-point above.
 
 4. **Create ROOTCA identities**
-* Note:- Every identity registration job must be executed in the same namespace where the respective CA's are running. And the admin credentials secret name must be supplied to the values file at `Values.mspca_ica_secret`
+* Note:- Every identity registration job must be executed in the same namespace where the respective CA's are running. And the admin credentials secret name must be supplied to the values file at `Values.ica_secret`
 ```
 helm install rootca-ops -n orderer helm-charts/fabric-ops/ -f examples/fabric-ops/rootca/rootca-identities.yaml
 ```

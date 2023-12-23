@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "abcorg"
+nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
 
@@ -22,8 +22,8 @@ csr_names_o: Your Company Name
 
 hlf_domain: my-hlf-domain.com
 
-mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
-mspca_ica_secret: orderer-secret
+ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+ica_secret: orderer-secret
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:

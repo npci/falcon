@@ -6,7 +6,6 @@ SPDX-License-Identifier:  GPL-3.0
 {{- if .Values.fabric_actions.identity }}
 
 {{- range .Values.identities }}
-{{- $CaEndpoint              := $.Values.ca.ca_endpoint }}
 {{- $ttlSecondsAfterFinished := $.Values.ttlSecondsAfterFinished }}
 ---
 apiVersion: batch/v1

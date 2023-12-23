@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "abcorg"
+nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
 
@@ -20,8 +20,8 @@ imagePullSecrets: []
 
 organizations:
   - org_type: orderer
-    org_name: abcorg
-    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
+    org_name: orderer
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
     cert_path: /root/orderer.pem
     admin_identity: admin
     admin_secret: ordererAdminpassword
@@ -37,7 +37,7 @@ organizations:
       port: "30000"
   - org_type: peerorg
     org_name: initialpeerorg
-    mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+    ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
     cert_path: /root/peerorg.pem
     admin_identity: admin
     admin_secret: initialpeerorgAdminSamplePassword
@@ -54,7 +54,6 @@ block_file: genesis.block
 config_transaction_filename: channel.tx
 
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-tlsca_cert_path: /tmp/tlsca.pem
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.

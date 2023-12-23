@@ -16,7 +16,7 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
-mspca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
@@ -38,13 +38,13 @@ admin_identity:
 # Organizations to be added
 organizatons:
  - name: org1
-   mspca_endpoint: ica-org1.my-hlf-domain.com:30000
+   ica_endpoint: ica-org1.my-hlf-domain.com:30000
    identity_name: admin
    identity_secret: org1AdminSamplePassword
    anchor_peer: peer0-org1.my-hlf-domain.com
    anchor_peer_port: 30000
  - name: org2
-   mspca_endpoint: ica-org2.my-hlf-domain.com:30000
+   ica_endpoint: ica-org2.my-hlf-domain.com:30000
    identity_name: admin
    identity_secret: org2AdminSamplePassword
    anchor_peer: peer0-org2.my-hlf-domain.com

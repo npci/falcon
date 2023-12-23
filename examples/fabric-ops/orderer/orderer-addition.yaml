@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "abcorg"
+nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
 
@@ -33,8 +33,8 @@ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 admin_identity:
   - identity_name: admin
     identity_secret: ordererAdminpassword
-    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
-    mspca_tlscertfile: /tmp/orderer-ica.cert
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-ica.cert
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
     require_msp_enrollment: true
     require_tls_enrollment: false
@@ -48,8 +48,8 @@ additional_orderers:
     endpoint: orderer3-orderer.my-hlf-domain.com
     port: 30000
     msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
-    mspca_endpoint: ica-orderer.my-hlf-domain.com:30000
-    mspca_tlscertfile: /tmp/orderer-ica.cert
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-ica.cert
     # hlf_domain: If you want to register this orderer with a different hlf domain other than .Values.hlf_domain. Useful when adding new orderers on a different DC and you want to assign a different sub domain for it.
     update_channels:
       - orderer-sys-channel
