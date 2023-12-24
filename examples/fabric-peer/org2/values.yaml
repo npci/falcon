@@ -36,6 +36,7 @@ global:
   ica_endpoint: ica-org2.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
   storageClass: standard
+  ingressEnabled: true
   ingressClass: nginx
   ingressPort: 30000
   ingress:

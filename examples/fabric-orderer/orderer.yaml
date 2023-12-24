@@ -48,6 +48,7 @@ global:
     tag: "2.4"
   serviceAccount:
     annotations: []
+  ingressEnabled: true
   ingress:
     className: "nginx"
     annotations:
