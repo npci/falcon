@@ -27,6 +27,17 @@ peers:
   - name: peer0
     identity_name: peer0-initialpeerorg
     identity_secret: peer0initialpeerorgSamplePassword
+    ## Add additional env variables unique to this peer
+    # additionalEnvironmentVars:
+    #   peer:
+    #   - name: PEER_ENV_NAME
+    #     value: peer_env_value
+    #   dind:
+    #   - name: DIND_ENV_NAME
+    #     value: dind_env_value
+    #   couchDb:
+    #   - name: COUCHDB_ENV_NAME
+    #     value: couchdb_env_value
   - name: peer1
     identity_name: peer1-initialpeerorg
     identity_secret: peer1initialpeerorgSamplePassword
@@ -183,7 +194,7 @@ global:
     tcpSocket:
       port: 2375
 
-additonalEnvironmentVars:
+additionalEnvironmentVars:
   # couchDb:
   #   - name: EXTRA_ENV_COUCHDB
   #     value: Extra_couch_env_value

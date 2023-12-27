@@ -68,8 +68,11 @@ spec:
               value: {{ .couchDbUser | default $.Values.global.couchDbUser | quote  }}
             - name: COUCHDB_PASSWORD
               value: {{ .couchDbUserPass | default $.Values.global.couchDbUserPass | quote }}
-            {{- if $.Values.additonalEnvironmentVars.couchDb }}
-            {{- tpl (toYaml $.Values.additonalEnvironmentVars.couchDb) $ | nindent 12 }}
+            {{- if $.Values.additionalEnvironmentVars.couchDb }}
+            {{- tpl (toYaml $.Values.additionalEnvironmentVars.couchDb) $ | nindent 12 }}
+            {{- end }}
+            {{- if ((.additionalEnvironmentVars).couchDb) }}
+            {{- tpl (toYaml .additionalEnvironmentVars.couchDb) $ | nindent 12 }}
             {{- end }}
           securityContext:
             {{- toYaml $.Values.global.couchSecurityContext | nindent 12 }}
@@ -93,8 +96,11 @@ spec:
           env:
             - name: DOCKER_TLS_CERTDIR
               value: {{ .dindDocker_tls_certdir | default $.Values.global.dindDocker_tls_certdir | quote }}
-            {{- if $.Values.additonalEnvironmentVars.dind }}
-            {{- tpl (toYaml $.Values.additonalEnvironmentVars.dind) $ | nindent 12 }}
+            {{- if $.Values.additionalEnvironmentVars.dind }}
+            {{- tpl (toYaml $.Values.additionalEnvironmentVars.dind) $ | nindent 12 }}
+            {{- end }}
+            {{- if ((.additionalEnvironmentVars).dind) }}
+            {{- tpl (toYaml .additionalEnvironmentVars.dind) $ | nindent 12 }}
             {{- end }}
           startupProbe:
              {{- toYaml (.dindStartupProbe | default $.Values.global.dindStartupProbe) | nindent 12 }}
@@ -181,8 +187,11 @@ spec:
             {{- else }}
               value: "disabled"
             {{- end }}
-            {{- if $.Values.additonalEnvironmentVars.peer }}
-            {{- tpl (toYaml $.Values.additonalEnvironmentVars.peer) $ | nindent 12 }}
+            {{- if $.Values.additionalEnvironmentVars.peer }}
+            {{- tpl (toYaml $.Values.additionalEnvironmentVars.peer) $ | nindent 12 }}
+            {{- end }}
+            {{- if ((.additionalEnvironmentVars).peer) }}
+            {{- tpl (toYaml .additionalEnvironmentVars.peer) $ | nindent 12 }}
             {{- end }}
           startupProbe:
              {{- toYaml (.peerStartupProbe | default $.Values.global.peerStartupProbe) | nindent 12 }}
