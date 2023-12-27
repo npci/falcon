@@ -260,7 +260,7 @@ spec:
         requests:
           storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
       storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
-{{- if .require_certs_dir_persistence }}
+{{- if (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
   - metadata:
       name: cert-peer
     spec:

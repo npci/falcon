@@ -18,8 +18,6 @@ fullnameOverride: ""
 #     require_certs_dir_persistence: true # If you want PVC to store the msp/tls certs.
 #     renew_peer_certs: true # If you want to generate new msp/tls certificates on the next reboot.
 
-ica_tls_cert_file: /root/ica-cert.pem
-tlsca_tls_cert_file: /root/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
 retry_seconds: 60
 
@@ -44,7 +42,6 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-autoscaling:
 nodeSelector: {}
 tolerations: []
 affinity: {}

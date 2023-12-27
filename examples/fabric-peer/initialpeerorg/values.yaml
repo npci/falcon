@@ -38,6 +38,7 @@ global:
   hlf_domain: my-hlf-domain.com
   ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+  #require_certs_dir_persistence: true
   storageClass: standard
   ingressEnabled: true
   ingressClass: nginx
