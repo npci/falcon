@@ -1,0 +1,151 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $CaEndPoint       := .Values.ca_endpoint }}
+{{- $CaTlsCertFile    := .Values.ca_tls_certfile | default "/tmp/ca-cert.pem" }}
+
+{{- if .Values.fabric_actions.identity }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+  annotations:
+data:
+  fabric_register_identity.sh: |
+      source /scripts/fabric_enroll.sh 
+      enroll \
+        $CA_ADMIN_USER \
+        $CA_ADMIN_PASSWORD \
+        {{ .Values.default_msp_dir }} \
+        {{ $CaEndPoint }} \
+        {{ "null" }} \
+        {{ $CaTlsCertFile }} \
+        {{ "null" }} \
+        {{ .Values.hlf_domain }} \
+        {{ "true" }} \
+        {{ "false" }}
+
+      FABRIC_CA_URL={{ $CaEndPoint }}
+      FABRIC_IDENTITY_NAME=$3
+      FABRIC_IDENTITY_SECRET=$4
+      FABRIC_IDENTITY_TYPE=$5
+      FABRIC_TLS_CERT_FILE={{ $CaTlsCertFile }}
+
+      registerIdentity () {
+        while true; do
+          echo "============ Validating the identity $FABRIC_IDENTITY_NAME at https://$FABRIC_CA_URL ============" 
+          
+          fabric-ca-client identity list --id $FABRIC_IDENTITY_NAME -u https://$FABRIC_CA_URL --mspdir {{ .Values.default_msp_dir }}/$CA_ADMIN_USER/msp --tls.certfiles $FABRIC_TLS_CERT_FILE
+          if [ $? -eq 0 ]; then
+              echo "============ The Identity $FABRIC_IDENTITY_NAME already exists hence no registration is required ============"
+              break;
+          else
+              echo "============ The Identity $FABRIC_IDENTITY_NAME does not exists. Proceeding to registration at https://$FABRIC_CA_URL ============"
+              fabric-ca-client register \
+                    {{- if .Values.debug_enroll }}
+                    --debug \
+                    {{- end }}
+                    --id.name $FABRIC_IDENTITY_NAME \
+                    --id.secret $FABRIC_IDENTITY_SECRET \
+                    --id.type $FABRIC_IDENTITY_TYPE \
+                    --tls.certfiles $FABRIC_TLS_CERT_FILE \
+                    --mspdir {{ .Values.default_msp_dir }}/$CA_ADMIN_USER/msp \
+                    --url https://$FABRIC_CA_URL
+              if [ $? -eq 0 ]
+                then
+                  echo "============ Registered identity $FABRIC_IDENTITY_NAME successfully at https://$FABRIC_CA_URL ============"
+                  break;
+              else
+                  echo "============ Previous registration command was not successful and returned a non-zero exit code. Will retry after {{ .Values.retry_seconds }} ============"
+                  sleep {{ .Values.retry_seconds }}
+              fi
+          fi
+        done
+
+      }
+
+      registerIcaIdentity () {
+        while true; do
+          echo "============ Validating the identity $FABRIC_IDENTITY_NAME at https://$FABRIC_CA_URL ============" 
+        
+          fabric-ca-client identity list --id $FABRIC_IDENTITY_NAME -u https://$FABRIC_CA_URL --mspdir {{ .Values.default_msp_dir }}/$CA_ADMIN_USER/msp --tls.certfiles $FABRIC_TLS_CERT_FILE
+          if [ $? -eq 0 ]; then
+              echo "============ The Identity $FABRIC_IDENTITY_NAME already exists hence no registration is required. ============"
+              break;
+          else
+              echo "============ The Identity $FABRIC_IDENTITY_NAME does not exists. Proceeding to registration at https://$FABRIC_CA_URL ============"
+                 fabric-ca-client register \
+                    {{- if .Values.debug_enroll }}
+                    --debug \
+                    {{- end }}
+                    --id.name $FABRIC_IDENTITY_NAME \
+                    --id.secret $FABRIC_IDENTITY_SECRET \
+                    --id.attrs '"hf.Registrar.Roles=client,peer,admin,orderer",hf.Revoker=true,hf.IntermediateCA=true' \
+                    --tls.certfiles $FABRIC_TLS_CERT_FILE \
+                    --mspdir {{ .Values.default_msp_dir }}/$CA_ADMIN_USER/msp \
+                    --url https://$FABRIC_CA_URL
+              if [ $? -eq 0 ]; then
+                  echo "============ Registered identity $FABRIC_IDENTITY_NAME successfully at https://$FABRIC_CA_URL ============"
+                  break;
+              else
+                  echo "Previous registration command was not successful and returned a non-zero exit code. Please check the logs. Will retry after {{ .Values.retry_seconds }}"
+                  sleep {{ .Values.retry_seconds }}
+              fi
+          fi
+        done
+
+      }
+
+      registerAdminIdentity () {
+        
+        ATTRIBUTES="hf.Registrar.Roles=client,hf.Registrar.Attributes=*,hf.Revoker=true,hf.GenCRL=true,admin=true:ecert,abac.init=true:ecert"
+        while true; do
+          echo "============ Validating the identity $FABRIC_IDENTITY_NAME at https://$FABRIC_CA_URL ============" 
+
+          fabric-ca-client identity list --id $FABRIC_IDENTITY_NAME -u https://$FABRIC_CA_URL --mspdir {{ .Values.default_msp_dir }}/$CA_ADMIN_USER/msp --tls.certfiles $FABRIC_TLS_CERT_FILE
+          if [ $? -eq 0 ]; then
+              echo "============ The Identity $FABRIC_IDENTITY_NAME already exists hence no registration is required. ============"
+              break;
+          else
+              echo "============ The Identity $FABRIC_IDENTITY_NAME does not exists. Proceeding to registration at https://$FABRIC_CA_URL ============"
+                fabric-ca-client register \
+                    {{- if .Values.debug_enroll }}
+                    --debug \
+                    {{- end }}
+                    --id.name $FABRIC_IDENTITY_NAME \
+                    --id.secret $FABRIC_IDENTITY_SECRET \
+                    --id.type $FABRIC_IDENTITY_TYPE \
+                    --id.attrs $ATTRIBUTES \
+                    --tls.certfiles $FABRIC_TLS_CERT_FILE \
+                    --mspdir {{ .Values.default_msp_dir }}/$CA_ADMIN_USER/msp \
+                    --url https://$FABRIC_CA_URL
+              if [ $? -eq 0 ]
+                then
+                echo "============ Registered identity $FABRIC_IDENTITY_NAME successfully at https://$FABRIC_CA_URL ============"
+                break;
+              else
+                echo "============ Previous registration command was not successful and returned a non-zero exit code. Please check the logs. Will retry after {{ .Values.retry_seconds }} ============"
+                sleep {{ .Values.retry_seconds }}
+              fi
+          fi
+      done
+
+      }
+
+      case $FABRIC_IDENTITY_TYPE in
+        "client"|"peer"|"orderer")
+            registerIdentity
+          ;;
+        "admin")
+            registerAdminIdentity
+          ;;
+        "ica")
+            registerIcaIdentity
+          ;;
+      esac
+{{- end }}

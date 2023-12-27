@@ -3,7 +3,7 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if eq "crypto" .Values.job_type  }}
+{{- if .Values.fabric_actions.cryptogen }}
 
 apiVersion: batch/v1
 kind: Job
@@ -38,8 +38,7 @@ spec:
           workingDir: /scripts
           command: ["/bin/sh","-c"]
           args:
-            - /scripts/enroll.sh;
-              /scripts/gen_artifacts.sh;
+            - /scripts/cryptogen.sh;
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
           env:
@@ -49,23 +48,27 @@ spec:
             - name: configtx
               subPath: configtx.yaml
               mountPath: /scripts/configtx.yaml
-            - name: crypto-gen
-              subPath: enroll.sh
-              mountPath: /scripts/enroll.sh
-            - name: crypto-gen
-              subPath: gen_artifacts.sh
-              mountPath: /scripts/gen_artifacts.sh
-            - name: crypto-gen
+            - name: scripts
+              subPath: cryptogen.sh
+              mountPath: /scripts/cryptogen.sh
+            - name: fabric-ops
               subPath: config.yaml
               mountPath: /tmp/config.yaml
+            - name: fabric-ops
+              subPath: fabric_enroll.sh
+              mountPath: /scripts/fabric_enroll.sh
       volumes:
         - name: configtx
           configMap:
             name: {{ include "fabric-ops.fullname" $ }}-configtx
             defaultMode: 0777
-        - name: crypto-gen
+        - name: scripts
           configMap:
-            name: {{ include "fabric-ops.fullname" $ }}-crypto-gen
+            name: {{ include "fabric-ops.fullname" $ }}
+            defaultMode: 0777
+        - name: fabric-ops
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-functions
             defaultMode: 0777
       {{- with $.Values.nodeSelector }}
       nodeSelector:

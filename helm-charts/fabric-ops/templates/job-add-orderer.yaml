@@ -3,19 +3,20 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if .Values.fabric_actions.configure_org_channel }}
+{{- if .Values.fabric_actions.add_orderer }}
 
-{{ $BankName               := .Values.nameOverride }}
-{{ $HlfDomain              := .Values.hlf_domain }}
-{{ $ChannelName            := .Values.channel_name }}
-{{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
+{{ $BankName         := .Values.nameOverride }}
+{{ $HlfDomain        := .Values.hlf_domain }}
+{{ $ChannelName      := .Values.channel_name }}
+{{ $Msp_base_dir     := printf "%s%s" .Values.workdir "/orderer/users/" }}
+{{ $OverrideMspId    := .Values.MspIdOverride }}
 
-{{- range .Values.organizatons }}
+{{- range .Values.admin_identity }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "fabric-ops.fullname" $ }}-{{ .name }}
+  name: {{ include "fabric-ops.fullname" $ }}
   labels:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 spec:
@@ -46,19 +47,17 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_configure_org_channel.sh {{ .name }} {{ .ica_endpoint }} {{ .identity_name }} {{ .identity_secret }} {{ .msp_dir | default "/crypto-config/peerOrganizations" }};
+           - /scripts/fabric_add_orderer.sh;
           tty: true
           env: 
             - name: FABRIC_LOGGING_SPEC
               value: INFO
             - name: CORE_PEER_LOCALMSPID
-              value: {{ $BankName }}
+              value: {{ $OverrideMspId | default $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
-              value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
+              value: {{ $.Values.core_peer_mspconfigpath_override | default (printf "%s%s%s" $Msp_base_dir .identity_name "/msp") }}
             - name: CORE_PEER_TLS_ENABLED
               value: "true"
-            - name: CORE_PEER_TLS_ROOTCERT_FILE
-              value: {{ $.Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
             - name: GOPATH
               value: /opt/gopath
             - name: ORDERER_CA
@@ -71,11 +70,8 @@ spec:
               subPath: fabric_enroll.sh
               mountPath: /scripts/fabric_enroll.sh
             - name: scripts
-              subPath: fabric_configure_org_channel.sh
-              mountPath: /scripts/fabric_configure_org_channel.sh
-            - name: scripts
-              subPath: configtx_{{ .name }}.yaml
-              mountPath: {{ $.Values.workdir }}/peer/configtx.yaml
+              subPath: fabric_add_orderer.sh
+              mountPath: /scripts/fabric_add_orderer.sh
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       volumes:

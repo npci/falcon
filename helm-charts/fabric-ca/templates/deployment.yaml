@@ -76,7 +76,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.ca_server.container_port }}
+              containerPort: {{ .Values.ca_server.container_port | default "7051" }}
               protocol: TCP
           env:
             {{- include "fabric-ca.fabricEnv" . | nindent 12 }}
@@ -109,8 +109,8 @@ spec:
       {{- end }}
         {{- if .Values.ica.enabled }}
         - name: intermediate-ca-cert
-          emptyDir:
-            sizeLimit: 5Mi
+          persistentVolumeClaim:
+            claimName: {{ include "fabric-ca.fullname" . }}-cert
         - name: scripts
           configMap:
             name: {{ include "fabric-ca.fullname" . }}-scripts

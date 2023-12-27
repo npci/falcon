@@ -4,6 +4,7 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{- range .Values.orderers }}
+  {{- if not .use_existing_pvc_data }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -18,8 +19,9 @@ spec:
     requests:
       storage: {{ .dataStorageSize | default ($.Values.global.storageSize | default "5Gi") }}
   storageClassName: {{ .storageClass | default ($.Values.global.storageClass | default "default") }}
+  {{- end }}
 ---
-{{- if not $.Values.enroll_on_every_pod_recreation }}
+{{- if (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

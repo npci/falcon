@@ -3,10 +3,9 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if eq "identity" .Values.job_type }}
+{{- if .Values.fabric_actions.identity }}
 
 {{- range .Values.identities }}
-{{- $CaEndpoint              := $.Values.ca.ca_endpoint }}
 {{- $ttlSecondsAfterFinished := $.Values.ttlSecondsAfterFinished }}
 ---
 apiVersion: batch/v1
@@ -44,8 +43,7 @@ spec:
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           command: ["/bin/sh","-c"]
           args:
-            - /scripts/fabric_enroll.sh {{ $CaEndpoint }} $CA_ADMIN_USER $CA_ADMIN_PASSWORD;
-              /scripts/fabric_register_identity.sh {{ $CaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }};
+            - /scripts/fabric_register_identity.sh $CA_ADMIN_USER $CA_ADMIN_PASSWORD {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }};
           env:
             {{- include "fabric-ops.fabricEnv" $ | nindent 12 }}
           resources:
@@ -54,13 +52,17 @@ spec:
             - name: fabric-ops
               subPath: fabric_enroll.sh
               mountPath: /scripts/fabric_enroll.sh
-            - name: fabric-ops
+            - name: scripts
               subPath: fabric_register_identity.sh
               mountPath: /scripts/fabric_register_identity.sh
       volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}
+            defaultMode: 0777
         - name: fabric-ops
           configMap:
-            name: {{ include "fabric-ops.fullname" $ }}-fabric-ops
+            name: {{ include "fabric-ops.fullname" $ }}-functions
             defaultMode: 0777
       {{- with $.Values.nodeSelector }}
       nodeSelector:

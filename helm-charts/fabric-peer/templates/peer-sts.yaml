@@ -3,10 +3,12 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $BankName      := .Values.nameOverride }}
-{{- $HlfDomain     := .Values.global.hlf_domain }}
-{{- $IcaEndpoint   := .Values.global.ica_endpoint }}
-{{- $TlsCaEndpoint := .Values.global.tlsca_endpoint }}
+{{- $BankName          := .Values.nameOverride }}
+{{- $HlfDomain         := .Values.global.hlf_domain }}
+{{- $IcaEndPoint       := .Values.global.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.global.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 
 {{- range .Values.peers }}
 ---
@@ -46,13 +48,16 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/enroll.sh {{ $IcaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
+           - /scripts/enroll.sh {{ $IcaEndPoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $IcaTlsCertFile }} {{ $TlsCaTlsCertFile }}
           volumeMounts:
            - name: cert-peer
              mountPath: {{ $.Values.fabric_base_dir }}
            - name: config
              mountPath: /scripts/enroll.sh
              subPath: enroll.sh
+           - name: common
+             mountPath: /scripts/functions.sh
+             subPath: functions.sh
       containers:
         {{- if .useCouchDB | default $.Values.global.useCouchDB }}
         - name: couchdb
@@ -196,15 +201,19 @@ spec:
             - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/tls
               subPath: tls
-            - name: config
+            - name: common
               mountPath: {{ $.Values.fabric_base_dir }}/msp/config.yaml
               subPath: config.yaml
       volumes:
+        - name: common
+          configMap:
+            name: {{ include "fabric-peer.fullname" $ }}-common
+            defaultMode: 0777
         - name: config
           configMap:
-            name: {{ include "fabric-peer.fullname" $ }}-fabric-ops
+            name: {{ .name }}-{{ include "fabric-peer.fullname" $ }}-conf
             defaultMode: 0777
-        {{- if $.Values.enroll_on_every_pod_recreation }}
+        {{- if not .require_certs_dir_persistence }}
         - name: cert-peer
           emptyDir:
            sizeLimit: {{ $.Values.global.peerCertDiskSize }}
@@ -251,7 +260,7 @@ spec:
         requests:
           storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
       storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
-{{- if not $.Values.enroll_on_every_pod_recreation }}
+{{- if (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
   - metadata:
       name: cert-peer
     spec:

@@ -18,11 +18,9 @@ init:
    repository: npcioss/hlf-builder
    tag: 2.4
 
-ica_tls_cert_file: /root/ica-cert.pem
-tlsca_tls_cert_file: /root/tlsca-cert.pem
+ica_tls_certfile: /tmp/ca-cert.pem
+tlsca_tls_certfile: /tmp/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
-enroll_on_every_pod_recreation: true
-renew_peer_certs: false
 retry_seconds: 60
 
 peers:
@@ -40,14 +38,16 @@ global:
   hlf_domain: my-hlf-domain.com
   ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+  #require_certs_dir_persistence: true
   storageClass: standard
+  ingressEnabled: true
   ingressClass: nginx
   ingressPort: 30000
   ingress:
     annotations:
       nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   imageRegistry: hyperledger
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   serviceAccount:
     annotations: []
 

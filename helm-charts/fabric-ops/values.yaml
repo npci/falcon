@@ -5,7 +5,10 @@ workdir: /opt/gopath/src/github.com/hyperledger/fabric
 peer_internal_service_port: "30002"
 ttlSecondsAfterFinished: "100"
 retry_seconds: 60
-tls_cert_file: /root/cert.pem
+connTimeout: 60s
+debug_enroll: false
+ica_tls_certfile: /tmp/ca-cert.pem
+tlsca_tls_certfile: /tmp/tlsca-cert.pem
 default_msp_dir: /tmp/fabric
 filestore_ssl: false
 # .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
@@ -13,3 +16,11 @@ filestore_ssl: false
 # This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
 # Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
 # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-org/msp
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+image:
+  repository: npcioss/hlf-builder
+  pullPolicy: Never
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.4"

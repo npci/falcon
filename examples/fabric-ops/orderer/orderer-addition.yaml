@@ -2,9 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-nameOverride: "initialpeerorg"
+nameOverride: "orderer"
 fullnameOverride: ""
 project: yourproject
+
+fabric_actions:
+ add_orderer: true
 
 imagePullSecrets: []
 image:
@@ -13,36 +16,46 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
-ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
-tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-
-hlf_domain: my-hlf-domain.com
-hlf_channel: "mychannel"
-require_collection_config: "true"
-fabric_actions: 
- commit_chaincode: true
-
 csr_names_cn: IN
 csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
+#MspIdOverride: ordererorg
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
-collection_config_file: collection-config.json
-collection_config_file_hash: "627dd1b8d679dc52475c148e502c576b109796df8495282ba602cc51ec173286"
-core_peer_address: peer0-initialpeerorg:30002
+seconds_to_wait_after_channel_update: 15
 
-cc_name: basic-chaincode
-cc_version: "1.0"
-seq: "1"
+hlf_domain: my-hlf-domain.com
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 admin_identity:
   - identity_name: admin
-    identity_secret: initialpeerorgAdminSamplePassword
+    identity_secret: ordererAdminpassword
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-ica.cert
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
     require_msp_enrollment: true
     require_tls_enrollment: false
+
+# additional_orderers are the list of new orderers you want to add. Only specify one item at a time.
+additional_orderers:
+  - identity_name: orderer3-orderer
+    identity_secret: orderer3ordererSamplePassword
+    require_msp_enrollment: true
+    require_tls_enrollment: true
+    endpoint: orderer3-orderer.my-hlf-domain.com
+    port: 30000
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-ica.cert
+    # hlf_domain: If you want to register this orderer with a different hlf domain other than .Values.hlf_domain. Useful when adding new orderers on a different DC and you want to assign a different sub domain for it.
+    update_channels:
+      - orderer-sys-channel
+      - mychannel
+    upload_latest_channel_block_to_filestore:
+      - orderer-sys-channel
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -71,13 +84,6 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
 tolerations: []

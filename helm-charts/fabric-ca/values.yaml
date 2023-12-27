@@ -18,6 +18,7 @@ image:
   tag: "1.5.0"
 
 retry_seconds: 60
+recreate_intermediate_cert: false
 
 # tls_domain : This will be used to create an Ingress, and CSR for the CA server.
 # Eg: my-hlf-domain.com, then the Ingress object will be created as a combination of ".fabric-ca.fullname + .Values.tls_domain"
@@ -35,6 +36,7 @@ ca_server:
   # You must create this secret outside of this chart for maximum security. Never commit CA user/pass into any charts.
   # kubectl -n <namespace> create secret generic ca-secret --from-literal=admin=<your-ca-user> --from-literal=password=<your-ca-user-password>
   admin_secret: rca-secret
+  additional_sans: []
 
 ica:
   # When true, this will be deployed as an ICA. 
@@ -55,10 +57,8 @@ ingress:
   className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-  hosts:
-    - paths:
-        - path: /
-          pathType: Prefix
+  path: /
+  pathType: Prefix
 
 storage:
   pvc_enabled: true
@@ -72,13 +72,13 @@ serviceAccount:
   annotations: {}
   name: ""
 
-resources:
-  limits:
-    cpu: 100m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
+# resources:
+#   limits:
+#     cpu: 100m
+#     memory: 256Mi
+#   requests:
+#     cpu: 100m
+#     memory: 128Mi
 
 # affinity:
 #  nodeAffinity:
@@ -91,22 +91,22 @@ resources:
 #         values:
 #         - <label>
 
-startupProbe:
-  httpGet:
-    path: /cainfo
-    port: http
-    scheme: HTTPS
-  initialDelaySeconds: 10
-livenessProbe:
-  httpGet:
-    path: /cainfo
-    port: http
-    scheme: HTTPS
-readinessProbe:
-  httpGet:
-    path: /cainfo
-    port: http
-    scheme: HTTPS
+# startupProbe:
+#   httpGet:
+#     path: /cainfo
+#     port: http
+#     scheme: HTTPS
+#   initialDelaySeconds: 10
+# livenessProbe:
+#   httpGet:
+#     path: /cainfo
+#     port: http
+#     scheme: HTTPS
+# readinessProbe:
+#   httpGet:
+#     path: /cainfo
+#     port: http
+#     scheme: HTTPS
 
 podAnnotations: {}
 podSecurityContext: {}

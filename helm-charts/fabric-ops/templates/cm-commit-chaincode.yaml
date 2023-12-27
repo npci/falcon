@@ -1,0 +1,88 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Project           := .Values.project }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndPoint       := .Values.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $ChannelName       := .Values.hlf_channel }}
+{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if .Values.fabric_actions.commit_chaincode | default false }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  fabric_commit_chaincode.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      {{- range .Values.admin_identity }}
+      enroll \
+        {{ .identity_name }} \
+        {{ .identity_secret }} \
+        {{ .msp_base_dir | default $Msp_base_dir }} \
+        {{ .ica_endpoint | default $IcaEndPoint }} \
+        {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+        {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
+        {{ .tlsca_tls_certfile | default $TlsCaTlsCertFile }} \
+        {{ .hlf_domain | default $.Values.hlf_domain }} \
+        {{ .require_msp_enrollment }} \
+        {{ .require_tls_enrollment }}
+      {{- end }}
+
+      CC_NAME={{ .Values.cc_name }}
+      CC_VERSION={{ .Values.cc_version }}
+      SEQ={{ .Values.seq }}
+
+      {{- if .Values.require_collection_config }}
+
+      COLLECTION_CONFIG_SHA_VALUE="{{ .Values.collection_config_file_hash }}"
+      COLLECTION_CONFIG_FILE_NAME="{{ $.Values.workdir }}/peer/collection-config.json"
+
+      get_file $COLLECTION_CONFIG_FILE_NAME {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.collection_config_file }}
+      echo "--------------------------------------------------------------"
+      echo "Displaying downloaded collection config"
+      echo "--------------------------------------------------------------"
+      cat {{ $.Values.workdir }}/peer/collection-config.json    
+      echo "--------------------------------------------------------------"  
+      echo "Checking the SHA256 value of downloaded collection-config.json"
+      echo "--------------------------------------------------------------"
+      
+      get_sha256=$(sha256sum $COLLECTION_CONFIG_FILE_NAME | awk {'print $1'})
+      echo "SHA256 value of the downloaded file is = $get_sha256"
+      echo "SHA256 value from helm is              = $COLLECTION_CONFIG_SHA_VALUE"
+      echo "--------------------------------------------------------------"
+
+      if [ "$get_sha256"  = "$COLLECTION_CONFIG_SHA_VALUE" ]; then
+        echo "Downloaded collection-config's SHA is matching. Proceeding to the CC commit process."
+        echo "Committing ChainCode with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $SEQ"
+        peer lifecycle chaincode commit -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --sequence $SEQ --collections-config {{ $.Values.workdir }}/peer/collection-config.json --tls --cafile $ORDERER_CA --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE --connTimeout {{ .Values.connTimeout }}
+          if [ $? -ne 0 ]; then
+            echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+          else
+            echo "============ [SUCCESS] All steps have been executed successfully. ============"
+          fi
+      else
+        echo "============ [SHAMISMATCH] Downloaded collection-config's SHA is not matching. Aborting the commit process. You may want to check the helm values or the actual file in the filestore"
+      fi
+      {{- end }}
+
+      {{- if not .Values.require_collection_config }}
+      echo "Committing ChainCode with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $SEQ"
+      peer lifecycle chaincode commit -o {{ .Values.orderer_endpoint }} --channelID {{ $ChannelName }} --name $CC_NAME --version $CC_VERSION --sequence $SEQ --tls --cafile $ORDERER_CA --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE --connTimeout {{ .Values.connTimeout }}
+
+      if [ $? -ne 0 ]; then
+        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+      else
+        echo "============ [SUCCESS] All steps have been executed successfully. ============"
+      fi
+      {{- end }}
+{{- end }}

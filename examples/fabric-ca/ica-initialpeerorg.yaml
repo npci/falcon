@@ -11,17 +11,15 @@ replicaCount: 1
 
 image:
   repository: hyperledger/fabric-ca
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "1.5.0"
 
 init:
   image:
    repository: npcioss/hlf-builder
-   pullPolicy: Always
+   pullPolicy: IfNotPresent
    tag: "2.4"
-
-retry_seconds: 60
 
 # tls_domain : This will be used to create an Ingress, and CSR for the CA server.
 # Eg: my-hlf-domain.com, then the Ingress object will be created as a combination of ".fabric-ca.fullname + .Values.tls_domain"
@@ -40,6 +38,9 @@ ca_server:
   # kubectl -n orderer create secret generic your-secret --from-literal=user=your-admin-user --from-literal=password=your-admin-password
   admin_secret: initialpeerorg-secret
 
+retry_seconds: 60
+recreate_intermediate_cert: false # Make it true if you want to delete existing parent server public key cert and fetch new one on the next restart.
+
 ica:
   enabled: true
   parent_ca_endpoint: "root-ca.my-hlf-domain.com:30000" # your-root-ca-endpoint:<port>
@@ -55,10 +56,6 @@ ingress:
   className: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-  hosts:
-    - paths:
-        - path: /
-          pathType: Prefix
 
 storage:
   pvc_enabled: true

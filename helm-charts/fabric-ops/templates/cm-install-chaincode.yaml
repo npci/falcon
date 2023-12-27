@@ -1,0 +1,63 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Project           := .Values.project }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndPoint       := .Values.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $ChannelName       := .Values.hlf_channel }}
+{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if .Values.fabric_actions.install_chaincode | default false }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  fabric_install_chaincode.sh: |
+      source /scripts/fabric_enroll.sh
+      fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      {{- range .Values.admin_identity }}
+      enroll \
+        {{ .identity_name }} \
+        {{ .identity_secret }} \
+        {{ .msp_base_dir | default $Msp_base_dir }} \
+        {{ .ica_endpoint | default $IcaEndPoint }} \
+        {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+        {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
+        {{ .tlsca_tls_certfile | default $TlsCaTlsCertFile }} \
+        {{ .hlf_domain | default $.Values.hlf_domain }} \
+        {{ .require_msp_enrollment }} \
+        {{ .require_tls_enrollment }}
+      {{- end }}
+
+      get_file {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.channel_block_filename }}
+      get_file {{ .Values.cc_tar_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.cc_tar_file }}
+
+      echo "Listing directory structure before creation."
+      echo $PWD
+      ls -l
+      echo "============ Listing the peer joined channels ============"
+      peer channel list
+      peer channel list | grep {{ $ChannelName }}
+      if [ $? -ne 0 ]; then
+        echo "The peer has not joined {{ $ChannelName }} channel yet."
+        echo "============ Joining channel ============"
+        peer channel join -b {{ .Values.channel_block_filename }} --connTimeout {{ .Values.connTimeout }}       
+      else
+        echo "Peer has already joined {{ $ChannelName }} channel."
+      fi
+      
+      echo "============ Installing ChainCode version {{ .Values.cc_tar_file }} ============"
+      sha256sum {{ .Values.cc_tar_file }}
+      peer lifecycle chaincode install {{ .Values.cc_tar_file }} --connTimeout {{ .Values.connTimeout }} 
+      echo "============ Print ChainCode installation status ============"
+      peer lifecycle chaincode queryinstalled --connTimeout {{ .Values.connTimeout }}
+{{- end }}

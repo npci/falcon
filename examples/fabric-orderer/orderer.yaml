@@ -24,15 +24,9 @@ csr_names_o: Your Company Name
 
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
-block_file: genesis.block
-ica_tls_cert_file: /root/cert.pem
-enroll_on_every_pod_recreation: true
+ica_tls_cert_file: /root/ica-cert.pem
 retry_seconds: 60
-
 hlf_domain: my-hlf-domain.com
-ca:
- ica_endpoint: ica-orderer.my-hlf-domain.com:30000
- tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 init:
   image:
@@ -43,13 +37,18 @@ global:
   containerPort: 7050
   servicePort: 7050
   replicaCount: 1
+  ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+  tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+  block_file: genesis.block
+  require_certs_dir_persistence: true
   image:
     repository: hyperledger/fabric-orderer
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     imagePullSecrets: []
     tag: "2.4"
   serviceAccount:
     annotations: []
+  ingressEnabled: true
   ingress:
     className: "nginx"
     annotations:
@@ -72,7 +71,7 @@ global:
     ## Only applicable if provider is "prometheus"
     ## A serviceMonitor will be created for each peer with the configuration provided below
     serviceMonitor:
-      enabled: true
+      enabled: false
       additionalLabels: {}
       namespace: ""
 
@@ -105,12 +104,8 @@ global:
       value: file
     - name: ORDERER_GENERAL_LISTENADDRESS
       value: 0.0.0.0
-    - name: ORDERER_GENERAL_LOCALMSPID
-      value: OrdererMSP
     - name: ORDERER_GENERAL_TLS_ENABLED
       value: "true"
-    - name: ORDERER_GENERAL_GENESISFILE
-      value: "{{ .Values.orderer_cert_base_dir }}/{{ .Values.block_file }}"
     - name: ORDERER_GENERAL_LOCALMSPDIR
       value: "{{ .Values.orderer_cert_base_dir }}/msp"
     - name: ORDERER_GENERAL_TLS_CERTIFICATE

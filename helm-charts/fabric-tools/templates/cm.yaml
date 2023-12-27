@@ -3,10 +3,12 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $HlfDomain     := .Values.hlf_domain }}
-{{- $IcaEndpoint   := .Values.ca.ca_endpoint }}
-{{- $TlsCaEndpoint := .Values.ca.tlss_ca_endpoint }}
-{{- $Msp_base_dir  := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndPoint       := .Values.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/crypto/users" }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -33,7 +35,7 @@ data:
   enroll.sh: |
       enroll() {
 
-      ica_url={{ $IcaEndpoint }}
+      ica_url={{ $IcaEndPoint }}
       tlsca_url={{ $TlsCaEndpoint }}
       identity_name=$1
       identity_secret=$2
@@ -41,30 +43,29 @@ data:
       msp_base_dir=$4
 
       echo "Fetching public key cert of https://$ica_url"
-      curl https://$ica_url/cainfo --insecure | jq .result.CAChain | base64 -i -d > /tmp/ca-cert.pem
+      curl https://$ica_url/cainfo --insecure | jq .result.CAChain | base64 -i -d > {{ $IcaTlsCertFile }}
       echo "Enrolling as user $identity_name to https://$ica_url"
         fabric-ca-client enroll -d \
             --url https://$identity_name:$identity_secret@$ica_url \
             --mspdir $msp_base_dir/$identity_name/msp \
-            --tls.certfiles /tmp/ca-cert.pem \
+            --tls.certfiles {{ $IcaTlsCertFile }} \
             --csr.hosts $identity_name,$identity_name.{{ $HlfDomain }} \
             --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
       echo "Re-arranging the MSP cert directory";
       cp $msp_base_dir/$identity_name/msp/intermediatecerts/* $msp_base_dir/$identity_name/msp/intermediatecerts/ca-cert.pem;
       cp /tmp/config.yaml $msp_base_dir/$identity_name/msp/config.yaml;
-      sleep 5;
 
       if [ $identity_type = "admin" ]
         then 
         echo "No TLS enrollment is required for admin user tye, Skipping"
         else
         echo "Fetching public key cert of https://$tlsca_url"
-        curl https://$tlsca_url/cainfo --insecure | jq .result.CAChain | base64 -i -d > /tmp/tlsca-cert.pem
+        curl https://$tlsca_url/cainfo --insecure | jq .result.CAChain | base64 -i -d > {{ $TlsCaTlsCertFile }}
         echo "Enrolling as user $identity_name to https://$tlsca_url"
           fabric-ca-client enroll -d \
               --url https://$identity_name:$identity_secret@$tlsca_url \
               --mspdir $msp_base_dir/$identity_name/tls \
-              --tls.certfiles /tmp/tlsca-cert.pem \
+              --tls.certfiles {{ $TlsCaTlsCertFile }} \
               --csr.hosts $identity_name,$identity_name.{{ $HlfDomain }} \
               --enrollment.profile tls \
               --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
@@ -72,13 +73,8 @@ data:
         cp $msp_base_dir/$identity_name/tls/tlscacerts/* $msp_base_dir/$identity_name/tls/ca.crt;
         cp $msp_base_dir/$identity_name/tls/signcerts/* $msp_base_dir/$identity_name/tls/server.crt;
         cp $msp_base_dir/$identity_name/tls/keystore/* $msp_base_dir/$identity_name/tls/server.key;
-        sleep 5;
       fi
       }
 {{- range .Values.identities }}  
       enroll {{ .identity_name }} {{ .identity_secret }} {{ .identity_type }} {{ .msp_base_dir | default $Msp_base_dir }}
 {{- end }}
-      echo "Creating directory structure for Orderer"
-      mkdir -p $ORDERER_BASE_PATH
-      echo "Copying Orderer tls cert"
-      cp /tmp/tlsca-cert.pem $ORDERER_BASE_PATH/ca-cert.pem
