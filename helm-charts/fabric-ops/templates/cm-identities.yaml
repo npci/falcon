@@ -3,8 +3,8 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $IcaEndPoint       := .Values.ica_endpoint }}
-{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $CaEndPoint       := .Values.ca_endpoint }}
+{{- $CaTlsCertFile    := .Values.ca_tls_certfile | default "/tmp/ca-cert.pem" }}
 
 {{- if .Values.fabric_actions.identity }}
 
@@ -22,19 +22,19 @@ data:
         $CA_ADMIN_USER \
         $CA_ADMIN_PASSWORD \
         {{ .Values.default_msp_dir }} \
-        {{ $IcaEndPoint }} \
+        {{ $CaEndPoint }} \
         {{ "null" }} \
-        {{ $IcaTlsCertFile }} \
+        {{ $CaTlsCertFile }} \
         {{ "null" }} \
         {{ .Values.hlf_domain }} \
         {{ "true" }} \
         {{ "false" }}
 
-      FABRIC_CA_URL={{ .Values.ica_endpoint }}
+      FABRIC_CA_URL={{ $CaEndPoint }}
       FABRIC_IDENTITY_NAME=$3
       FABRIC_IDENTITY_SECRET=$4
       FABRIC_IDENTITY_TYPE=$5
-      FABRIC_TLS_CERT_FILE={{ $IcaTlsCertFile }}
+      FABRIC_TLS_CERT_FILE={{ $CaTlsCertFile }}
 
       registerIdentity () {
         while true; do

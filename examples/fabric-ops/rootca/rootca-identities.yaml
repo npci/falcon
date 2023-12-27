@@ -21,7 +21,7 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: "Your Company Name"
 
-ica_endpoint: root-ca.my-hlf-domain.com:30000
+ca_endpoint: root-ca.my-hlf-domain.com:30000
 ca_secret: rca-secret # It's a reference to the Kubernetes secret. 
 hlf_domain: my-hlf-domain.com
 
