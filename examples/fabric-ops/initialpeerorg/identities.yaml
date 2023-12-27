@@ -26,8 +26,6 @@ ca_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
 ca_secret: initialpeerorg-secret
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
-hlf_domain: my-hlf-domain.com
-
 identities:
   - identity_name: admin
     identity_secret: initialpeerorgAdminSamplePassword
