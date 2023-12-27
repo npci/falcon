@@ -52,7 +52,7 @@ data:
       }
 
 
-      enroll() {
+      function enroll() {
 
       FABRIC_IDENTITY="${1}"
       FABRIC_IDENTITY_SECRET="${2}"
