@@ -24,7 +24,7 @@ csr_names_o: Your Company Name
 hlf_domain: my-hlf-domain.com
 
 ica_endpoint: ica-org2.my-hlf-domain.com:30000
-ica_secret: org2-secret
+ca_secret: org2-secret
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:

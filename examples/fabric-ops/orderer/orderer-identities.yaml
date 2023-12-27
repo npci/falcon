@@ -23,7 +23,7 @@ csr_names_o: Your Company Name
 hlf_domain: my-hlf-domain.com
 
 ica_endpoint: ica-orderer.my-hlf-domain.com:30000
-ica_secret: orderer-secret
+ca_secret: orderer-secret
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:

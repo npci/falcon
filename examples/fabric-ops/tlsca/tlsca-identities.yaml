@@ -21,7 +21,7 @@ csr_names_l: Mumbai
 csr_names_o: "Your Company Name"
 
 ica_endpoint: tls-ca.my-hlf-domain.com:30000
-ica_secret: tlsca-secret
+ca_secret: tlsca-secret
 
 hlf_domain: my-hlf-domain.com
 identities:

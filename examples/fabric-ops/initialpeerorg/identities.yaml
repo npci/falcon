@@ -23,7 +23,7 @@ csr_names_o: Your Company Name
 hlf_domain: my-hlf-domain.com
 
 ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
-ica_secret: initialpeerorg-secret
+ca_secret: initialpeerorg-secret
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 hlf_domain: my-hlf-domain.com
