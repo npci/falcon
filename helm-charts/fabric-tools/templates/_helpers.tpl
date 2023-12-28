@@ -54,6 +54,9 @@ Selector labels
 project: {{ .Values.project }}
 app.kubernetes.io/name: {{ include "fabric-tools.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if .Values.additionalLabels }}
+{{ toYaml .Values.additionalLabels }}
+{{- end }}
 {{- end }}
 
 {{/*

@@ -4,7 +4,7 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{- $HlfDomain         := .Values.hlf_domain }}
-{{- $IcaEndPoint       := .Values.ica_endpoint }}
+{{- $IcaEndPoint       := .Values.ca_endpoint }}
 {{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
 {{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/crypto/users" }}
 {{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
