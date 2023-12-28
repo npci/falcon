@@ -8,7 +8,7 @@
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
+additionalLabels: {}
 replicaCount: 1
 restartPolicy: Always
 image:
