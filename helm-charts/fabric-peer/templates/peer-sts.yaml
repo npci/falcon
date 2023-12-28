@@ -18,6 +18,9 @@ metadata:
   name: {{ .name }}-{{ include "fabric-peer.name" $ }}
   labels:
     {{- include "fabric-peer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   serviceName: {{ .name }}-{{ include "fabric-peer.name" $ }}
   replicas: {{ $.Values.replicaCount }}
@@ -25,6 +28,9 @@ spec:
     matchLabels:
       {{- include "fabric-peer.selectorLabels" $ | nindent 6 }}
       app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+      {{- if .additionalLabels -}}
+      {{ toYaml .additionalLabels | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       {{- with $.Values.global.podAnnotations }}
@@ -34,6 +40,9 @@ spec:
       labels:
         {{- include "fabric-peer.selectorLabels" $ | nindent 8 }}
         app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+        {{- if .additionalLabels -}}
+        {{ toYaml .additionalLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:

@@ -16,6 +16,9 @@ metadata:
   labels:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ $.Values.global.replicaCount }}
   strategy:
@@ -24,6 +27,9 @@ spec:
     matchLabels:
       {{- include "fabric-orderer.selectorLabels" $ | nindent 6 }}
       app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+      {{- if .additionalLabels -}}
+      {{ toYaml .additionalLabels | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -34,6 +40,9 @@ spec:
         {{- include "fabric-orderer.selectorLabels" $ | nindent 8 }}
         app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
         type: {{ $.Values.project }}-{{ include "fabric-orderer.fullname" $ }}
+        {{- if .additionalLabels -}}
+        {{ toYaml .additionalLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with $.Values.global.image.imagePullSecrets }}
       imagePullSecrets:

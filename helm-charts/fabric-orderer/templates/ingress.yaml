@@ -19,6 +19,9 @@ metadata:
   labels:
     app: {{ include "fabric-orderer.fullname" $ }}-{{ .name }}
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
   {{- with $Annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

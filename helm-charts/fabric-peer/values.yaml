@@ -17,7 +17,21 @@ fullnameOverride: ""
 #     dindUseExistingPvcPrefix: dind-pvc # If you want to use an existing pvc for Dind. A pvc must exists with name dind-pvc-peer0-org1-0
 #     require_certs_dir_persistence: true # If you want PVC to store the msp/tls certs.
 #     renew_peer_certs: true # If you want to generate new msp/tls certificates on the next reboot.
-
+#     #Add additional env variables unique to this peer
+#     additionalEnvironmentVars:
+#      peer:
+#      - name: PEER_ENV_NAME
+#        value: peer_env_value
+#      dind:
+#      - name: DIND_ENV_NAME
+#        value: dind_env_value
+#      couchDb:
+#      - name: COUCHDB_ENV_NAME
+#        value: couchdb_env_value
+#     # Additional labels unique for this peer  
+#     additionalLabels:
+#       extraPeerLabel1: extraPeerLabelvalue1
+#       extraPeerLabel2: extraPeerLabelvalue2
 fabric_base_dir: /etc/hyperledger/fabric
 retry_seconds: 60
 

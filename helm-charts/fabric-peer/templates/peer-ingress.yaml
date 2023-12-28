@@ -13,6 +13,9 @@ metadata:
   labels:
     app: {{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
   {{- with $.Values.global.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

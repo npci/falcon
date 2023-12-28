@@ -12,6 +12,9 @@ metadata:
   labels:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -31,6 +34,9 @@ metadata:
     orderer: {{ .identity_name }}
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   type: ClusterIP
   ports:

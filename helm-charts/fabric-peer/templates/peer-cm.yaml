@@ -116,6 +116,9 @@ metadata:
   name: {{ .name }}-{{ include "fabric-peer.fullname" $ }}-conf
   labels:
     {{- include "fabric-peer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 data:
   enroll.sh: |
     source /scripts/functions.sh

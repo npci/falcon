@@ -12,6 +12,9 @@ metadata:
   name: data-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
   labels:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   accessModes:
   - {{ .storageAccessMode | default ($.Values.global.storageAccessMode | default "ReadWriteOnce") }}
@@ -28,6 +31,9 @@ metadata:
   name: cert-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
   labels:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   accessModes:
   - {{ .storageAccessMode | default ($.Values.global.storageAccessMode | default "ReadWriteOnce") }}
