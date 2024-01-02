@@ -10,7 +10,7 @@ imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 ica_endpoint: ica-org1.my-hlf-domain.com:30000

@@ -22,5 +22,5 @@ serviceAccount:
 image:
   repository: npcioss/hlf-builder
   pullPolicy: Never
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"

@@ -10,7 +10,7 @@ imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN
@@ -44,10 +44,10 @@ peer_identities:
  - identity_name: peer1-org1
  - identity_name: peer2-org1
 
-# .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
-# Not required for identity registration, but we use the same values file for deploying fabric-tools helm chart. 
-# This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
-# Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
+## .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
+## Not required for identity registration, but we use the same values file for deploying fabric-tools helm chart. 
+## This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
+## Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
 # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-org1/msp
 
 serviceAccount:

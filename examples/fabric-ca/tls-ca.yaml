@@ -12,7 +12,7 @@ replicaCount: 1
 image:
   repository: hyperledger/fabric-ca
   pullPolicy: IfNotPresent
-  ## Overrides the image tag whose default is the chart appVersion.
+  ### Overrides the image tag whose default is the chart appVersion.
   tag: "1.5.0"
 
 ## tls_domain : This will be used to create an Ingress, and CSR for the CA server.

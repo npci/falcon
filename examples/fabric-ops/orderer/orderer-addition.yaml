@@ -13,7 +13,7 @@ imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN
@@ -39,7 +39,7 @@ admin_identity:
     require_msp_enrollment: true
     require_tls_enrollment: false
 
-# additional_orderers are the list of new orderers you want to add. Only specify one item at a time.
+## additional_orderers are the list of new orderers you want to add. Only specify one item at a time.
 additional_orderers:
   - identity_name: orderer3-orderer
     identity_secret: orderer3ordererSamplePassword

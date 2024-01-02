@@ -10,7 +10,7 @@ imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
@@ -45,9 +45,9 @@ peer_identities:
  - identity_name: peer1-initialpeerorg
  - identity_name: peer2-initialpeerorg
 
-# .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
-# This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
-# Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
+## .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
+## This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
+## Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
 # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-initialpeerorg/msp
 
 serviceAccount:

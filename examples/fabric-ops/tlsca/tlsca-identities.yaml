@@ -12,7 +12,7 @@ fabric_actions:
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN

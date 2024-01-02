@@ -12,11 +12,11 @@ fabric_actions:
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 imagePullSecrets: []
 
-# These organizations are the list of initial organizations required to generate the genesis.block file. 
+## These organizations are the list of initial organizations required to generate the genesis.block file. 
 
 organizations:
   - org_type: orderer

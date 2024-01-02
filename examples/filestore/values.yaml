@@ -10,7 +10,7 @@ replicaCount: 1
 image:
   repository: nginx
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 imagePullSecrets: []
@@ -44,17 +44,6 @@ global:
 
 # If you want to override the global.hlf_domain FQDN and use your own FQDN, then use this .Values.hostOverride
 # hostOverride: "custom.filestore.com" 
-
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations: {}
-  hosts:
-    - paths:
-        - path: /
-          pathType: Prefix
-  # tls:
-  #  secretName: my-hlf-domain-ssl-certs
 
 resources: {}
   # limits:

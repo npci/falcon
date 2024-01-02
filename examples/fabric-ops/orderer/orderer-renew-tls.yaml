@@ -13,7 +13,7 @@ imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN
@@ -30,7 +30,7 @@ seconds_to_wait_after_channel_update: 15
 hlf_domain: my-hlf-domain.com
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
-# The identities mentioned below are used to fetch the channel blocks. Be sure to specify the identities with necessary permissions. 
+## The identities mentioned below are used to fetch the channel blocks. Be sure to specify the identities with necessary permissions. 
 admin_identity:
   - identity_name: admin
     identity_secret: ordererAdminpassword
@@ -40,7 +40,7 @@ admin_identity:
     require_msp_enrollment: true
     require_tls_enrollment: false
 
-# orderers_to_update_tls are the list of orderers you want to renew the certs.
+## orderers_to_update_tls are the list of orderers you want to renew the certs.
 orderers_to_renew_tls_cert:
   - identity_name: orderer1-orderer
     identity_secret: orderer1ordererSamplePassword
@@ -76,7 +76,6 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 resources: {}
   # limits:
   #   cpu: 100m
@@ -84,7 +83,6 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
 nodeSelector: {}
 tolerations: []
 affinity: {}

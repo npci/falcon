@@ -10,7 +10,7 @@ imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN
@@ -28,8 +28,8 @@ hlf_channel: "mychannel"
 fabric_actions: 
  update_anchor_peer: true
 
-# Only admin and one core peer entries are required for updating the anchor peer. 
-# You don't need to pass all the existing peer identities here.
+## Only admin and one core peer entries are required for updating the anchor peer. 
+## You don't need to pass all the existing peer identities here.
 
 admin_identity:
   - identity_name: admin
