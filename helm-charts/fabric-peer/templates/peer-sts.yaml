@@ -203,11 +203,11 @@ spec:
             {{- tpl (toYaml .additionalEnvironmentVars.peer) $ | nindent 12 }}
             {{- end }}
           startupProbe:
-             {{- toYaml (.peerStartupProbe | default $.Values.global.peerStartupProbe) | nindent 12 }}
+             {{- toYaml (.peerStartupProbe | default $.Values.peerStartupProbe) | nindent 12 }}
           livenessProbe:
-             {{- toYaml (.peerLivenessProbe | default $.Values.global.peerLivenessProbe) | nindent 12 }}
+             {{- toYaml (.peerLivenessProbe | default $.Values.peerLivenessProbe) | nindent 12 }}
           readinessProbe:
-             {{- toYaml (.peerReadinessProbe | default $.Values.global.peerReadinessProbe) | nindent 12 }}
+             {{- toYaml (.peerReadinessProbe | default $.Values.peerReadinessProbe) | nindent 12 }}
           resources:
             {{- toYaml (.peerResources | default $.Values.global.peerResources) | nindent 12 }}
           volumeMounts:
@@ -236,17 +236,38 @@ spec:
           emptyDir:
            sizeLimit: {{ $.Values.global.peerCertDiskSize }}
         {{- end }}
-      {{- with .nodeSelector }}
+      {{- if .nodeSelector }}
+       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+       {{- end }}
+      {{- else if not (.disableGlobalNodeSelector) }}
+       {{- with $.Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}
       {{- end }}
-      {{- with .affinity }}
+      {{- if .affinity }}
+       {{- with .affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+       {{- end }}
+      {{- else if not (.disableGlobalAffinity) }}
+       {{- with $.Values.global.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}
       {{- end }}
-      {{- with .tolerations }}
+      {{- if .tolerations }}
+       {{- with .tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+       {{- end }}
+      {{- else if not (.disableGlobalTolerations) }}
+       {{- with $.Values.global.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}
       {{- end }}
   volumeClaimTemplates:
   {{- if .useCouchDB | default $.Values.global.useCouchDB }}

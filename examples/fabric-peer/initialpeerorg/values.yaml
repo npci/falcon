@@ -102,21 +102,8 @@ global:
   couchPvcAccessMode: ReadWriteOnce
   couchDbUser: "couchDbSampleUser"
   couchDbUserPass: couchDbSampleUserPassword
-  couchResources: {}
-  # couchStartupProbe: {}
-  couchLivenessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 5984
-  couchReadinessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 5984
   couchSecurityContext: {}
+  couchResources: {}
 
   peerImageRegistry: docker.io
   peerImageRepo: hyperledger/fabric-peer
@@ -141,23 +128,6 @@ global:
   core_ledger_state_couchdbconfig_couchdbaddress: "localhost:5984"
   peerSecurityContext: {}
   peerResources: {}
-  # peerStartupProbe: {}
-  peerLivenessProbe:
-    failureThreshold: 3
-    httpGet:
-      path: /healthz
-      port: 9443
-      scheme: HTTP
-    periodSeconds: 10
-    successThreshold: 1
-  peerReadinessProbe:
-    failureThreshold: 3
-    httpGet:
-      path: /healthz
-      port: 9443
-      scheme: HTTP
-    periodSeconds: 10
-    successThreshold: 1
 
   dindImageRegistry: docker.io
   dindImageRepo: npcioss/dind
@@ -169,19 +139,6 @@ global:
   dindSecurityContext:
     privileged: true
   dindResources: {}
-  # dindStartupProbe: {}
-  dindLivenessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 2375
-  dindReadinessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 2375
 
 additionalEnvironmentVars:
   # couchDb:

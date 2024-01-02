@@ -62,14 +62,20 @@ securityContext: {}
   # runAsUser: 1000
 
 resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
-autoscaling:
-nodeSelector: {}
-tolerations: []
-affinity: {}
+startupProbe:
+  tcpSocket:
+    port: 7050
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+readinessProbe:
+  tcpSocket:
+    port: 7050
+  periodSeconds: 10
+  failureThreshold: 3
+livenessProbe:
+  tcpSocket:
+    port: 7050
+  periodSeconds: 10
+  failureThreshold: 3

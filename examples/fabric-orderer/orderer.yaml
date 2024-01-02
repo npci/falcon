@@ -62,7 +62,6 @@ global:
     serviceName: operations
     serviceType: ClusterIP
     servicePort: 8443
-
   metrics:
     ## Select metrics provider. Possible values are "prometheus", "statsd" or "disabled"
     provider: prometheus
@@ -95,7 +94,6 @@ global:
       network: udp
       address: 127.0.0.1:8125
       writeInterval: 10s
-
   env:
     - name: FABRIC_LOGGING_SPEC
       value: INFO
@@ -119,20 +117,14 @@ global:
       value: "{{ .Values.orderer_cert_base_dir }}/tls/server.key"
     - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
       value: "[{{ .Values.orderer_cert_base_dir }}/tls/ca.crt]"
+  resources: {}
+  nodeSelector: {}
+  tolerations: {}
+  affinity: {}
 
-podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
 startupProbe: {}
 livenessProbe: {}
 readinessProbe: {}
-resources: 
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-nodeSelector: {}
-tolerations: []
-affinity: {}
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}

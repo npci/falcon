@@ -105,6 +105,14 @@ spec:
             {{- if .additionalEnvironmentVariables }}
             {{- tpl (toYaml .additionalEnvironmentVariables) $ | nindent 12 }}
             {{- end }}
+          livenessProbe:
+             {{- toYaml (.livenessProbe | default $.Values.livenessProbe) | nindent 12 }}
+          startupProbe:
+             {{- toYaml (.startupProbe | default $.Values.startupProbe) | nindent 12 }}
+          readinessProbe:
+             {{- toYaml (.readinessProbe | default $.Values.readinessProbe) | nindent 12 }}
+          resources:
+             {{- toYaml (.resources | default $.Values.global.resources) | nindent 12 }}
           ports:
             - name: http
               containerPort: {{ $.Values.global.containerPort }}
@@ -141,17 +149,37 @@ spec:
           configMap:
             name: {{ include "fabric-orderer.fullname" $ }}-common
             defaultMode: 0777
-      {{- with $.Values.nodeSelector }}
+      {{- if .nodeSelector }}
+       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+       {{- end }}
+      {{- else if not (.disableGlobalNodeSelector) }}
+       {{- with $.Values.global.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}
       {{- end }}
-      {{- with $.Values.affinity }}
+      {{- if .affinity }}
+       {{- with .affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+       {{- end }}
+      {{- else if not (.disableGlobalAffinity) }}
+       {{- with $.Values.global.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}
       {{- end }}
-      {{- with $.Values.tolerations }}
+      {{- if .tolerations }}
+       {{- with .tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+       {{- end }}
+      {{- else if not (.disableGlobalTolerations) }}
+       {{- with $.Values.global.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+       {{- end }}
       {{- end }}
-
 {{- end }}
