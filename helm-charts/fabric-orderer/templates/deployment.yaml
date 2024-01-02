@@ -102,8 +102,8 @@ spec:
             {{- else }}
               value: "disabled"
             {{- end }}
-            {{- if .additionalEnvironmentVariables }}
-            {{- tpl (toYaml .additionalEnvironmentVariables) $ | nindent 12 }}
+            {{- if .additionalEnvironmentVars }}
+            {{- tpl (toYaml .additionalEnvironmentVars) $ | nindent 12 }}
             {{- end }}
           livenessProbe:
              {{- toYaml (.livenessProbe | default $.Values.livenessProbe) | nindent 12 }}

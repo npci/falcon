@@ -24,7 +24,7 @@ ica_tls_cert_file: /root/ica-cert.pem
 #       extraOrdererLabel1: extraOrdererLabelvalue1
 #       extraOrdererLabel2: extraOrdererLabelvalue2
 #     # Additional env variables unique to this orderer
-#     additionalEnvironmentVariables:
+#     additionalEnvironmentVars:
 #      - name: ORDERER_ENV_VAR
 #        value: orderer0_env_var
 
