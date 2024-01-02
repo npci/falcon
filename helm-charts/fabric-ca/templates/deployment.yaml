@@ -12,9 +12,7 @@ metadata:
   labels:
     {{- include "fabric-ca.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   strategy:
     type: Recreate
   selector:
