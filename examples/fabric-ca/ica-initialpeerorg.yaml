@@ -12,7 +12,7 @@ replicaCount: 1
 image:
   repository: hyperledger/fabric-ca
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "1.5.0"
 
 init:
@@ -21,9 +21,9 @@ init:
    pullPolicy: IfNotPresent
    tag: "2.4"
 
-# tls_domain : This will be used to create an Ingress, and CSR for the CA server.
-# Eg: my-hlf-domain.com, then the Ingress object will be created as a combination of ".fabric-ca.fullname + .Values.tls_domain"
-# ie, root-ca.my-hlf-domain.com
+## tls_domain : This will be used to create an Ingress, and CSR for the CA server.
+## Eg: my-hlf-domain.com, then the Ingress object will be created as a combination of ".fabric-ca.fullname + .Values.tls_domain"
+## ie, root-ca.my-hlf-domain.com
 tls_domain: my-hlf-domain.com
 ca_server:
   csr_names_country: IN
@@ -34,8 +34,8 @@ ca_server:
   container_port: 7051
   debug: true
   tls_enabled: true
-  # You must create this secret outside of this chart for maximum security. Don't commit CA user/pass into any charts.
-  # kubectl -n orderer create secret generic your-secret --from-literal=user=your-admin-user --from-literal=password=your-admin-password
+  ## You must create this secret outside of this chart for maximum security. Don't commit CA user/pass into any charts.
+  ## kubectl -n orderer create secret generic your-secret --from-literal=user=your-admin-user --from-literal=password=your-admin-password
   admin_secret: initialpeerorg-secret
 
 retry_seconds: 60
@@ -68,51 +68,3 @@ serviceAccount:
   create: true
   annotations: {}
   name: ""
-
-resources:
-  limits:
-    cpu: 100m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
-
-# affinity:
-#  nodeAffinity:
-#   preferredDuringSchedulingIgnoredDuringExecution:
-#   - weight: 50
-#     preference:
-#       matchExpressions:
-#       - key: project
-#         operator: In
-#         values:
-#         - value1
-
-startupProbe:
-  httpGet:
-    path: /cainfo
-    port: http
-    scheme: HTTPS
-  initialDelaySeconds: 10
-livenessProbe:
-  httpGet:
-    path: /cainfo
-    port: http
-    scheme: HTTPS
-readinessProbe:
-  httpGet:
-    path: /cainfo
-    port: http
-    scheme: HTTPS
-
-podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
-nodeSelector: {}
-tolerations: []
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80

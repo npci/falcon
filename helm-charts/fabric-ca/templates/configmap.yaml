@@ -68,7 +68,7 @@ data:
     done
     }
 
-    {{- if .Values.recreate_intermediate_cert }}
+    {{- if .Values.recreate_intermediate_cert | default false }}
     echo "----------------------------------------------------------"
     echo "Intermediate cert re-creation is set to true at Values.recreate_intermediate_cert. This will remove the existing intermediate public key certificate and fetch new cert."
     echo "----------------------------------------------------------"
