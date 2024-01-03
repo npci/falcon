@@ -119,7 +119,7 @@ global:
       value: "[{{ .Values.orderer_cert_base_dir }}/tls/ca.crt]"
   resources: {}
   nodeSelector: {}
-  tolerations: {}
+  tolerations: []
   affinity: {}
 
 startupProbe: {}
