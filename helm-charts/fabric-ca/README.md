@@ -24,7 +24,7 @@ To install the chart with the release name `rootca`:
 $ helm install rootca -n rootca helm-charts/fabric-ca/ -f values.yaml
 ```
 
-This above command deploys the peer nodes based on your peer count at peer array. 
+This above command deploys the Hyperledger Fabric-CA.
 
 > **Tip**: List all releases using `helm list`
 
