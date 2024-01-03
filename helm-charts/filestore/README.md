@@ -33,7 +33,7 @@ This above command deploys the nginx pod with custom configurations.
 To uninstall/delete the release:
 
 ```bash
-$ helm delete rootca -n rootca
+$ helm delete filestore -n filestore
 ```
 
 ## Configuration
