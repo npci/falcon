@@ -74,7 +74,7 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-orderer.my-hlf-domain.com:30000"` |
 | `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
 | `global.block_file` | Default genesis block file name in the filestore | `"genesis.block"` |
-| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory | `true` |
+| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory for all orderers. This can be set per orderer too. | `true` |
 | `global.image.repository` | The Orderer container image repository | `"hyperledger/fabric-orderer"` |
 | `global.image.pullPolicy` | The Orderer container image pullpolicy | `"IfNotPresent"` |
 | `global.image.imagePullSecrets` | The Orderer container registry imagePullSecrets | `[]` |
