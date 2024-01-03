@@ -3,6 +3,38 @@ Fabric-orderer
 
 A Helm chart for deploying Fabric Orderers in Kubernetes.
 
+## Introduction
+
+This chart can deploy and bootstrap the Hyperledger Fabric-Orderer nodes in kubernetes. 
+
+## Prerequisites
+
+- Kubernetes 1.23+
+- Helm 3.10.1+
+- PV provisioner support in the underlying infrastructure
+- Ingress
+
+## Installing the Chart
+
+Download the `falcon fabric-orderer` charts repo locally:
+
+To install the chart with the release name `orderer`:
+
+```bash
+$ helm install orderer -n orderer helm-charts/fabric-orderer/ -f examples/fabric-orderer/orderer.yaml
+```
+
+This above command deploys the orderer nodes based on your oderer count at orderer array. 
+
+> **Tip**: List all releases using `helm list`
+
+## Uninstalling the Chart
+
+To uninstall/delete the release:
+
+```bash
+$ helm delete orderer -n orderer
+```
 
 ## Configuration
 
