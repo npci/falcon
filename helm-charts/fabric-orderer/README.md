@@ -8,8 +8,8 @@ A Helm chart for deploying Fabric Orderers in Kubernetes.
 
 The following table lists the configurable parameters of the Fabric-orderer chart and their default values.
 
-| Parameter                | Description             | Default        |
-| ------------------------ | ----------------------- | -------------- |
+| Name                      | Description                                     | Value |
+| ------------------------- | ----------------------------------------------- | ----- |
 | `nameOverride` | This has to match with Orderer Org name. | `"orderer"` |
 | `fullnameOverride` |  | `""` |
 | `project` | This will appear in every resource label. This is required. | `"yourproject"` |
