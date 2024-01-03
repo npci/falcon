@@ -3,6 +3,38 @@ Fabric-ca
 
 A Helm chart for deploying Fabric CA Server in Kubernetes.
 
+## Introduction
+
+This chart can deploy Hyperledger Fabric-CA node in kubernetes. 
+
+## Prerequisites
+
+- Kubernetes 1.23+
+- Helm 3.10.1+
+- PV provisioner support in the underlying infrastructure
+- Ingress
+
+## Installing the Chart
+
+Download the `falcon fabric-ca` charts repo locally:
+
+To install the chart with the release name `rootca`:
+
+```bash
+$ helm install rootca -n rootca helm-charts/fabric-ca/ -f values.yaml
+```
+
+This above command deploys the peer nodes based on your peer count at peer array. 
+
+> **Tip**: List all releases using `helm list`
+
+## Uninstalling the Chart
+
+To uninstall/delete the release:
+
+```bash
+$ helm delete rootca -n rootca
+```
 
 ## Configuration
 
