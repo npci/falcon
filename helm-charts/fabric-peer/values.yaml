@@ -35,7 +35,12 @@ fullnameOverride: ""
 fabric_base_dir: /etc/hyperledger/fabric
 retry_seconds: 60
 
-couchStartupProbe: {}
+couchStartupProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  tcpSocket:
+    port: 5984
+  initialDelaySeconds: 20
 couchLivenessProbe:
   failureThreshold: 3
   periodSeconds: 10
@@ -49,7 +54,12 @@ couchReadinessProbe:
   tcpSocket:
     port: 5984
 
-peerStartupProbe: {}
+peerStartupProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  tcpSocket:
+    port: 7051
+  initialDelaySeconds: 20
 peerLivenessProbe:
   failureThreshold: 3
   httpGet:
@@ -67,7 +77,12 @@ peerReadinessProbe:
   periodSeconds: 10
   successThreshold: 1
 
-dindStartupProbe: {}
+dindStartupProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  tcpSocket:
+    port: 2375
+  initialDelaySeconds: 20 
 dindLivenessProbe:
   failureThreshold: 3
   periodSeconds: 10

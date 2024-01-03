@@ -86,11 +86,23 @@ spec:
           securityContext:
             {{- toYaml $.Values.global.couchSecurityContext | nindent 12 }}
           startupProbe:
-             {{- toYaml (.couchStartupProbe | default $.Values.global.couchStartupProbe) | nindent 12 }}
+          {{- if .couchStartupProbe }}
+             {{- toYaml .couchStartupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultCouchStartupProbe | default $.Values.global.disableDefaultCouchStartupProbe) }}
+             {{- toYaml $.Values.couchStartupProbe | nindent 12 }}
+          {{- end }}
           livenessProbe:
-             {{- toYaml (.couchLivenessProbe | default $.Values.global.couchLivenessProbe) | nindent 12 }}
+          {{- if .couchLivenessProbe }}
+             {{- toYaml .couchLivenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultCouchLivenessProbe | default $.Values.global.disableDefaultCouchLivenessProbe) }}
+             {{- toYaml $.Values.couchLivenessProbe | nindent 12 }}
+          {{- end }} 
           readinessProbe:
-             {{- toYaml (.couchReadinessProbe | default $.Values.global.couchReadinessProbe) | nindent 12 }}
+          {{- if .couchReadinessProbe }}
+             {{- toYaml .couchReadinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultCouchReadinessProbe | default $.Values.global.disableDefaultCouchReadinessProbe) }}
+             {{- toYaml $.Values.couchReadinessProbe | nindent 12 }}
+          {{- end }}
           resources:
              {{- toYaml (.couchResources | default $.Values.global.couchResources) | nindent 12 }}
           ports:
@@ -112,11 +124,23 @@ spec:
             {{- tpl (toYaml .additionalEnvironmentVars.dind) $ | nindent 12 }}
             {{- end }}
           startupProbe:
-             {{- toYaml (.dindStartupProbe | default $.Values.global.dindStartupProbe) | nindent 12 }}
+          {{- if .dindStartupProbe }}
+             {{- toYaml .dindStartupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultDindStartupProbe | default $.Values.global.disableDefaultDindStartupProbe) }}
+             {{- toYaml $.Values.dindStartupProbe | nindent 12 }}
+          {{- end }}
           livenessProbe:
-             {{- toYaml (.dindLivenessProbe | default $.Values.global.dindLivenessProbe) | nindent 12 }}
+          {{- if .dindLivenessProbe }}
+             {{- toYaml .dindLivenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultDindLivenessProbe | default $.Values.global.disableDefaultDindLivenessProbe) }}
+             {{- toYaml $.Values.dindLivenessProbe | nindent 12 }}
+          {{- end }} 
           readinessProbe:
-             {{- toYaml (.dindReadinessProbe | default $.Values.global.dindReadinessProbe) | nindent 12 }}
+          {{- if .dindReadinessProbe }}
+             {{- toYaml .dindReadinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultDindReadinessProbe | default $.Values.global.disableDefaultDindReadinessProbe) }}
+             {{- toYaml $.Values.dindReadinessProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml (.dindResources | default $.Values.global.dindResources) | nindent 12 }}
           lifecycle:
@@ -140,7 +164,7 @@ spec:
           ports:
             - containerPort: {{ .peerContainerPort | default $.Values.global.peerContainerPort }}
           {{- $peerServicePort := .peerServicePort | default $.Values.global.peerServicePort }}
-          {{- $IngressPort := $.Values.global.ingressPort }}
+          {{- $IngressPort     := $.Values.global.ingressPort }}
           env:
             - name: CORE_PEER_ADDRESS
               value: {{ .identity_name }}:{{ $peerServicePort }}
@@ -203,11 +227,23 @@ spec:
             {{- tpl (toYaml .additionalEnvironmentVars.peer) $ | nindent 12 }}
             {{- end }}
           startupProbe:
-             {{- toYaml (.peerStartupProbe | default $.Values.peerStartupProbe) | nindent 12 }}
+          {{- if .peerStartupProbe }}
+             {{- toYaml .peerStartupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultPeerStartupProbe | default $.Values.global.disableDefaultPeerStartupProbe) }}
+             {{- toYaml $.Values.peerStartupProbe | nindent 12 }}
+          {{- end }}
           livenessProbe:
-             {{- toYaml (.peerLivenessProbe | default $.Values.peerLivenessProbe) | nindent 12 }}
+          {{- if .peerLivenessProbe }}
+             {{- toYaml .peerLivenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultPeerLivenessProbe | default $.Values.global.disableDefaultPeerLivenessProbe) }}
+             {{- toYaml $.Values.peerLivenessProbe | nindent 12 }}
+          {{- end }} 
           readinessProbe:
-             {{- toYaml (.peerReadinessProbe | default $.Values.peerReadinessProbe) | nindent 12 }}
+          {{- if .peerReadinessProbe }}
+             {{- toYaml .peerReadinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultPeerReadinessProbe | default $.Values.global.disableDefaultPeerReadinessProbe) }}
+             {{- toYaml $.Values.peerReadinessProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml (.peerResources | default $.Values.global.peerResources) | nindent 12 }}
           volumeMounts:
@@ -236,38 +272,23 @@ spec:
           emptyDir:
            sizeLimit: {{ $.Values.global.peerCertDiskSize }}
         {{- end }}
-      {{- if .nodeSelector }}
-       {{- with .nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+      {{- if .nodeSelector }} 
+        {{- toYaml .nodeSelector | nindent 8 }}
       {{- else if not (.disableGlobalNodeSelector) }}
-       {{- with $.Values.global.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+        {{- toYaml $.Values.global.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .affinity }}
-       {{- with .affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+      {{- if .affinity }} 
+        {{- toYaml .affinity | nindent 8 }}
       {{- else if not (.disableGlobalAffinity) }}
-       {{- with $.Values.global.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+        {{- toYaml $.Values.global.affinity | nindent 8 }}
       {{- end }}
-      {{- if .tolerations }}
-       {{- with .tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+      {{- if .tolerations }} 
+        {{- toYaml .tolerations | nindent 8 }}
       {{- else if not (.disableGlobalTolerations) }}
-       {{- with $.Values.global.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+        {{- toYaml $.Values.global.tolerations | nindent 8 }}
       {{- end }}
   volumeClaimTemplates:
   {{- if .useCouchDB | default $.Values.global.useCouchDB }}

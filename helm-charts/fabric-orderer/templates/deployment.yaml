@@ -106,11 +106,23 @@ spec:
             {{- tpl (toYaml .additionalEnvironmentVars) $ | nindent 12 }}
             {{- end }}
           livenessProbe:
-             {{- toYaml (.livenessProbe | default $.Values.livenessProbe) | nindent 12 }}
+          {{- if .livenessProbe }}
+             {{- toYaml .livenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultLivenessProbe | default $.Values.global.disableDefaultLivenessProbe) }}
+             {{- toYaml $.Values.livenessProbe | nindent 12 }}
+          {{- end }}          
           startupProbe:
-             {{- toYaml (.startupProbe | default $.Values.startupProbe) | nindent 12 }}
+          {{- if .startupProbe }}
+             {{- toYaml .startupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultStartupProbe | default $.Values.global.disableDefaultStartupProbe) }}
+             {{- toYaml $.Values.startupProbe | nindent 12 }}
+          {{- end }}
           readinessProbe:
-             {{- toYaml (.readinessProbe | default $.Values.readinessProbe) | nindent 12 }}
+          {{- if .readinessProbe }}
+             {{- toYaml .readinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultReadinessProbe | default $.Values.global.disableDefaultReadinessProbe) }}
+             {{- toYaml $.Values.readinessProbe | nindent 12 }}
+          {{- end }}
           resources:
              {{- toYaml (.resources | default $.Values.global.resources) | nindent 12 }}
           ports:
@@ -149,37 +161,22 @@ spec:
           configMap:
             name: {{ include "fabric-orderer.fullname" $ }}-common
             defaultMode: 0777
-      {{- if .nodeSelector }}
-       {{- with .nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+      {{- if .nodeSelector }} 
+        {{- toYaml .nodeSelector | nindent 8 }}
       {{- else if not (.disableGlobalNodeSelector) }}
-       {{- with $.Values.global.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+        {{- toYaml $.Values.global.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .affinity }}
-       {{- with .affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+      {{- if .affinity }} 
+        {{- toYaml .affinity | nindent 8 }}
       {{- else if not (.disableGlobalAffinity) }}
-       {{- with $.Values.global.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+        {{- toYaml $.Values.global.affinity | nindent 8 }}
       {{- end }}
-      {{- if .tolerations }}
-       {{- with .tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+      {{- if .tolerations }} 
+        {{- toYaml .tolerations | nindent 8 }}
       {{- else if not (.disableGlobalTolerations) }}
-       {{- with $.Values.global.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-       {{- end }}
+        {{- toYaml $.Values.global.tolerations | nindent 8 }}
       {{- end }}
 {{- end }}
