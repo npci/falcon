@@ -34,6 +34,7 @@ To uninstall/delete the release:
 
 ```bash
 $ helm delete peer -n peerorg
+```
 
 ## Configuration
 
