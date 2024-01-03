@@ -12,31 +12,32 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | ------------------------ | ----------------------- | -------------- |
 | `nameOverride` | This has to match with Orderer Org name. | `"orderer"` |
 | `fullnameOverride` |  | `""` |
-| `project` | Your projectname, this will be added to every resource label | `"yourproject"` |
+| `project` | This will appear in every resource label. This is required. | `"yourproject"` |
 | `orderers` | The list of orderer identities to deploy | `[]` |
 | `csr_names_cn` | Country name abbreviation in TWO letter | `"IN"` |
 | `csr_names_st` | State | `"Maharashtra"` |
 | `csr_names_l` | Locality | `"Mumbai"` |
 | `csr_names_o` | Organization Name | `"Your Company Name"` |
-| `filestore_endpoint` | Your filestore endpoint with http/s and port format. | `"http://filestore.my-hlf-domain.com:30001"` |
-| `filestore_ssl` | Make it `true` if `filestore_endpoint` is over https. | `false` |
-| `ica_tls_cert_file` | Path for the init container to pull public key cert of ica_endpoint | `"/root/ica-cert.pem"` |
-| `retry_seconds` | Seconds to retry for any init container HLF activitity failures | `60` |
-| `hlf_domain` | The FQDN for the orderers. It should match with the channel config | `"my-hlf-domain.com"` |
+| `filestore_endpoint` | Filestore endpoint with `http/s://fqdn:port ` format. | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https. | `false` |
+| `ica_tls_cert_file` | Path for the init container to pull public key cert of `global.ica_endpoint` | `"/root/ica-cert.pem"` |
+| `retry_seconds` | Seconds to retry after any init container HLF activitity failures; Eg; enrollement | `60` |
+| `hlf_domain` | The FQDN for the orderers. It should match with the channel config entries | `"my-hlf-domain.com"` |
 | `init.image.repository` | The init container image repository | `"npcioss/hlf-builder"` |
 | `init.image.tag` | The init container image tag | `2.4` |
 | `global.containerPort` | Default Orderer container port | `7050` |
 | `global.servicePort` | Default Orderer k8s service port | `7050` |
 | `global.replicaCount` | Orderer replica count. Only 1 per orderer is supported as of now | `1` |
-| `global.ica_endpoint` | MSP server endpoint with port (without http/s) | `"ica-orderer.my-hlf-domain.com:30000"` |
+| `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-orderer.my-hlf-domain.com:30000"` |
 | `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
 | `global.block_file` | Default genesis block file name in the filestore | `"genesis.block"` |
 | `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory | `true` |
 | `global.image.repository` | The Orderer container image repository | `"hyperledger/fabric-orderer"` |
 | `global.image.pullPolicy` | The Orderer container image pullpolicy | `"IfNotPresent"` |
-| `global.image.imagePullSecrets` | The Orderer container image imagePullSecrets | `[]` |
+| `global.image.imagePullSecrets` | The Orderer container registry imagePullSecrets | `[]` |
 | `global.image.tag` | The Orderer container image tag | `"2.4"` |
 | `global.serviceAccount.annotations` | Service account annontations | `[]` |
+| `global.additionalLabels` | To add additional labels. Can be global or per Orderer | `{}` |
 | `global.ingressEnabled` | Determine whether ingress should be created or not. This can be set globally or per Orderer | `true` |
 | `global.ingress.className` | Ingress class name | `"nginx"` |
 | `global.ingress.annotations` | Ingress annotations to bypass ssl to pod  | `nginx.ingress.kubernetes.io/ssl-passthrough: "true"` |
