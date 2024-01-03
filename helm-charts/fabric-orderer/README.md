@@ -45,7 +45,6 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `nameOverride` | This has to match with Orderer Org name. | `"orderer"` |
 | `fullnameOverride` |  | `""` |
 | `project` | This will appear in every resource label. This is required. | `"yourproject"` |
-| `orderers` | The list of orderer identities to deploy | `[]` |
 | `csr_names_cn` | Country name abbreviation in TWO letter | `"IN"` |
 | `csr_names_st` | State | `"Maharashtra"` |
 | `csr_names_l` | Locality | `"Mumbai"` |
@@ -53,10 +52,22 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `filestore_endpoint` | Filestore endpoint with `http/s://fqdn:port ` format. | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https. | `false` |
 | `ica_tls_cert_file` | Path for the init container to pull public key cert of `global.ica_endpoint` | `"/root/ica-cert.pem"` |
+| `orderer_cert_base_dir` | Path to store the orderer enrollement certs | `"/var/hyperledger/orderer"` |
+| `orderer_data_dir` | Path to store the orderer data | `"orderer_data_dir"` |
 | `retry_seconds` | Seconds to retry after any init container HLF activitity failures; Eg; enrollement | `60` |
 | `hlf_domain` | The FQDN for the orderers. It should match with the channel config entries | `"my-hlf-domain.com"` |
 | `init.image.repository` | The init container image repository | `"npcioss/hlf-builder"` |
 | `init.image.tag` | The init container image tag | `2.4` |
+| `orderers` | The list of orderer identities to deploy | `[]` |
+| `orderers.[].name` | The name of the orderer | `` |
+| `orderers.[].identity_name` | The identity of orderer | `` |
+| `orderers.[].identity_secret` | The identity password of orderer | `` |
+| `orderers.[].identity_secret` | The identity password of orderer | `` |
+| `orderers.[].tls_cert_archive` | The tls cert archive file name of orderer in the filestore | `` |
+| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file` | `` |
+| `orderers.[].renew_orderer_certs` | If `true`, on startup the init container will remove the existing enrolled certs and do fresh enrollment | `` |
+| `orderers.[].use_existing_pvc_data` | If want to mount an existing orderer pvc instead of creating new pvc. | `` |
+| `orderers.[].additionalEnvironmentVars` | If want to add additional env variables per orderer | `` |
 | `global.containerPort` | Default Orderer container port | `7050` |
 | `global.servicePort` | Default Orderer k8s service port | `7050` |
 | `global.replicaCount` | Orderer replica count. Only 1 per orderer is supported as of now | `1` |
