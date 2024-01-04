@@ -6,7 +6,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 ### Supports the following operations
 
 - [x] [Identity registration](#How-to-register-new-identites-) [Supported types: ica, admin, client, peer, orderer]
-- [x] [Genesis block creation](#how-to-create-genesis-block--channel-transcation-tx-)
+- [x] [Genesis block creation](#how-to-create-genesis-block--channel-transaction-tx-)
 - [x] [Channel creation](#how-to-create-new-channel-in-hyperpedger-fabric-)
 - [x] [Anchorpeer list update on channel](#how-to-update-anchorpeer-on-channel-)
 - [x] [Adding Orgs to channel](#how-to-add-a-new-org-to-channel-)
@@ -63,7 +63,7 @@ identities:
     identity_type: peer
 ```
 
-## How to create Genesis block & channel transcation tx ?
+## How to create Genesis block & channel transaction tx ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
