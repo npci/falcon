@@ -321,6 +321,7 @@ Example; adding a new orderer3 to the running network.
 2. Register the new orderer identity in respective TLSCA. Make sure to use the same identity name and identity secret in both places.
 3. Prepare a fabric-ops values files with the new orderer information and orderer admin identity as described above.
 4. Run helm install fabric-ops with the this values file and watch the job output and make sure that there is no failures. If all the tasks are success, then you will see the following log at the end;
+
 ============ [SUCCESS] Successfully uploaded artifacts of orderer3-orderer to filestore. ============
 File hash = 4a9cb5f5fe2b935944813aaa4509d1b3d4f7db562f31b97899a7d8e0fd8e0a43 `orderer3-orderer-orderer-sys-channel_2024_01_04_150835.block`
 File hash = 11682afaff1a8dd17970b048c799afedc343259aad16176aba1ac5d322d6a1f4 `orderer3-orderer-tls-certs_2024_01_04_150835.tar.gz`
@@ -329,9 +330,6 @@ File hash = 11682afaff1a8dd17970b048c799afedc343259aad16176aba1ac5d322d6a1f4 `or
 6. Add the new orderer3 in your fabric-orderer deployment values file by specifing the genesis block file and tls archive file name explicitily since these are not the default one. 
 
 Your fabric-orderer array should look like this for the new orderer.
-.
-.
-.
   - name: orderer3
     identity_name: orderer3-orderer
     identity_secret: orderer3ordererSamplePassword
@@ -375,4 +373,28 @@ orderers_to_renew_tls_cert:
       - mychannel
     upload_latest_channel_block_to_filestore:
       - orderer-sys-channel
+```
+
+##### Steps to do;
+```bash
+Example; renewing tls certificate of orderer1 in the running network.
+
+1. Prepare a values file with the above information. The `endpoint` in the `orderers_to_renew_tls_cert` array should match to the corresponding orderer's identity present in the network. This is very important, because the entire process is based on this endpoint. 
+2. Run helm install fabric-ops with the this values file and watch the job output and make sure that there is no failures. If all the tasks are success, then you will see some similar logs at the end;
+
+============ [SUCCESS] Successfully uploaded artifacts of orderer1-orderer to filestore. ============
+File hash = c9d71e5870a5e06675349ff7cefdba7810c0948e0df1410e20b8f6795e38a6d5 orderer1-orderer-orderer-sys-channel_2024_01_04_151953.block
+File hash = d2d550fd31ae156f7a294be37e2be6f710117ce623fb6ab1bdb4da81257c3d82 orderer1-orderer-renewed-tls-certs_2024_01_04_151953.tar.gz
+
+3. There is a slight difference with orderer addition and orderer tls cert renewal/updation process. Now you need to update the `fabric-orderer` values files on the existing orderer for which you have updated the tls cert by explicitily specifying this new block, tls archive and make `renew_orderer_certs` true. So that `helm upgrade`, the init orderer init container will cleanup the existing cert directory and do a fresh enrollment with msp and download the latest tls archive and genesis block file from filestore. So the existing orderer1 entry should be modified as follows;
+
+orderers:
+  - name: orderer1
+    identity_name: orderer1-orderer
+    identity_secret: orderer1ordererSamplePassword
+    tls_cert_archive: orderer1-orderer-renewed-tls-certs_2024_01_04_151953.tar.gz
+    block_file: orderer1-orderer-orderer-sys-channel_2024_01_04_151953.block
+    renew_orderer_certs: true
+
+4. Now, run helm upgrade on fabric-orderer and watch the logs of all orderers. Once verified everything is working as expected, you need to turn off the flag `renew_orderer_certs` to `false` and update fabric-orderer once more.  So that on next restart, the pod won't try to do fresh enrollment.
 ```
