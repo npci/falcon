@@ -263,16 +263,16 @@ peer_identities:
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `fabric_actions.add_orderer` | `true` to specify the job is to add new orderer  | `true` |
+| `fabric_actions.add_orderer` | `true` to specify the job is to add new orderer | `true` |
 | `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
 | `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
 | `seconds_to_wait_after_channel_update` | Seconds to pause the script/job activity after one channel update | `15` |
-| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port  | `"tls-ca.my-hlf-domain.com:30000"` |
-| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity-for-order-addition) | `[]` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity-for-order-operation) | `[]` |
 | `additional_orderers` | List of additional oderers. Execute one at a time. [Refer](#New-orderer-for-order-addition) | `[]` |
 
-#### Admin identity for order addition;
+#### Admin identity for order operation;
 
 ```bash
 admin_identity:
@@ -302,6 +302,41 @@ additional_orderers:
     update_channels:
       - orderer-sys-channel # Orderer system channel
       - mychannel #Application channel
+    upload_latest_channel_block_to_filestore:
+      - orderer-sys-channel
+```
+
+## Order TLS cert renewal
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.renew_orderer_tls` | `true` to specify the job is to renew orderer tls cert | `true` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port. Make sure that this orderer should not be the one you're trying to update. | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
+| `seconds_to_wait_after_channel_update` | Seconds to pause the script/job activity after one channel update | `15` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity-for-order-operation) | `[]` |
+| `orderers_to_renew_tls_cert` | List of oderers to renew the tls cert. Execute one at a time. [Refer](#Orderer-renew-order-format) | `[]` |
+
+#### Orderer renew order format;
+
+```bash
+## orderers_to_update_tls are the list of orderers you want to renew the certs.
+orderers_to_renew_tls_cert:
+  - identity_name: orderer1-orderer
+    identity_secret: orderer1ordererSamplePassword
+    upload_sys_channel_block: true
+    endpoint: orderer1-orderer.my-hlf-domain-dc-1.com # This must match to the existing endpoint of the orderer in the channel. 
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-cert.pem
+    require_msp_enrollment: true
+    require_tls_enrollment: true
+    #hlf_domain: my-hlf-domain-dc-1.com # This hlf_domain must match with the existing orderer end-point in the channel. If the default .Values.hlf_domain is different, then it must be specified here. 
+    update_channels:
+      - orderer-sys-channel
+      - mychannel
     upload_latest_channel_block_to_filestore:
       - orderer-sys-channel
 ```
