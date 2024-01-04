@@ -39,6 +39,38 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 | `peer_internal_service_port` | Port number of peer svc | `"30002"` |
 
 
+## How to use the common enrollment function for any identity enrollments in fabric-ops ?
+
+The enrollment function will now accept 10 parameters, this includes the following in the below orderer.  IMP; this orderer is very important.
+      1) FABRIC_IDENTITY
+      2) FABRIC_IDENTITY_SECRET
+      3) FABRIC_IDENTITY_MSP_DIR (The enrollment basedir for the identity)
+      4) FABRIC_ICA_URL
+      5) FABRIC_TLSCA_URL
+      6) FABRIC_ICA_TLS_CERTFILES
+      7) FABRIC_TLSCA_TLS_CERTFILES
+      8) FABRIC_HLF_DOMAIN
+      9) REQUIRE_MSP_ENROLLMENT
+      10) REQUIRE_TLS_ENROLLMENT
+      
+```bash
+Example; To enroll an identity `admin` which does not require a tlsca enrollment. 
+    enroll \
+        admin \
+        adminPassword \
+        /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users \
+        ica-url.my-hlf-domain.com:30000 \
+        "none" \
+        /tmp/ca-cert.pem \
+        "none" \
+        my-hlf-domain.com \
+        true \
+        false
+```
+
+The above function invocation will enroll the user `admin` with password `adminPassword` at its msp ca endpoint `ica-url.my-hlf-domain.com:30000` by fetching the public key of `ica-url.my-hlf-domain.com:30000` to the path `/tmp/ca-cert.pem`. If the identity password is correct, then it will create a directory `/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<identity-name>/msp` and place the enrolled certificates there. This function won't attempt a tlsca enrollment since we set `REQUIRE_TLS_ENROLLMENT` is `false` as its 10th parameter. If tlsca enrollment is enabled and a valid tlsca endpoint is given, then the above enrollment will happen at tlsca endpoint and the certs will be stored in `/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<identity-name>/tls` directory. 
+
+
 
 ## How to register new identities ?
 
