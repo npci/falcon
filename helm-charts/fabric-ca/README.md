@@ -13,15 +13,17 @@ This chart will deploy Hyperledger Fabric-CA node in kubernetes either in standl
 - Helm 3.10.1+
 - PV provisioner support in the underlying infrastructure
 - Ingress (Optional and required if name based endpoints are needed.)
-
+- Additionally the following prerequisites must be done before deploying CA with CNI based routing. https://github.com/npci/falcon/tree/main/examples#prerequisite
 ## Installing the Chart
 
 Download the `falcon fabric-ca` charts repo locally:
 
-To install the chart with the release name `rootca`:
+To install the chart with the release name `root-ca`:
 
 ```bash
-$ helm install rootca -n rootca helm-charts/fabric-ca/ -f values.yaml
+$ kubectl create ns orderer
+$ kubectl -n orderer create secret generic rca-secret --from-literal=user=rca-admin --from-literal=password=rcaComplexPassword
+$ helm install root-ca -n orderer helm-charts/fabric-ca -f examples/fabric-ca/root-ca.yaml
 ```
 
 This above command deploys the Hyperledger Fabric-CA.
@@ -33,7 +35,7 @@ This above command deploys the Hyperledger Fabric-CA.
 To uninstall/delete the release:
 
 ```bash
-$ helm delete rootca -n rootca
+$ helm delete rootca -n root-ca
 ```
 
 ## Configuration
