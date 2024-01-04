@@ -8,7 +8,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 - [x] [Identity registration](#Identity-registration-Configuration) [Supported types: ica, admin, client, peer, orderer]
 - [x] [Genesis block creation](#Genesis-block-creation)
 - [x] [Channel creation](#Channel-creation)
-- [x] Anchorpeer list update on channel
+- [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
 - [x] Adding Orgs to channel
 - [x] Chaincode installation
 - [x] Chaincode approval
@@ -75,7 +75,7 @@ identities:
 | `channel_artifact_dir` | Directory in which the channel artifacts will be generated inside the job pod | `"/scripts/channel-artifacts"` |
 | `base_dir` | Base directory for all identity registration inside the job pod | `"/scripts/crypto-config"` |
 | `orderer_system_channel` | Orderer system channel name | `"orderer-sys-channel"` |
-| `hlf_channel` | Application channel name | `"mychannel"` |
+| `hlf_channel` | Application channel name | `""` |
 | `block_file` | Genesisblock file name to be generated | `"genesis.block"` |
 | `config_transaction_filename` | Channel transaction file name to be generated | `"channel.tx"` |
 | `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
@@ -125,8 +125,8 @@ organizations:
 | `filestore_endpoint` |  | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
 | `config_transaction_filename` | Transaction filename in the filestore project dirctory | `"channel.tx"` |
-| `channel_block_filename` | Initial channel block filename to be created and uploaded to filestore project dirctory | `"mychannel.block"` |
-| `hlf_channel` | Application channel name | `"mychannel"` |
+| `channel_block_filename` | Initial channel block filename to be created and uploaded to filestore project dirctory | `""` |
+| `hlf_channel` | Application channel name | `""` |
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
 
 #### Admin-identity;
@@ -137,4 +137,28 @@ admin_identity:
     identity_secret: initialpeerorgAdminSamplePassword
     require_msp_enrollment: true
     require_tls_enrollment: false
+```
+
+## AnchorPeer update on channel
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.update_anchor_peer` | `true` to specify the job is an anchor peer update job | `true` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `""` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `hlf_channel` | The channel to update | `""` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+| `anchor_peers` | Anchor peer lists. [Refer](#Anchorpeer-list-format) | `[]` |
+
+#### Anchorpeer list format;
+
+```bash
+anchor_peers:
+   - host: peer0-initialpeerorg.my-hlf-domain.com
+     port: "30000"
+   - host: peer1-initialpeerorg.my-hlf-domain.com
+     port: "30000"
+   - host: peer2-initialpeerorg.my-hlf-domain.com
+     port: "30000"
 ```
