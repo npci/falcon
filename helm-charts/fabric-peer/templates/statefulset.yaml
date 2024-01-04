@@ -9,6 +9,7 @@ SPDX-License-Identifier:  GPL-3.0
 {{- $TlsCaEndpoint     := .Values.global.tlsca_endpoint }}
 {{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
 {{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $OverrideMspId     := .Values.MspIdOverride }}
 
 {{- range .Values.peers }}
 ---
@@ -181,7 +182,7 @@ spec:
             - name: CORE_PEER_TLS_CERT_FILE
               value: "{{ $.Values.fabric_base_dir }}/tls/server.crt"
             - name: CORE_PEER_LOCALMSPID
-              value: "{{ $.Values.nameOverride }}"
+              value: "{{ $OverrideMspId | default $.Values.nameOverride }}"
             {{- if .useCouchDB | default $.Values.global.useCouchDB }}
             - name: CORE_LEDGER_STATE_STATEDATABASE
               value: "CouchDB"

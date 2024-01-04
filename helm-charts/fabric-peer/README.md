@@ -59,6 +59,7 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `tlsca_tls_certfile` | Path for the init container to store the public key cert of `global.tlsca_endpoint` | `"/tmp/tlsca-cert.pem"` |
 | `fabric_base_dir` | Path to store the `msp/tls` enrollment certificates | `"/etc/hyperledger/fabric"` |
 | `retry_seconds` | Retry period in seconds for any script activities. Eg; enrollment | `60` |
+| `MspIdOverride` | To override Org name different than `nameOverride` | `""` |
 | `peers` | The list of Peer identities to deploy | `[]` |
 | `peers.[].name` | The name of the peer | `peer[n]` |
 | `peers.[].identity_name` | The identity of peer | `""` |

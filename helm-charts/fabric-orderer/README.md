@@ -72,28 +72,46 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `orderers.[].identity_name` | The identity of orderer | `""` |
 | `orderers.[].identity_secret` | The identity password of orderer | `""` |
 | `orderers.[].tls_cert_archive` | The tls cert archive file name of orderer in the filestore | `"orderer[n]-orderer-tls-certs.tar.gz"` |
-| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file`. This will be used for ENV variable `ORDERER_GENERAL_GENESISFILE` value. | `genesis.block` |
-| `orderers.[].renew_orderer_certs` | If `true`, on startup the init container will remove the existing enrolled certificates from `orderer_cert_base_dir` and do fresh enrollment | `false` |
 | `orderers.[].use_existing_pvc_data` | If want to mount an existing orderer pvc instead of creating new pvc. | `""` |
 | `orderers.[].additionalEnvironmentVars` | If want to add additional env variables per orderer | `""` |
 | `orderers.[].disableGlobalNodeSelector` | `true` to disable global nodeslector | `false` |
 | `orderers.[].disableGlobalAffinity` | `true` to disable global affinity | `false` |
 | `orderers.[].disableGlobalTolerations` | `true` to disable global tolerations | `false` |
-| `global.block_file` | Default genesis block file name in the filestore. This will be used for ENV variable `ORDERER_GENERAL_GENESISFILE` value. `(Globally/Per Orderer)`| `"genesis.block"` |
-| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory for all orderers. `(Globally/Per Orderer)` | `true` |
-| `global.disableDefaultLivenessProbe` | `true` to disable default livenessProbe `(Globally/Per Orderer)` | `false` |
-| `global.disableDefaultStartupProbe` | `true` to disable default startupProbe `(Globally/Per Orderer)` | `false` |
-| `global.disableDefaultReadinessProbe` | `true` to disable default readinessProbe `(Globally/Per Orderer)` | `false` |
-| `global.ingressEnabled` | Determine whether ingress should be created or not. `(Globally/Per Orderer)` | `true` |
-| `global.additionalLabels` | To add additional labels. `(Globally/Per Orderer)` | `{}` |
-| `global.resources` | To set compute resources for all Orderers `(Globally/Per Orderer)` | `{}` |
-| `global.nodeSelector` | To set nodeSelector for all Orderers `(Globally/Per Orderer)` | `{}` |
-| `global.tolerations` | To set tolerations for all Orderers `(Globally/Per Orderer)` | `[]` |
-| `global.affinity` | To set affinity for all Orderers `(Globally/Per Orderer)` | `{}` |
-| `global.storageAccessMode` | Storageclass access mode `(Globally/Per Orderer)` | `"ReadWriteOnce"` |
-| `global.dataStorageSize` | PVC size of orderer data directory `(Globally/Per Orderer)` | `"10Gi"` |
-| `global.certStorageSize` | PVC size of orderer cert directory `(Globally/Per Orderer)` | `"50M"` |
-| `global.storageClass` | Default Storageclass name `(Globally/Per Orderer)` | `"standard"` |
+| `orderers.[].disableDefaultLivenessProbe` | `true` to disable default livenessProbe | `global.disableDefaultLivenessProbe` |
+| `orderers.[].disableDefaultStartupProbe` | `true` to disable default StartupProbe | `global.disableDefaultStartupProbe` |
+| `orderers.[].disableDefaultReadinessProbe` | `true` to disable default ReadinessProbe | `global.disableDefaultReadinessProbe` |
+| `orderers.[].require_certs_dir_persistence` | `true` to enable PVC support for enrolled certificate directory for this orderer | `global.require_certs_dir_persistence` |
+| `orderers.[].ingressEnabled` | `true` to enable ingress for this orderer | `global.ingressEnabled` |
+| `orderers.[].additionalLabels` | To add additional labels for this orderer | `global.additionalLabels` |
+| `orderers.[].resources` | To set compute resources for this orderer | `global.resources` |
+| `orderers.[].nodeSelector` | To set nodeSelector for this orderer | `global.nodeSelector` |
+| `orderers.[].tolerations` | To set tolerations for this orderer | `global.tolerations` |
+| `orderers.[].affinity` | To set affinity for this orderer | `global.affinity` |
+| `orderers.[].storageAccessMode` | Storageclass access mode | `global.storageAccessMode` |
+| `orderers.[].dataStorageSize` | PVC size of orderer data directory | `global.dataStorageSize` |
+| `orderers.[].certStorageSize` | PVC size of orderer cert directory | `global.certStorageSize` |
+| `orderers.[].storageClass` | To set different storageclass for this orderer | `global.storageClass` |
+| `orderers.[].startupProbe` | To set different startupProbe for this orderer | `.Values.startupProbe` |
+| `orderers.[].livenessProbe` | To set different livenessProbe for this orderer | `.Values.livenessProbe` |
+| `orderers.[].readinessProbe` | To set different readinessProbe for this orderer | `.Values.readinessProbe` |
+| `orderers.[].podAnnotations` | To set different podAnnotations for this orderer | `.Values.podAnnotations` |
+| `orderers.[].renew_orderer_certs` | If `true`, on startup the init container will remove the existing enrolled certificates from `orderer_cert_base_dir` and do fresh enrollment | `false` |
+| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file`. This will be used for ENV variable `ORDERER_GENERAL_GENESISFILE` value. | `genesis.block` |
+| `global.block_file` | Default genesis block file name in the filestore. This will be used for ENV variable `ORDERER_GENERAL_GENESISFILE` value. | `"genesis.block"` |
+| `global.require_certs_dir_persistence` | `true` to enable PVC support for enrolled certificate directory for all orderers. | `true` |
+| `global.disableDefaultLivenessProbe` | `true` to disable default livenessProbe for all orderers | `false` |
+| `global.disableDefaultStartupProbe` | `true` to disable default startupProbe for all orderers  | `false` |
+| `global.disableDefaultReadinessProbe` | `true` to disable default readinessProbe for all orderers| `false` |
+| `global.ingressEnabled` | `true` to enable ingress for all orderers. | `true` |
+| `global.additionalLabels` | To add additional labels for all orderers | `{}` |
+| `global.resources` | To set compute resources for all orderers | `{}` |
+| `global.nodeSelector` | To set nodeSelector for all orderers | `{}` |
+| `global.tolerations` | To set tolerations for all orderers | `[]` |
+| `global.affinity` | To set affinity for all orderers | `{}` |
+| `global.storageAccessMode` | Storageclass access mode | `"ReadWriteOnce"` |
+| `global.dataStorageSize` | PVC size of orderer data directory | `"10Gi"` |
+| `global.certStorageSize` | PVC size of orderer cert directory | `"50M"` |
+| `global.storageClass` | Default Storageclass name | `"standard"` |
 | `global.containerPort` | Default Orderer container port | `7050` |
 | `global.servicePort` | Default Orderer k8s service port | `7050` |
 | `global.serviceType` | Default Orderer k8s service type | `ClusterIP` |
@@ -125,9 +143,9 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `global.metrics.statsd.address` | Configuration for statsd provider | `"127.0.0.1:8125"` |
 | `global.metrics.statsd.writeInterval` | Configuration for statsd provider | `"10s"` |
 | `global.env` | Additional ENV variables for all Orderers | `[]` |
-| `startupProbe` | Default Orderer startupProbe `(Globally/Per Orderer)` | `{}` |
-| `livenessProbe` | Default Orderer livenessProbe `(Globally/Per Orderer)` | `{}` |
-| `readinessProbe` | Default Orderer readinessProbe `(Globally/Per Orderer)` | `{}` |
-| `podAnnotations` | Default Orderer podAnnotations `(Globally/Per Orderer)` | `{}` |
+| `startupProbe` | Default Orderer startupProbe | `{}` |
+| `livenessProbe` | Default Orderer livenessProbe | `{}` |
+| `readinessProbe` | Default Orderer readinessProbe | `{}` |
+| `podAnnotations` | Default Orderer podAnnotations | `{}` |
 | `podSecurityContext` | Default Orderer podSecurityContext | `{}` |
 | `securityContext` | Default Orderer container securityContext | `{}` |
