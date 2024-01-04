@@ -16,7 +16,7 @@ metadata:
     {{ toYaml .additionalLabels | nindent 4 }}
     {{- end }}
 spec:
-  type: ClusterIP
+  type: {{ $.Values.global.serviceType | default "ClusterIP" }}
   ports:
     - port: {{ $.Values.global.servicePort }}
       targetPort: {{ $.Values.global.containerPort }}
@@ -38,7 +38,7 @@ metadata:
     {{ toYaml .additionalLabels | nindent 4 }}
     {{- end }}
 spec:
-  type: ClusterIP
+  type: {{ $.Values.global.operations.serviceType | default "ClusterIP" }}
   ports:
     - port: {{ $.Values.global.operations.servicePort }}
       targetPort: 8443
