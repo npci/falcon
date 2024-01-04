@@ -10,7 +10,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 - [x] [Channel creation](#Channel-creation)
 - [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
 - [x] [Adding Orgs to channel](#Adding-Orgs-to-channel)
-- [x] Chaincode installation
+- [x] [Chaincode installation](#Chaincode-installation)
 - [x] Chaincode approval
 - [x] Chaincode commit
 - [x] Order addition
@@ -44,9 +44,6 @@ The following table lists the configurable parameters of the Fabric-ops chart fo
 | `ca_endpoint` | FQDN of the CA server endpoint with port. `Eg; ica-org1.my-hlf-domain.com:30000` | `""` |
 | `ca_secret` | The kubernetes secret contains the CA username and password at `user` and `password` keys. | `""` |
 | `identities` | The array of identities with identity information. [Refer](#Identity-array-example) | `[]` |
-| `[].identity_name` | Identity name | `""` |
-| `[].identity_secret` | Identity password | `""` |
-| `[].identity_type` | Identity type `ica,peer,orderer etc` | `""` |
 
 #### Identity array example;
 
@@ -122,7 +119,7 @@ organizations:
 | `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `""` |
 | `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
 | `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
-| `filestore_endpoint` |  | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
 | `config_transaction_filename` | Transaction filename in the filestore project dirctory | `"channel.tx"` |
 | `channel_block_filename` | Initial channel block filename to be created and uploaded to filestore project dirctory | `""` |
@@ -192,3 +189,31 @@ organizatons:
    anchor_peer: peer0-org2.my-hlf-domain.com
    anchor_peer_port: 30000
 ```
+
+## Chaincode installation
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.install_chaincode` | `true` to specify the job is to install chaincode | `true` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
+| `channel_block_filename` | Initial application channel block file name in filestore under project directory | `"mychannel.block"` |
+| `retry_seconds` | Retry period in seconds for any failed script activities. Eg; enrollment  | `10` |
+| `cc_tar_file` | ChainCode file name in the filestore under project directory | `"basic-chaincode_go_1.0.tar.gz"` |
+| `hlf_channel` | Application channel name the peer needs to join | `""` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+| `peer_identities` | List of peer endpoints to install chaincode. [Refer](#Peer-list-example) | `[]` |
+
+#### Peer list example;
+
+```bash
+peer_identities:
+ - identity_name: peer0-initialpeerorg
+   # peer_endpoint: peer0-initialpeerorg.my-hlf-domain.com:30000 # By default it will use identity_name:peer_internal_service_port
+ - identity_name: peer1-initialpeerorg
+ - identity_name: peer2-initialpeerorg
+ ```
+
+ 
