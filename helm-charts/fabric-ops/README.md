@@ -7,14 +7,14 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 
 - [x] [Identity registration](#How-to-register-new-identites-) [Supported types: ica, admin, client, peer, orderer]
 - [x] [Genesis block creation](#how-to-create-genesis-block--channel-transcation-tx-)
-- [x] [Channel creation](#Channel-creation)
-- [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
-- [x] [Adding Orgs to channel](#Adding-Orgs-to-channel)
-- [x] [Chaincode installation](#Chaincode-installation)
-- [x] [Chaincode approval](#Chaincode-approval)
-- [x] [Chaincode commit](#Chaincode-commit)
-- [x] [Order addition](#Order-addition)
-- [x] [Order TLS cert renewal](#Order-TLS-cert-renewal)
+- [x] [Channel creation](#how-to-create-new-channel-)
+- [x] [Anchorpeer list update on channel](#how-to-update-anchorpeer-on-channel-)
+- [x] [Adding Orgs to channel](#how-to-add-a-new-org-to-channel-)
+- [x] [Chaincode installation](#how-to-install-chaincode-on-peers-)
+- [x] [Chaincode approval](#how-to-approve-chaincode-for-an-org-)
+- [x] [Chaincode commit](#how-to-commmit-chaincode-from-an-org-)
+- [x] [Order addition](#how-to-add-new-order-node-into-a-running-hyperpedger-fabric-network-)
+- [x] [Order TLS cert renewal](#how-to-updaterenew-orderer-node-tls-certificates-in-a-running-hyperpedger-fabric-network-)
 
 #### The following parameters are common across all fabric-ops job.
 
@@ -111,7 +111,7 @@ organizations:
       port: "30000"
 ```
 
-## How to create new Channel ?
+## How to create new Channel in hyperpedger fabric ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
