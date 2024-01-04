@@ -11,8 +11,8 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 - [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
 - [x] [Adding Orgs to channel](#Adding-Orgs-to-channel)
 - [x] [Chaincode installation](#Chaincode-installation)
-- [x] Chaincode approval
-- [x] Chaincode commit
+- [x] [Chaincode approval](#Chaincode-approval)
+- [x] [Chaincode commit](#Chaincode-commit)
 - [x] Order addition
 - [x] Order TLS cert renewal
 
@@ -195,7 +195,7 @@ organizatons:
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
 | `fabric_actions.install_chaincode` | `true` to specify the job is to install chaincode | `true` |
-| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `""` |
 | `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
 | `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
@@ -216,4 +216,45 @@ peer_identities:
  - identity_name: peer2-initialpeerorg
  ```
 
- 
+ ## Chaincode approval
+
+ | Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.approve_chaincode` | `true` to specify the job is to approve chaincode | `true` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port  | `""` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `hlf_channel` | Application channel name | `""` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
+| `require_collection_config` | `true` if collection config is required | `"true"` |
+| `collection_config_file` | Collection config filename in the filestore under the project directory  | `"collection-config.json"` |
+| `collection_config_file_hash` | File hash of the above collection config | `"627dd1b8d679dc52475c148e502c576b109796df8495282ba602cc51ec173286"` |
+| `core_peer_address` | Core peer address | `"peer0-initialpeerorg:30002"` |
+| `cc_name` | Chaincode name  | `"basic-chaincode"` |
+| `cc_version` | Chaincode version | `"1.0"` |
+| `cc_package_id` | Chaincode package ID | `"basic-chaincode-1.0:7c83030bdb05a4a4864f3d1d96afa2dc33d8ad0709c8485a12b5e895ef80c82d"` |
+| `seq` | Seq number | `"1"` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+
+
+## Chaincode commit
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.commit_chaincode` | `true` to specify the job is to commit chaincode | `true` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `""` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `hlf_channel` | Application channel name | `""` |
+| `require_collection_config` | `true` if collection config is required  | `"true"` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
+| `collection_config_file` | Collection config filename in the filestore under the project directory | `"collection-config.json"` |
+| `collection_config_file_hash` | File hash of the above collection config | `"627dd1b8d679dc52475c148e502c576b109796df8495282ba602cc51ec173286"` |
+| `core_peer_address` | Core peer address | `"peer0-initialpeerorg:30002"` |
+| `cc_name` | Chaincode name | `"basic-chaincode"` |
+| `cc_version` | Chaincode version | `"1.0"` |
+| `seq` | Seq number | `"1"` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+
