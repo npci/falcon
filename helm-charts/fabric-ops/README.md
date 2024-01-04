@@ -7,7 +7,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 
 - [x] [Identity registration](#Identity-registration-Configuration) [Supported types: ica, admin, client, peer, orderer]
 - [x] [Genesis block creation](#Genesis-block-creation)
-- [x] Channel creation
+- [x] [Channel creation](#Channel-creation)
 - [x] Anchorpeer list update on channel
 - [x] Adding Orgs to channel
 - [x] Chaincode installation
@@ -78,9 +78,9 @@ identities:
 | `hlf_channel` | Application channel name | `"mychannel"` |
 | `block_file` | Genesisblock file name to be generated | `"genesis.block"` |
 | `config_transaction_filename` | Channel transaction file name to be generated | `"channel.tx"` |
-| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port.   | `"tls-ca.my-hlf-domain.com:30000"` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
 | `filestore_endpoint` | FQDN of filestore server endpoint with port | `"http://filestore.my-hlf-domain.com:30001"` |
-| `filestore_ssl` | Make it `true` if `filestore_endpoint` is over https. | `false` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https. | `false` |
 
 
 #### Cryptogen array example;
@@ -112,4 +112,29 @@ organizations:
     anchor_peers:
     - host: peer0-initialpeerorg.my-hlf-domain.com
       port: "30000"
+```
+
+## Channel creation
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.create_channel` | `true` to specify the job is a channel creation job | `true` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `""` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `filestore_endpoint` |  | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
+| `config_transaction_filename` | Transaction filename in the filestore project dirctory | `"channel.tx"` |
+| `channel_block_filename` | Initial channel block filename to be created and uploaded to filestore project dirctory | `"mychannel.block"` |
+| `hlf_channel` | Application channel name | `"mychannel"` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+
+#### Admin-identity;
+
+```bash
+admin_identity:
+  - identity_name: admin
+    identity_secret: initialpeerorgAdminSamplePassword
+    require_msp_enrollment: true
+    require_tls_enrollment: false
 ```
