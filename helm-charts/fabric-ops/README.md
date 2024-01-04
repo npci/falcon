@@ -5,7 +5,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 
 ### Supports the following operations
 
-- [x] [Identity registration](#Identity-registration-Configuration) [Supported types: ica, admin, client, peer, orderer]
+- [x] [Identity registration](#How-to-register-new-identites-?) [Supported types: ica, admin, client, peer, orderer]
 - [x] [Genesis block creation](#Genesis-block-creation)
 - [x] [Channel creation](#Channel-creation)
 - [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
@@ -34,7 +34,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 | `csr_names_o` | Organization name | `"Your Company Name"` |
 | `hlf_domain` | The FQDN suffix will be used in CSR generation. Eg `peer0-prg1.my-hlf-domain.com` | `"my-hlf-domain.com"` |
 
-## Identity registration
+## How to register new identites ?
 
 The following table lists the configurable parameters of the Fabric-ops chart for Identity registration.
 
