@@ -42,7 +42,7 @@ $ helm delete rootca -n root-ca
 
 The following table lists the configurable parameters of the Fabric-ca chart and their default values.
 
-| Parameter                | Description             | Default Value        |
+| Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
 | `nameOverride` |  | `""` |
 | `fullnameOverride` |  | `""` |

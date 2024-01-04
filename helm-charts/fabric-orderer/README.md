@@ -66,29 +66,40 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `hlf_domain` | The FQDN suffix for the orderers.  | `"my-hlf-domain.com"` |
 | `init.image.repository` | The init container image repository | `"npcioss/hlf-builder"` |
 | `init.image.tag` | The init container image tag | `2.4` |
+| `MspIdOverride` | To override Org name different than `nameOverride` | `2.4` |
 | `orderers` | The list of orderer identities to deploy | `[]` |
 | `orderers.[].name` | The name of the orderer | `orderer[n]` |
 | `orderers.[].identity_name` | The identity of orderer | `""` |
 | `orderers.[].identity_secret` | The identity password of orderer | `""` |
 | `orderers.[].tls_cert_archive` | The tls cert archive file name of orderer in the filestore | `""` |
-| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file` | `genesis.block` |
+| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file`. This will be used for ENV variable `ORDERER_GENERAL_GENESISFILE` value. | `genesis.block` |
 | `orderers.[].renew_orderer_certs` | If `true`, on startup the init container will remove the existing enrolled certs and do fresh enrollment | `false` |
 | `orderers.[].use_existing_pvc_data` | If want to mount an existing orderer pvc instead of creating new pvc. | `""` |
 | `orderers.[].additionalEnvironmentVars` | If want to add additional env variables per orderer | `""` |
+| `orderers.[].disableGlobalNodeSelector` | `true` to disable global nodeslector | `false` |
+| `orderers.[].disableGlobalAffinity` | `true` to disable global affinity | `false` |
+| `orderers.[].disableGlobalTolerations` | `true` to disable global tolerations | `false` |
+| `global.block_file` | Default genesis block file name in the filestore `(Globally/Per Orderer)`. This will be used for ENV variable `ORDERER_GENERAL_GENESISFILE` value.| `"genesis.block"` |
+| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory for all orderers. `(Globally/Per Orderer)` | `true` |
+| `global.disableDefaultLivenessProbe` | `true` to disable default livenessProbe `(Globally/Per Orderer)` | `false` |
+| `global.disableDefaultStartupProbe` | `true` to disable default startupProbe `(Globally/Per Orderer)` | `false` |
+| `global.disableDefaultReadinessProbe` | `true` to disable default readinessProbe `(Globally/Per Orderer)` | `false` |
+| `global.ingressEnabled` | Determine whether ingress should be created or not. `(Globally/Per Orderer)` | `true` |
+| `global.additionalLabels` | To add additional labels. `(Globally/Per Orderer)` | `{}` |
+| `global.resources` | To set compute resources for all Orderers `(Globally/Per Orderer)` | `{}` |
+| `global.nodeSelector` | To set nodeSelector for all Orderers `(Globally/Per Orderer)` | `{}` |
+| `global.tolerations` | To set tolerations for all Orderers `(Globally/Per Orderer)` | `[]` |
+| `global.affinity` | To set affinity for all Orderers `(Globally/Per Orderer)` | `{}` |
 | `global.containerPort` | Default Orderer container port | `7050` |
 | `global.servicePort` | Default Orderer k8s service port | `7050` |
 | `global.replicaCount` | Orderer replica count. Only 1 per orderer is supported as of now | `1` |
 | `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-orderer.my-hlf-domain.com:30000"` |
 | `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
-| `global.block_file` | Default genesis block file name in the filestore `(Globally/Per Orderer)` | `"genesis.block"` |
-| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory for all orderers. `(Globally/Per Orderer)` | `true` |
 | `global.image.repository` | The Orderer container image repository | `"hyperledger/fabric-orderer"` |
 | `global.image.pullPolicy` | The Orderer container image pullpolicy | `"IfNotPresent"` |
 | `global.image.imagePullSecrets` | The Orderer container registry imagePullSecrets | `[]` |
 | `global.image.tag` | The Orderer container image tag | `"2.4"` |
 | `global.serviceAccount.annotations` | Service account annontations | `[]` |
-| `global.additionalLabels` | To add additional labels. `(Globally/Per Orderer)` | `{}` |
-| `global.ingressEnabled` | Determine whether ingress should be created or not. `(Globally/Per Orderer)` | `true` |
 | `global.ingress.className` | Ingress class name | `"nginx"` |
 | `global.ingress.annotations` | Ingress annotations to bypass ssl to pod  | `nginx.ingress.kubernetes.io/ssl-passthrough: "true"` |
 | `global.storageAccessMode` | Storageclass access mode | `"ReadWriteOnce"` |
@@ -113,10 +124,6 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `global.metrics.statsd.address` |  | `"127.0.0.1:8125"` |
 | `global.metrics.statsd.writeInterval` |  | `"10s"` |
 | `global.env` | Additional ENV variables for all Orderers | `[]` |
-| `global.resources` | To set compute resources for all Orderers `(Globally/Per Orderer)` | `{}` |
-| `global.nodeSelector` | To set nodeSelector for all Orderers `(Globally/Per Orderer)` | `{}` |
-| `global.tolerations` | To set tolerations for all Orderers `(Globally/Per Orderer)` | `[]` |
-| `global.affinity` | To set affinity for all Orderers `(Globally/Per Orderer)` | `{}` |
 | `startupProbe` | Default Orderer startupProbe `(Globally/Per Orderer)` | `{}` |
 | `livenessProbe` | Default Orderer livenessProbe `(Globally/Per Orderer)` | `{}` |
 | `readinessProbe` | Default Orderer readinessProbe `(Globally/Per Orderer)` | `{}` |
