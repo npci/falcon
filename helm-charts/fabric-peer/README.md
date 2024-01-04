@@ -80,9 +80,43 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `peers.[].couchContainerPort` | CouchDb container port | default `.Values.global.couchContainerPort` |
 | `peers.[].couchUseExistingPvcPrefix` | If you want to use an existing pvc for Couch. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-couchdb"` |
 | `peers.[].couchDataDir` | CouchDb data directory| default `.Values.global.couchDataDir` |
-
-
-
+| `peers.[].dindImageRegistry` | Dind image registry | default `.Values.global.dindImageRegistry` |
+| `peers.[].dindImageRepo` | Dind image repo | default `.Values.global.dindImageRepo` |
+| `peers.[].dindImageTag` | Dind image tag | default `.Values.global.dindImageTag` |
+| `peers.[].dindDocker_tls_certdir` | Dind docker tls directory | default `.Values.global.dindDocker_tls_certdir` |
+| `peers.[].additionalEnvironmentVars.dind` | Dind DB additional env variable | default `{}` |
+| `peers.[].dindStartupProbe` | Dind startuprobe | default `.Values.dindStartupProbe` |
+| `peers.[].dindLivenessProbe` | Dind livenessprobe | default `.Values.dindLivenessProbe` |
+| `peers.[].dindReadinessProbe` | Dind readinessprobe | default `.Values.dindReadinessProbe` |
+| `peers.[].disableDefaultDindStartupProbe` | `true` to disable default Dind StartupProbe | default `.Values.global.disableDefaultDindStartupProbe` |
+| `peers.[].disableDefaultDindLivenessProbe` | `true` to disable default Dind LivenessProbe | default `.Values.global.disableDefaultDindLivenessProbe` |
+| `peers.[].disableDefaultDindReadinessProbe` | `true` to disable default Dind ReadinessProbe | default `.Values.global.disableDefaultDindReadinessProbe` |
+| `peers.[].dindResources` | Dind resources | default `.Values.global.couchResources` |
+| `peers.[].dindUseExistingPvcPrefix` | If you want to use an existing pvc for Dind. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-dind"` |
+| `peers.[].dindDataDir` | Dind data directory| default `.Values.global.dindDataDir` |
+| `peers.[].peerImageRegistry` | Peer image registry | default `.Values.global.peerImageRegistry` |
+| `peers.[].peerImageRepo` | Peer image repo | default `.Values.global.peerImageRepo` |
+| `peers.[].peerImageTag` | Peer image tag | default `.Values.global.peerImageTag` |
+| `peers.[].peerContainerPort` | Peer container port| default `.Values.global.peerContainerPort` |
+| `peers.[].peerServicePort` | Peer service tag | default `.Values.global.peerServicePort` |
+| `peers.[].peerImageTag` | Peer image tag | default `.Values.global.peerImageTag` |
+| `peers.[].core_peer_gossip_bootstrap` | Core peer endpoint for bootstrapping | default `.Values.global.core_peer_gossip_bootstrap` |
+| `peers.[].core_ledger_state_couchdbconfig_requesttimeout` | Couchdb requesttimeout | default `.Values.global.core_ledger_state_couchdbconfig_requesttimeout` |
+| `peers.[].core_ledger_state_couchdbconfig_maxretries` | Couchdb maxretries | default `.Values.global.core_ledger_state_couchdbconfig_maxretries` |
+| `peers.[].core_ledger_state_couchdbconfig_maxupdatebatchsize` | Couchdb maxupdatebatchsize | default `.Values.global.core_ledger_state_couchdbconfig_maxupdatebatchsize` |
+| `peers.[].core_ledger_state_couchdbconfig_internalquerylimit` | Couchdb internal querylimit  | default `.Values.global.core_ledger_state_couchdbconfig_internalquerylimit` |
+| `peers.[].core_ledger_state_couchdbconfig_totalquerylimit` | Couchdb total querylimit | default `.Values.global.core_ledger_state_couchdbconfig_totalquerylimit` |
+| `peers.[].core_ledger_state_couchdbconfig_couchdbaddress` | Couchdb address | default `.Values.global.core_ledger_state_couchdbconfig_couchdbaddress` |
+| `peers.[].additionalEnvironmentVars.peer` | Peer additional env variable | default `{}` |
+| `peers.[].peerStartupProbe` | Peer startuprobe | default `.Values.peerStartupProbe` |
+| `peers.[].peerLivenessProbe` | Peer livenessprobe | default `.Values.peerLivenessProbe` |
+| `peers.[].peerReadinessProbe` | Peer readinessprobe | default `.Values.peerReadinessProbe` |
+| `peers.[].disableDefaultPeerStartupProbe` | `true` to disable default Peer StartupProbe | default `.Values.global.disableDefaultPeerStartupProbe` |
+| `peers.[].disableDefaultPeerLivenessProbe` | `true` to disable default Peer LivenessProbe | default `.Values.global.disableDefaultPeerLivenessProbe` |
+| `peers.[].disableDefaultPeerReadinessProbe` | `true` to disable default Peer ReadinessProbe | default `.Values.global.disableDefaultPeerReadinessProbe` |
+| `peers.[].peerResources` | Peer resources | default `.Values.global.peerResources` |
+| `peers.[].peerDataDir` | Peer data directory| default `.Values.global.peerDataDir` |
+| `peers.[].peerUseExistingPvcPrefix` | If you want to use an existing pvc for Peer. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-peer"` |
 | `global.hlf_domain` | The FQDN suffix for the peers. | `"my-hlf-domain.com"` |
 | `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
 | `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
