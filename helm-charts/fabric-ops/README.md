@@ -13,8 +13,8 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 - [x] [Chaincode installation](#Chaincode-installation)
 - [x] [Chaincode approval](#Chaincode-approval)
 - [x] [Chaincode commit](#Chaincode-commit)
-- [x] Order addition
-- [x] Order TLS cert renewal
+- [x] [Order addition](#Order-addition)
+- [x] [Order TLS cert renewal](#Order-TLS-cert-renewal)
 
 #### The following parameters are common across all fabric-ops job.
 
@@ -258,3 +258,50 @@ peer_identities:
 | `seq` | Seq number | `"1"` |
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
 
+
+## Order addition
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.add_orderer` | `true` to specify the job is to add new orderer  | `true` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
+| `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
+| `seconds_to_wait_after_channel_update` | Seconds to pause the script/job activity after one channel update | `15` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port  | `"tls-ca.my-hlf-domain.com:30000"` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity-for-order-addition) | `[]` |
+| `additional_orderers` | List of additional oderers. Execute one at a time. [Refer](#New-orderer-for-order-addition) | `[]` |
+
+#### Admin identity for order addition;
+
+```bash
+admin_identity:
+  - identity_name: admin
+    identity_secret: ordererAdminpassword
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-ica.cert
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    require_msp_enrollment: true
+    require_tls_enrollment: false
+```
+
+#### New orderer for order addition;
+
+```bash
+additional_orderers:
+  - identity_name: orderer3-orderer
+    identity_secret: orderer3ordererSamplePassword
+    require_msp_enrollment: true
+    require_tls_enrollment: true
+    endpoint: orderer3-orderer.my-hlf-domain.com
+    port: 30000
+    msp_base_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer/users
+    ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+    ica_tls_certfile: /tmp/orderer-ica.cert
+    # hlf_domain: If you want to register this orderer with a different hlf domain other than .Values.hlf_domain. Useful when adding new orderers on a different DC and you want to assign a different sub domain for it.
+    update_channels:
+      - orderer-sys-channel # Orderer system channel
+      - mychannel #Application channel
+    upload_latest_channel_block_to_filestore:
+      - orderer-sys-channel
+```
