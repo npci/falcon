@@ -5,7 +5,7 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 
 ### Supports the following operations
 
-- [x] [Identity registration](#How-to-register-new-identites-) [Supported types: ica, admin, client, peer, orderer]
+- [x] [Identity registration](#How-to-register-new-identities-) [Supported types: ica, admin, client, peer, orderer]
 - [x] [Genesis block creation](#how-to-create-genesis-block--channel-transaction-tx-)
 - [x] [Channel creation](#how-to-create-new-channel-in-hyperpedger-fabric-)
 - [x] [Anchorpeer list update on channel](#how-to-update-anchorpeer-on-channel-)
@@ -40,7 +40,7 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 
 
 
-## How to register new identites ?
+## How to register new identities ?
 
 The following table lists the configurable parameters of the Fabric-ops chart for Identity registration.
 
