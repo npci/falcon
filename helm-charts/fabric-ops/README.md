@@ -42,16 +42,16 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 ## How to use the common enrollment function for any identity enrollments in fabric-ops ?
 
 The enrollment function will now accept 10 parameters, this includes the following in the below orderer.  IMP; this orderer is very important.
-1) FABRIC_IDENTITY.
-2) FABRIC_IDENTITY_SECRET.
-3) FABRIC_IDENTITY_MSP_DIR (The enrollment basedir for the identity). 
-      4) FABRIC_ICA_URL. 
-      5) FABRIC_TLSCA_URL. 
-      6) FABRIC_ICA_TLS_CERTFILES. 
-      7) FABRIC_TLSCA_TLS_CERTFILES. 
-      8) FABRIC_HLF_DOMAIN. 
-      9) REQUIRE_MSP_ENROLLMENT. 
-      10) REQUIRE_TLS_ENROLLMENT. 
+1) FABRIC_IDENTITY
+2) FABRIC_IDENTITY_SECRET
+3) FABRIC_IDENTITY_MSP_DIR (The enrollment basedir for the identity)
+4) FABRIC_ICA_URL
+5) FABRIC_TLSCA_URL
+6) FABRIC_ICA_TLS_CERTFILES
+7) FABRIC_TLSCA_TLS_CERTFILES
+8) FABRIC_HLF_DOMAIN
+9) REQUIRE_MSP_ENROLLMENT
+10) REQUIRE_TLS_ENROLLMENT
       
 ```bash
 Example; To enroll an identity `admin` which does not require a tlsca enrollment. 
