@@ -13,7 +13,7 @@ This chart can deploy and bootstrap the Hyperledger Fabric-Orderer nodes in kube
 - Helm 3.10.1+
 - PV provisioner support in the underlying infrastructure
 - Ingress
-- Additionally the following prerequisites must be done before deploying CA with CNI based routing. https://github.com/npci/falcon/tree/main/examples#prerequisite
+- Additionally the following prerequisites must be done before deploying orderer. https://github.com/npci/falcon/tree/main/examples#prerequisite
 
 ## Installing the Chart
 
@@ -48,48 +48,47 @@ $ helm delete orderer -n orderer
 
 The following table lists the configurable parameters of the Fabric-orderer chart and their default values.
 
-| Name                      | Description                                     | Value |
+| Name                      | Description                                     | Default |
 | ------------------------- | ----------------------------------------------- | ----- |
 | `nameOverride` | This has to match with Orderer Org name. | `"orderer"` |
 | `fullnameOverride` |  | `""` |
-| `project` | This will appear in every resource label. This is required. | `"yourproject"` |
+| `project` | Project name string. This will be added to every resource label as `project=yourproject` | `"yourproject"` |
 | `csr_names_cn` | Country name abbreviation in TWO letter | `"IN"` |
 | `csr_names_st` | State | `"Maharashtra"` |
 | `csr_names_l` | Locality | `"Mumbai"` |
 | `csr_names_o` | Organization Name | `"Your Company Name"` |
 | `filestore_endpoint` | Filestore endpoint with `http/s://fqdn:port ` format. | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https. | `false` |
-| `ica_tls_cert_file` | Path for the init container to pull public key cert of `global.ica_endpoint` | `"/root/ica-cert.pem"` |
-| `orderer_cert_base_dir` | Path to store the orderer enrollement certs | `"/var/hyperledger/orderer"` |
+| `ica_tls_cert_file` | Path for the init container to store the public key cert of `global.ica_endpoint` | `"/root/ica-cert.pem"` |
+| `orderer_cert_base_dir` | Path to store the orderer enrollment certs (msp/tls) | `"/var/hyperledger/orderer"` |
 | `orderer_data_dir` | Path to store the orderer data | `"orderer_data_dir"` |
-| `retry_seconds` | Seconds to retry after any init container HLF activitity failures; Eg; enrollement | `60` |
-| `hlf_domain` | The FQDN for the orderers. It should match with the channel config entries | `"my-hlf-domain.com"` |
+| `retry_seconds` | Retry period in seconds for any script activities. Eg; enrollment | `60` |
+| `hlf_domain` | The FQDN suffix for the orderers.  | `"my-hlf-domain.com"` |
 | `init.image.repository` | The init container image repository | `"npcioss/hlf-builder"` |
 | `init.image.tag` | The init container image tag | `2.4` |
 | `orderers` | The list of orderer identities to deploy | `[]` |
-| `orderers.[].name` | The name of the orderer | `` |
-| `orderers.[].identity_name` | The identity of orderer | `` |
-| `orderers.[].identity_secret` | The identity password of orderer | `` |
-| `orderers.[].identity_secret` | The identity password of orderer | `` |
-| `orderers.[].tls_cert_archive` | The tls cert archive file name of orderer in the filestore | `` |
-| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file` | `` |
-| `orderers.[].renew_orderer_certs` | If `true`, on startup the init container will remove the existing enrolled certs and do fresh enrollment | `` |
-| `orderers.[].use_existing_pvc_data` | If want to mount an existing orderer pvc instead of creating new pvc. | `` |
-| `orderers.[].additionalEnvironmentVars` | If want to add additional env variables per orderer | `` |
+| `orderers.[].name` | The name of the orderer | `orderer[n]` |
+| `orderers.[].identity_name` | The identity of orderer | `""` |
+| `orderers.[].identity_secret` | The identity password of orderer | `""` |
+| `orderers.[].tls_cert_archive` | The tls cert archive file name of orderer in the filestore | `""` |
+| `orderers.[].block_file` | The genesis block file name in the filestore if want to override `global.block_file` | `genesis.block` |
+| `orderers.[].renew_orderer_certs` | If `true`, on startup the init container will remove the existing enrolled certs and do fresh enrollment | `false` |
+| `orderers.[].use_existing_pvc_data` | If want to mount an existing orderer pvc instead of creating new pvc. | `""` |
+| `orderers.[].additionalEnvironmentVars` | If want to add additional env variables per orderer | `""` |
 | `global.containerPort` | Default Orderer container port | `7050` |
 | `global.servicePort` | Default Orderer k8s service port | `7050` |
 | `global.replicaCount` | Orderer replica count. Only 1 per orderer is supported as of now | `1` |
 | `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-orderer.my-hlf-domain.com:30000"` |
 | `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
-| `global.block_file` | Default genesis block file name in the filestore | `"genesis.block"` |
-| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory for all orderers. This can be set per orderer too. | `true` |
+| `global.block_file` | Default genesis block file name in the filestore `(Globally/Per Orderer)` | `"genesis.block"` |
+| `global.require_certs_dir_persistence` | Whether PVC support is required for enrolled certificate directory for all orderers. `(Globally/Per Orderer)` | `true` |
 | `global.image.repository` | The Orderer container image repository | `"hyperledger/fabric-orderer"` |
 | `global.image.pullPolicy` | The Orderer container image pullpolicy | `"IfNotPresent"` |
 | `global.image.imagePullSecrets` | The Orderer container registry imagePullSecrets | `[]` |
 | `global.image.tag` | The Orderer container image tag | `"2.4"` |
 | `global.serviceAccount.annotations` | Service account annontations | `[]` |
-| `global.additionalLabels` | To add additional labels. Can be global or per Orderer | `{}` |
-| `global.ingressEnabled` | Determine whether ingress should be created or not. This can be set globally or per Orderer | `true` |
+| `global.additionalLabels` | To add additional labels. `(Globally/Per Orderer)` | `{}` |
+| `global.ingressEnabled` | Determine whether ingress should be created or not. `(Globally/Per Orderer)` | `true` |
 | `global.ingress.className` | Ingress class name | `"nginx"` |
 | `global.ingress.annotations` | Ingress annotations to bypass ssl to pod  | `nginx.ingress.kubernetes.io/ssl-passthrough: "true"` |
 | `global.storageAccessMode` | Storageclass access mode | `"ReadWriteOnce"` |
@@ -114,13 +113,13 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `global.metrics.statsd.address` |  | `"127.0.0.1:8125"` |
 | `global.metrics.statsd.writeInterval` |  | `"10s"` |
 | `global.env` | Additional ENV variables for all Orderers | `[]` |
-| `global.resources` | To set compute resources for all Orderers | `{}` |
-| `global.nodeSelector` | To set nodeSelector for all Orderers | `{}` |
-| `global.tolerations` | To set tolerations for all Orderers | `[]` |
-| `global.affinity` | To set affinity for all Orderers | `{}` |
-| `startupProbe` | Default Orderer startupProbe | `{}` |
-| `livenessProbe` | Default Orderer livenessProbe | `{}` |
-| `readinessProbe` | Default Orderer readinessProbe  | `{}` |
-| `podAnnotations` | Default Orderer podAnnotations | `{}` |
+| `global.resources` | To set compute resources for all Orderers `(Globally/Per Orderer)` | `{}` |
+| `global.nodeSelector` | To set nodeSelector for all Orderers `(Globally/Per Orderer)` | `{}` |
+| `global.tolerations` | To set tolerations for all Orderers `(Globally/Per Orderer)` | `[]` |
+| `global.affinity` | To set affinity for all Orderers `(Globally/Per Orderer)` | `{}` |
+| `startupProbe` | Default Orderer startupProbe `(Globally/Per Orderer)` | `{}` |
+| `livenessProbe` | Default Orderer livenessProbe `(Globally/Per Orderer)` | `{}` |
+| `readinessProbe` | Default Orderer readinessProbe `(Globally/Per Orderer)` | `{}` |
+| `podAnnotations` | Default Orderer podAnnotations `(Globally/Per Orderer)` | `{}` |
 | `podSecurityContext` | Default Orderer podSecurityContext | `{}` |
 | `securityContext` | Default Orderer container securityContext | `{}` |

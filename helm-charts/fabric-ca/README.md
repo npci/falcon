@@ -42,7 +42,7 @@ $ helm delete rootca -n root-ca
 
 The following table lists the configurable parameters of the Fabric-ca chart and their default values.
 
-| Parameter                | Description             | Default        |
+| Parameter                | Description             | Default Value        |
 | ------------------------ | ----------------------- | -------------- |
 | `nameOverride` |  | `""` |
 | `fullnameOverride` |  | `""` |
@@ -54,6 +54,9 @@ The following table lists the configurable parameters of the Fabric-ca chart and
 | `image.repository` | Fabric-ca container image repository | `"hyperledger/fabric-ca"` |
 | `image.pullPolicy` | Fabric-ca container image pull policy  | `"IfNotPresent"` |
 | `image.tag` | Fabric-ca container image tag | `"1.5.0"` |
+| `init.image.repository` | The init container image repository  | `"npcioss/hlf-builder"` |
+| `init.image.tag` | The init container image tag | `2.4` |
+| `init.image.pullPolicy` | The init container image pull policy | `"IfNotPresent"` |
 | `retry_seconds` | Retry period in seconds for any script activities. | `60` |
 | `recreate_intermediate_cert` | `true` if parent public key cert needs to be re-created | `false` |
 | `tls_domain` | Any resolvable DNS for you CA endpoint | `"my-hlf-domain.com"` |
