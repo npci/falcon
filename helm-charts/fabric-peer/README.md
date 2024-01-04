@@ -42,8 +42,8 @@ $ helm delete peer -n initialpeerorg
 
 The following table lists the configurable parameters of the Fabric-peer chart and their default values.
 
-| Parameter                | Description             | Default        |
-| ------------------------ | ----------------------- | -------------- |
+| Parameter                | Description             | Default                        |
+| ------------------------ | ----------------------- | ------------------------------ |
 | `nameOverride` | This has to match with Peer Org name | `"initialpeerorg"` |
 | `fullnameOverride` | Helm default | `""` |
 | `project` | Project name string. This will be added to every resource label as `project=yourproject` | `"yourproject"` |
