@@ -277,6 +277,7 @@ peer_identities:
 | `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity-for-order-operation) | `[]` |
 | `additional_orderers` | List of additional oderers. Execute one at a time. [Refer](#New-orderer-for-order-addition) | `[]` |
+| `MspIdOverride` | To override `nameOverride` with a different MSPID | `""` |
 
 #### Admin identity for order operation;
 
@@ -312,6 +313,27 @@ additional_orderers:
       - orderer-sys-channel
 ```
 
+##### Steps to do;
+```bash
+Example; adding a new orderer3 to the running network.
+
+1. Register the new orderer identity in respective MSP CA.
+2. Register the new orderer identity in respective TLSCA. Make sure to use the same identity name and identity secret in both places.
+3. Prepare a fabric-ops values files with the new orderer information and orderer admin identity as described above.
+4. Run helm install fabric-ops with the this values file and watch the job output and make sure that there is no failures. If all the tasks are success, then you will see the following log at the end;
+============ [SUCCESS] Successfully uploaded artifacts of orderer3-orderer to filestore. ============
+File hash = 4a9cb5f5fe2b935944813aaa4509d1b3d4f7db562f31b97899a7d8e0fd8e0a43 orderer3-orderer-orderer-sys-channel_2024_01_04_150835.block
+File hash = 11682afaff1a8dd17970b048c799afedc343259aad16176aba1ac5d322d6a1f4 orderer3-orderer-tls-certs_2024_01_04_150835.tar.gz
+5. Copy the block file name and orderer tls archive file name from the above job log. This job will upload these files to the filestore registry by default and print it in the output for our reference. 
+6. Add the new orderer3 in your fabric-orderer deployment values file by specifing the genesis block file and tls archive file name explicitily since these are not the default one. 
+  - name: orderer3
+    identity_name: orderer3-orderer
+    identity_secret: orderer3ordererSamplePassword
+    block_file: orderer3-orderer-orderer-sys-channel_2024_01_04_150835.block
+    tls_cert_archive: orderer3-orderer-tls-certs_2024_01_04_150835.tar.gz
+7. Run helm upgrade on your fabric-orderer and check the new orderer logs. Make sure it is joning all the channels and syncing. 
+```
+
 ## How to update/renew orderer node TLS certificates in a running hyperpedger fabric network ?
 
 | Parameter                | Description             | Default        |
@@ -324,6 +346,7 @@ additional_orderers:
 | `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity-for-order-operation) | `[]` |
 | `orderers_to_renew_tls_cert` | List of oderers to renew the tls cert. Execute one at a time. [Refer](#Orderer-renew-order-format) | `[]` |
+| `MspIdOverride` | To override `nameOverride` with a different MSPID | `""` |
 
 #### Orderer renew order format;
 
