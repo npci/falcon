@@ -322,15 +322,22 @@ Example; adding a new orderer3 to the running network.
 3. Prepare a fabric-ops values files with the new orderer information and orderer admin identity as described above.
 4. Run helm install fabric-ops with the this values file and watch the job output and make sure that there is no failures. If all the tasks are success, then you will see the following log at the end;
 ============ [SUCCESS] Successfully uploaded artifacts of orderer3-orderer to filestore. ============
-File hash = 4a9cb5f5fe2b935944813aaa4509d1b3d4f7db562f31b97899a7d8e0fd8e0a43 orderer3-orderer-orderer-sys-channel_2024_01_04_150835.block
-File hash = 11682afaff1a8dd17970b048c799afedc343259aad16176aba1ac5d322d6a1f4 orderer3-orderer-tls-certs_2024_01_04_150835.tar.gz
+File hash = 4a9cb5f5fe2b935944813aaa4509d1b3d4f7db562f31b97899a7d8e0fd8e0a43 `orderer3-orderer-orderer-sys-channel_2024_01_04_150835.block`
+File hash = 11682afaff1a8dd17970b048c799afedc343259aad16176aba1ac5d322d6a1f4 `orderer3-orderer-tls-certs_2024_01_04_150835.tar.gz`
+
 5. Copy the block file name and orderer tls archive file name from the above job log. This job will upload these files to the filestore registry by default and print it in the output for our reference. 
 6. Add the new orderer3 in your fabric-orderer deployment values file by specifing the genesis block file and tls archive file name explicitily since these are not the default one. 
+
+Your fabric-orderer array should look like this for the new orderer.
+.
+.
+.
   - name: orderer3
     identity_name: orderer3-orderer
     identity_secret: orderer3ordererSamplePassword
     block_file: orderer3-orderer-orderer-sys-channel_2024_01_04_150835.block
     tls_cert_archive: orderer3-orderer-tls-certs_2024_01_04_150835.tar.gz
+
 7. Run helm upgrade on your fabric-orderer and check the new orderer logs. Make sure it is joning all the channels and syncing. 
 ```
 
