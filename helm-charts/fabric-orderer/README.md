@@ -51,7 +51,7 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | Name                      | Description                                     | Default |
 | ------------------------- | ----------------------------------------------- | ----- |
 | `nameOverride` | This has to match with Orderer Org name. | `"orderer"` |
-| `fullnameOverride` |  | `""` |
+| `fullnameOverride` | Helm default | `""` |
 | `project` | Project name string. This will be added to every resource label as `project=yourproject` | `"yourproject"` |
 | `csr_names_cn` | Country name abbreviation in TWO letter | `"IN"` |
 | `csr_names_st` | State | `"Maharashtra"` |
@@ -121,9 +121,9 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `global.metrics.serviceMonitor.metricRelabelings` | ServiceMonitor metricRelabelings if required  | `[]` |
 | `global.metrics.serviceMonitor.namespaceSelector.any` | ServiceMonitor to choose the service from all ns | `true` |
 | `global.metrics.serviceMonitor.targetLabels` | ServiceMonitor target label | `[]` |
-| `global.metrics.statsd.network` |  | `"udp"` |
-| `global.metrics.statsd.address` |  | `"127.0.0.1:8125"` |
-| `global.metrics.statsd.writeInterval` |  | `"10s"` |
+| `global.metrics.statsd.network` | Configuration for statsd provider | `"udp"` |
+| `global.metrics.statsd.address` | Configuration for statsd provider | `"127.0.0.1:8125"` |
+| `global.metrics.statsd.writeInterval` | Configuration for statsd provider | `"10s"` |
 | `global.env` | Additional ENV variables for all Orderers | `[]` |
 | `startupProbe` | Default Orderer startupProbe `(Globally/Per Orderer)` | `{}` |
 | `livenessProbe` | Default Orderer livenessProbe `(Globally/Per Orderer)` | `{}` |

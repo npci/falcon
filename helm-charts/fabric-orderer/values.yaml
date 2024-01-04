@@ -10,57 +10,9 @@ orderer_cert_base_dir: "/var/hyperledger/orderer"
 orderer_data_dir: "/var/hyperledger/production"
 filestore_ssl: false
 ica_tls_cert_file: /root/ica-cert.pem
-# orderers:
-#   - name: orderer0
-#     identity_name: orderer0-orderer
-#     identity_secret: orderer0ordererSamplePassword
-#     block_file: orderer0-orderer-orderer-sys-channel_2023_11_23_080452.block
-#     tls_cert_archive: orderer0-orderer-renewed-tls-certs_2023_11_23_080452.tar.gz
-#     renew_orderer_certs: true
-#     require_certs_dir_persistence: true
-#     use_existing_pvc_data: existingPvcName
-#     # Additional labels unique for this orderer  
-#     additionalLabels:
-#       extraOrdererLabel1: extraOrdererLabelvalue1
-#       extraOrdererLabel2: extraOrdererLabelvalue2
-#     # Additional env variables unique to this orderer
-#     additionalEnvironmentVars:
-#      - name: ORDERER_ENV_VAR
-#        value: orderer0_env_var
-
-# global:
-#   containerPort: 7050
-#   servicePort: 7050
-#   replicaCount: 1
-#   ica_endpoint: ""
-#   tlsca_endpoint: ""
-#   block_file: genesis.block
-#   require_certs_dir_persistence: true
-#   image: {}
-#   serviceAccount:
-#     annotations: []
-#   ingressEnabled: true
-#   ingress: {}
-#   storageAccessMode: ReadWriteOnce
-#   dataStorageSize: "10Gi"
-#   certStorageSize: "50M"
-#   storageClass: standard
-#   additionalLabels: {}
-#   operations: {}
-#   metrics: {}
-#   env: {}
-
 podAnnotations: {}
 podSecurityContext: {}
-  # fsGroup: 2000
 securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
 resources: {}
 startupProbe:
   tcpSocket:
@@ -79,3 +31,127 @@ livenessProbe:
     port: 7050
   periodSeconds: 10
   failureThreshold: 3
+
+## Example complete list of orderer deployment values.
+# orderers:
+#   - name: orderer0
+#     identity_name: orderer0-orderer
+#     identity_secret: orderer0ordererSamplePassword
+#   - name: orderer1
+#     identity_name: orderer1-orderer
+#     identity_secret: orderer1ordererSamplePassword
+#   - name: orderer2
+#     identity_name: orderer2-orderer
+#     identity_secret: orderer2ordererSamplePassword
+
+# csr_names_cn: IN
+# csr_names_st: Maharashtra
+# csr_names_l: Mumbai
+# csr_names_o: Your Company Name
+
+# filestore_endpoint: http://filestore.my-hlf-domain.com:30001
+# filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
+# ica_tls_cert_file: /root/ica-cert.pem
+# retry_seconds: 60
+# hlf_domain: my-hlf-domain.com
+
+# init:
+#   image:
+#    repository: npcioss/hlf-builder
+#    tag: 2.4
+
+# global:
+#   containerPort: 7050
+#   servicePort: 7050
+#   replicaCount: 1
+#   ica_endpoint: ica-orderer.my-hlf-domain.com:30000
+#   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
+#   block_file: genesis.block
+#   require_certs_dir_persistence: true
+#   image:
+#     repository: hyperledger/fabric-orderer
+#     pullPolicy: IfNotPresent
+#     imagePullSecrets: []
+#     tag: "2.4"
+#   serviceAccount:
+#     annotations: []
+#   ingressEnabled: true
+#   ingress:
+#     className: "nginx"
+#     annotations:
+#       nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+#   storageAccessMode: ReadWriteOnce
+#   dataStorageSize: "10Gi"
+#   certStorageSize: "50M"
+#   storageClass: standard
+#   ## Configuration for the Operations Service: https://hyperledger-fabric.readthedocs.io/en/latest/operations_service.html
+#   operations:
+#     serviceName: operations
+#     serviceType: ClusterIP
+#     servicePort: 8443
+#   metrics:
+#     ## Select metrics provider. Possible values are "prometheus", "statsd" or "disabled"
+#     provider: disabled
+
+#     ## Only applicable if provider is "prometheus"
+#     ## A serviceMonitor will be created for each Orderer with the configuration provided below
+#     serviceMonitor:
+#       enabled: false
+#       additionalLabels: {}
+#       namespace: ""
+
+#       ## This should be equal to the operations port name
+#       portName: operations
+#       scrapeInterval: 30s
+#       honorLabels: true
+#       relabelings: []
+#       metricRelabelings: []
+
+#       ## Default: scrape .Release.Namespace only
+#       ## To scrape all, use the following:
+#       ## namespaceSelector:
+#       ##   any: true
+#       namespaceSelector:
+#         any: true
+#       targetLabels: []
+    
+#     ## Configuration for statsd provider
+#     ## Statsd prefix will be the orderer identity name
+#     statsd:
+#       network: udp
+#       address: 127.0.0.1:8125
+#       writeInterval: 10s
+#   env:
+#     - name: FABRIC_LOGGING_SPEC
+#       value: INFO
+#     - name: ORDERER_GENERAL_GENESISMETHOD
+#       value: file
+#     - name: ORDERER_GENERAL_LISTENADDRESS
+#       value: 0.0.0.0
+#     - name: ORDERER_GENERAL_TLS_ENABLED
+#       value: "true"
+#     - name: ORDERER_GENERAL_LOCALMSPDIR
+#       value: "{{ .Values.orderer_cert_base_dir }}/msp"
+#     - name: ORDERER_GENERAL_TLS_CERTIFICATE
+#       value: "{{ .Values.orderer_cert_base_dir }}/tls/server.crt"
+#     - name: ORDERER_GENERAL_TLS_PRIVATEKEY
+#       value: "{{ .Values.orderer_cert_base_dir }}/tls/server.key"
+#     - name: ORDERER_GENERAL_TLS_ROOTCAS
+#       value: "[{{ .Values.orderer_cert_base_dir }}/tls/ca.crt]"
+#     - name: ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE
+#       value: "{{ .Values.orderer_cert_base_dir }}/tls/server.crt"
+#     - name: ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY
+#       value: "{{ .Values.orderer_cert_base_dir }}/tls/server.key"
+#     - name: ORDERER_GENERAL_CLUSTER_ROOTCAS
+#       value: "[{{ .Values.orderer_cert_base_dir }}/tls/ca.crt]"
+#   resources: {}
+#   nodeSelector: {}
+#   tolerations: []
+#   affinity: {}
+
+# startupProbe: {}
+# livenessProbe: {}
+# readinessProbe: {}
+# podAnnotations: {}
+# podSecurityContext: {}
+# securityContext: {}
