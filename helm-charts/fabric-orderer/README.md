@@ -13,8 +13,16 @@ This chart can deploy and bootstrap the Hyperledger Fabric-Orderer nodes in kube
 - Helm 3.10.1+
 - PV provisioner support in the underlying infrastructure
 - Ingress
+- Additionally the following prerequisites must be done before deploying CA with CNI based routing. https://github.com/npci/falcon/tree/main/examples#prerequisite
 
 ## Installing the Chart
+
+> **NOTICE**: Before installing the orderer chart, please make sure that you have the following in place;-
+
+1. Filestore is deployed and it is reachable at the filestore endpoint provided in `.Values.filestore_endpoint` 
+2. You have Orderer, InitialPeer Org ICA's are deployed and respective Orderer, admin identities have been created.
+3. You have executed the `crytpgen` job and verified the Orderer TLS Cert archive and Genesis block file has got created and it is available in your filestore under your project directory. Your project directory will be `.Values.project` by default.
+4. Orderer deployment will not pass the init container if these conditions are not met.
 
 Download the `falcon fabric-orderer` charts repo locally:
 
