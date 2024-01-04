@@ -5,7 +5,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 
 ### Supports the following operations
 
-- [x] [Identity registration](#How-to-register-new-identites-?) [Supported types: ica, admin, client, peer, orderer]
+- [x] [Identity registration](#How-to-register-new-identites-) [Supported types: ica, admin, client, peer, orderer]
 - [x] [Genesis block creation](#Genesis-block-creation)
 - [x] [Channel creation](#Channel-creation)
 - [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
