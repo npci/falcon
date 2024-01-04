@@ -6,7 +6,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 ### Supports the following operations
 
 - [x] [Identity registration](#How-to-register-new-identites-) [Supported types: ica, admin, client, peer, orderer]
-- [x] [Genesis block creation](#How-to-create-Genesis-block-channel-transcation-tx-)
+- [x] [Genesis block creation](#how-to-create-genesis-block--channel-transcation-tx-)
 - [x] [Channel creation](#Channel-creation)
 - [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
 - [x] [Adding Orgs to channel](#Adding-Orgs-to-channel)
@@ -111,7 +111,7 @@ organizations:
       port: "30000"
 ```
 
-## Channel creation
+## How to create new Channel ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -136,7 +136,7 @@ admin_identity:
     require_tls_enrollment: false
 ```
 
-## AnchorPeer update on channel
+## How to update AnchorPeer on channel ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -160,7 +160,7 @@ anchor_peers:
      port: "30000"
 ```
 
-## Adding Orgs to channel
+## How to add a new Org to channel ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -190,7 +190,7 @@ organizatons:
    anchor_peer_port: 30000
 ```
 
-## Chaincode installation
+## How to install Chaincode on peers ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -216,7 +216,7 @@ peer_identities:
  - identity_name: peer2-initialpeerorg
  ```
 
- ## Chaincode approval
+ ## How to approve Chaincode for an Org ?
 
  | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -238,7 +238,7 @@ peer_identities:
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
 
 
-## Chaincode commit
+## How to commmit Chaincode from an Org ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -259,7 +259,7 @@ peer_identities:
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
 
 
-## Order addition
+## How to add new Order node into a running hyperpedger fabric network ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -306,7 +306,7 @@ additional_orderers:
       - orderer-sys-channel
 ```
 
-## Order TLS cert renewal
+## How to update/renew orderer node TLS certificates in a running hyperpedger fabric network ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
