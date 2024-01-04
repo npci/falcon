@@ -45,7 +45,7 @@ The following table lists the configurable parameters of the Fabric-ops chart fo
 | `ca_secret` | The kubernetes secret contains the CA username and password at `user` and `password` keys. | `""` |
 | `identities` | The array of identities with identity information. [Refer](#Identity-array-example) | `[]` |
 
-##### Identity array example;
+#### Identity array example;
 
 ```bash
 $ identities:
