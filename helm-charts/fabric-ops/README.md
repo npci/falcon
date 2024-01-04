@@ -9,7 +9,7 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 - [x] [Genesis block creation](#Genesis-block-creation)
 - [x] [Channel creation](#Channel-creation)
 - [x] [Anchorpeer list update on channel](#AnchorPeer-update-on-channel)
-- [x] Adding Orgs to channel
+- [x] [Adding Orgs to channel](#Adding-Orgs-to-channel)
 - [x] Chaincode installation
 - [x] Chaincode approval
 - [x] Chaincode commit
@@ -161,4 +161,34 @@ anchor_peers:
      port: "30000"
    - host: peer2-initialpeerorg.my-hlf-domain.com
      port: "30000"
+```
+
+## Adding Orgs to channel
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `fabric_actions.configure_org_channel` | `true` to specify the job is to add new org | `true` |
+| `ica_endpoint` | FQDN of the MSPCA server endpoint with port | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
+| `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
+| `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
+| `hlf_channel` | The channel to update | `""` |
+| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+| `organizatons` | List of organizations to add. [Refer](#Organization-list-format) | `[]` |
+
+#### Organization list format;
+
+```bash
+organizatons:
+ - name: org1
+   ica_endpoint: ica-org1.my-hlf-domain.com:30000
+   identity_name: admin
+   identity_secret: org1AdminSamplePassword
+   anchor_peer: peer0-org1.my-hlf-domain.com
+   anchor_peer_port: 30000
+ - name: org2
+   ica_endpoint: ica-org2.my-hlf-domain.com:30000
+   identity_name: admin
+   identity_secret: org2AdminSamplePassword
+   anchor_peer: peer0-org2.my-hlf-domain.com
+   anchor_peer_port: 30000
 ```
