@@ -63,7 +63,10 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `peers.[].identity_name` | The identity of peer | `""` |
 | `peers.[].identity_secret` | The identity password of peer | `""` |
 | `peers.[].additionalLabels` | The identity password of peer | `""` |
-| `peers.[].useCouchDB` | `true` if couchdb container should be added to every peer | default `.Values.global.useCouchDB` |
+| `peers.[].require_certs_dir_persistence` | `true` for enabling PVC support for the `fabric_base_dir` | `""` |
+| `peers.[].ingressEnabled` | `true` to enable ingress for peer | default `global.ingressEnabled` |
+| `peers.[].ingressClass` | Ingress classname for peer | default `global.ingressClass` |
+| `peers.[].useCouchDB` | `true` if couchdb container should be added to this peer | default `.Values.global.useCouchDB` |
 | `peers.[].couchImageRegistry` | CouchDb image registry | default `.Values.global.couchImageRegistry` |
 | `peers.[].couchImageRepo` | CouchDb image repo | default `.Values.global.couchImageRepo` |
 | `peers.[].couchImageTag` | CouchDb image tag | default `.Values.global.couchImageTag` |
@@ -79,7 +82,9 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `peers.[].couchResources` | CouchDb resources | default `.Values.global.couchResources` |
 | `peers.[].couchContainerPort` | CouchDb container port | default `.Values.global.couchContainerPort` |
 | `peers.[].couchUseExistingPvcPrefix` | If you want to use an existing pvc for Couch. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-couchdb"` |
-| `peers.[].couchDataDir` | CouchDb data directory| default `.Values.global.couchDataDir` |
+| `peers.[].couchDataDir` | CouchDb data directory | default `.Values.global.couchDataDir` |
+| `peers.[].couchDiskSize` | CouchDb PVC DiskSize | default `.Values.global.couchDiskSize` |
+| `peers.[].couchPvcAccessMode` | CouchDb PVC accessmode | default `.Values.global.couchPvcAccessMode` |
 | `peers.[].dindImageRegistry` | Dind image registry | default `.Values.global.dindImageRegistry` |
 | `peers.[].dindImageRepo` | Dind image repo | default `.Values.global.dindImageRepo` |
 | `peers.[].dindImageTag` | Dind image tag | default `.Values.global.dindImageTag` |
@@ -91,20 +96,22 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `peers.[].disableDefaultDindStartupProbe` | `true` to disable default Dind StartupProbe | default `.Values.global.disableDefaultDindStartupProbe` |
 | `peers.[].disableDefaultDindLivenessProbe` | `true` to disable default Dind LivenessProbe | default `.Values.global.disableDefaultDindLivenessProbe` |
 | `peers.[].disableDefaultDindReadinessProbe` | `true` to disable default Dind ReadinessProbe | default `.Values.global.disableDefaultDindReadinessProbe` |
-| `peers.[].dindResources` | Dind resources | default `.Values.global.couchResources` |
+| `peers.[].dindResources` | Dind resources | default `.Values.global.dindResources` |
 | `peers.[].dindUseExistingPvcPrefix` | If you want to use an existing pvc for Dind. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-dind"` |
-| `peers.[].dindDataDir` | Dind data directory| default `.Values.global.dindDataDir` |
+| `peers.[].dindDataDir` | Dind data directory | default `.Values.global.dindDataDir` |
+| `peers.[].dindDiskSize` | Default Dind pvc disk size | default `.Values.global.dindDiskSize` |
+| `peers.[].dindPvcAccessMode` | Dind pvc access mode | default `.Values.global.dindPvcAccessMode` |
 | `peers.[].peerImageRegistry` | Peer image registry | default `.Values.global.peerImageRegistry` |
 | `peers.[].peerImageRepo` | Peer image repo | default `.Values.global.peerImageRepo` |
 | `peers.[].peerImageTag` | Peer image tag | default `.Values.global.peerImageTag` |
-| `peers.[].peerContainerPort` | Peer container port| default `.Values.global.peerContainerPort` |
-| `peers.[].peerServicePort` | Peer service tag | default `.Values.global.peerServicePort` |
+| `peers.[].peerContainerPort` | Peer container port | default `.Values.global.peerContainerPort` |
+| `peers.[].peerServicePort` | Peer service port | default `.Values.global.peerServicePort` |
 | `peers.[].peerImageTag` | Peer image tag | default `.Values.global.peerImageTag` |
 | `peers.[].core_peer_gossip_bootstrap` | Core peer endpoint for bootstrapping | default `.Values.global.core_peer_gossip_bootstrap` |
 | `peers.[].core_ledger_state_couchdbconfig_requesttimeout` | Couchdb requesttimeout | default `.Values.global.core_ledger_state_couchdbconfig_requesttimeout` |
 | `peers.[].core_ledger_state_couchdbconfig_maxretries` | Couchdb maxretries | default `.Values.global.core_ledger_state_couchdbconfig_maxretries` |
 | `peers.[].core_ledger_state_couchdbconfig_maxupdatebatchsize` | Couchdb maxupdatebatchsize | default `.Values.global.core_ledger_state_couchdbconfig_maxupdatebatchsize` |
-| `peers.[].core_ledger_state_couchdbconfig_internalquerylimit` | Couchdb internal querylimit  | default `.Values.global.core_ledger_state_couchdbconfig_internalquerylimit` |
+| `peers.[].core_ledger_state_couchdbconfig_internalquerylimit` | Couchdb internal querylimit | default `.Values.global.core_ledger_state_couchdbconfig_internalquerylimit` |
 | `peers.[].core_ledger_state_couchdbconfig_totalquerylimit` | Couchdb total querylimit | default `.Values.global.core_ledger_state_couchdbconfig_totalquerylimit` |
 | `peers.[].core_ledger_state_couchdbconfig_couchdbaddress` | Couchdb address | default `.Values.global.core_ledger_state_couchdbconfig_couchdbaddress` |
 | `peers.[].additionalEnvironmentVars.peer` | Peer additional env variable | default `{}` |
@@ -115,77 +122,81 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `peers.[].disableDefaultPeerLivenessProbe` | `true` to disable default Peer LivenessProbe | default `.Values.global.disableDefaultPeerLivenessProbe` |
 | `peers.[].disableDefaultPeerReadinessProbe` | `true` to disable default Peer ReadinessProbe | default `.Values.global.disableDefaultPeerReadinessProbe` |
 | `peers.[].peerResources` | Peer resources | default `.Values.global.peerResources` |
-| `peers.[].peerDataDir` | Peer data directory| default `.Values.global.peerDataDir` |
+| `peers.[].peerDataDir` | Peer data directory | default `.Values.global.peerDataDir` |
+| `peers.[].peerDiskSize` | Peer data DiskSize | default `.Values.global.peerDiskSize` |
+| `peers.[].peerCertDiskSize` | Peer cert DiskSize | default `.Values.global.peerCertDiskSize` |
+| `peers.[].peerPvcAccessMode` | Peer PVC accessmode | default `.Values.global.peerPvcAccessMode` |
 | `peers.[].peerUseExistingPvcPrefix` | If you want to use an existing pvc for Peer. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-peer"` |
 | `global.hlf_domain` | The FQDN suffix for the peers. | `"my-hlf-domain.com"` |
-| `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
-| `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
+| `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `""` |
+| `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `""` |
 | `global.storageClass` | Default Storageclass name | `"standard"` |
-| `global.ingressEnabled` |  | `true` |
-| `global.ingressClass` |  | `"nginx"` |
-| `global.ingressPort` |  | `30000` |
-| `global.ingress.annotations.nginx.ingress.kubernetes.io/ssl-passthrough` |  | `"true"` |
-| `global.imageRegistry` |  | `"hyperledger"` |
-| `global.imagePullPolicy` |  | `"IfNotPresent"` |
-| `global.serviceAccount.annotations` |  | `[]` |
-| `global.operations.serviceName` |  | `"operations"` |
-| `global.operations.serviceType` |  | `"ClusterIP"` |
-| `global.operations.servicePort` |  | `9443` |
-| `global.metrics.provider` |  | `"disabled"` |
-| `global.metrics.serviceMonitor.enabled` |  | `false` |
-| `global.metrics.serviceMonitor.additionalLabels` |  | `{}` |
-| `global.metrics.serviceMonitor.namespace` |  | `""` |
-| `global.metrics.serviceMonitor.portName` |  | `"operations"` |
-| `global.metrics.serviceMonitor.scrapeInterval` |  | `"30s"` |
-| `global.metrics.serviceMonitor.honorLabels` |  | `true` |
-| `global.metrics.serviceMonitor.relabelings` |  | `[]` |
-| `global.metrics.serviceMonitor.metricRelabelings` |  | `[]` |
-| `global.metrics.serviceMonitor.namespaceSelector.any` |  | `true` |
-| `global.metrics.serviceMonitor.targetLabels` |  | `[]` |
-| `global.metrics.statsd.network` |  | `"udp"` |
-| `global.metrics.statsd.address` |  | `"127.0.0.1:8125"` |
-| `global.metrics.statsd.writeInterval` |  | `"10s"` |
-| `global.useCouchDB` |  | `true` |
-| `global.couchImageRegistry` |  | `"docker.io"` |
-| `global.couchImageRepo` |  | `"couchdb"` |
-| `global.couchImageTag` |  | `"3.1.1"` |
-| `global.couchContainerPort` |  | `"5984"` |
-| `global.couchServiceType` |  | `"ClusterIP"` |
-| `global.couchServicePort` |  | `"5984"` |
-| `global.couchDataDir` |  | `"/opt/couchdb/data"` |
-| `global.couchDiskSize` |  | `"1G"` |
-| `global.couchPvcAccessMode` |  | `"ReadWriteOnce"` |
-| `global.couchDbUser` |  | `"couchDbSampleUser"` |
-| `global.couchDbUserPass` |  | `"couchDbSampleUserPassword"` |
-| `global.couchSecurityContext` |  | `{}` |
-| `global.couchResources` |  | `{}` |
-| `global.peerImageRegistry` |  | `"docker.io"` |
-| `global.peerImageRepo` |  | `"hyperledger/fabric-peer"` |
-| `global.peerImageTag` |  | `2.4` |
-| `global.peerContainerPort` |  | `"7051"` |
-| `global.peerDataDir` |  | `"/var/hyperledger/production"` |
-| `global.peerServiceType` |  | `"ClusterIP"` |
-| `global.peerServicePort` |  | `"30002"` |
-| `global.peerDiskSize` |  | `"1G"` |
-| `global.peerCertDiskSize` |  | `"50M"` |
-| `global.peerPvcAccessMode` |  | `"ReadWriteOnce"` |
-| `global.peerArgs` |  | `["peer", "node", "start"]` |
-| `global.core_peer_gossip_bootstrap` |  | `"peer0-initialpeerorg.my-hlf-domain.com:30000"` |
-| `global.core_ledger_state_couchdbconfig_requesttimeout` |  | `"180s"` |
-| `global.core_ledger_state_couchdbconfig_maxretries` |  | `"5"` |
-| `global.core_ledger_state_couchdbconfig_maxupdatebatchsize` |  | `"5000"` |
-| `global.core_ledger_state_couchdbconfig_internalquerylimit` |  | `"5000"` |
-| `global.core_ledger_state_couchdbconfig_totalquerylimit` |  | `"5000"` |
-| `global.core_ledger_state_couchdbconfig_couchdbaddress` |  | `"localhost:5984"` |
-| `global.peerSecurityContext` |  | `{}` |
-| `global.peerResources` |  | `{}` |
-| `global.dindImageRegistry` |  | `"docker.io"` |
-| `global.dindImageRepo` |  | `"npcioss/dind"` |
-| `global.dindImageTag` |  | `"dind-20-10-16"` |
-| `global.dindDataDir` |  | `"/var/lib/docker"` |
-| `global.dindDiskSize` |  | `"5G"` |
-| `global.dindPvcAccessMode` |  | `"ReadWriteOnce"` |
-| `global.dindDocker_tls_certdir` |  | `""` |
-| `global.dindSecurityContext.privileged` |  | `true` |
-| `global.dindResources` |  | `{}` |
-| `additionalEnvironmentVars.peer` |  | `[]` |
+| `global.ingressEnabled` | `true` to enable ingress for all peers.  | `true` |
+| `global.ingressClass` | Default ingress class name | `"nginx"` |
+| `global.ingressPort` | Default ingress port, will be used in peer env `CORE_PEER_GOSSIP_EXTERNALENDPOINT`  | `30000` |
+| `global.ingress.annotations` | Default ingress annotation | `nginx.ingress.kubernetes.io/ssl-passthrough:"true"` |
+| `global.imageRegistry` | Global image registry | `"hyperledger"` |
+| `global.imagePullPolicy` | Global image pull policy | `"IfNotPresent"` |
+| `global.serviceAccount.annotations` | Global serviceAccount annotation | `[]` |
+| `global.operations.serviceName` | Service name for operations | `"operations"` |
+| `global.operations.serviceType` | Service type for operations | `"ClusterIP"` |
+| `global.operations.servicePort` | Service port for operations | `9443` |
+| `global.metrics.provider` | Select metrics provider. Possible values are "prometheus", "statsd" or "disabled"  | `"disabled"` |
+| `global.metrics.serviceMonitor.enabled` |  A serviceMonitor will be created for each peer | `false` |
+| `global.metrics.serviceMonitor.additionalLabels` | Additional labels for the serviceMonitor | `{}` |
+| `global.metrics.serviceMonitor.namespace` | ServiceMonitor namespace | `""` |
+| `global.metrics.serviceMonitor.portName` | ServiceMonitor target portname | `"operations"` |
+| `global.metrics.serviceMonitor.scrapeInterval` | ServiceMonitor scrapeInterval | `"30s"` |
+| `global.metrics.serviceMonitor.honorLabels` | ServiceMonitor honorLabels | `true` |
+| `global.metrics.serviceMonitor.relabelings` | ServiceMonitor relabeling if required | `[]` |
+| `global.metrics.serviceMonitor.metricRelabelings` | ServiceMonitor metricRelabelings if required | `[]` |
+| `global.metrics.serviceMonitor.namespaceSelector.any` | ServiceMonitor to choose the service from all ns | `true` |
+| `global.metrics.serviceMonitor.targetLabels` | ServiceMonitor target label | `[]` |
+| `global.metrics.statsd.network` | Configuration for statsd provider | `"udp"` |
+| `global.metrics.statsd.address` | Configuration for statsd provider | `"127.0.0.1:8125"` |
+| `global.metrics.statsd.writeInterval` | Configuration for statsd provider | `"10s"` |
+| `global.useCouchDB` | `true` if couchdb container should be added to all peers | `true` |
+| `global.couchImageRegistry` | Default CouchDb image registry | `"docker.io"` |
+| `global.couchImageRepo` | Default CouchDb image repo  | `"couchdb"` |
+| `global.couchImageTag` | Default CouchDb image tag | `"3.1.1"` |
+| `global.couchContainerPort` | Default CouchDb container port | `"5984"` |
+| `global.couchServiceType` | Default CouchDb ServiceType | `"ClusterIP"` |
+| `global.couchServicePort` | Default CouchDb ServicePort | `"5984"` |
+| `global.couchDataDir` | Default CouchDb data directory | `"/opt/couchdb/data"` |
+| `global.couchDiskSize` | Default CouchDb PVC DiskSize | `"1G"` |
+| `global.couchPvcAccessMode` | Default CouchDb PVC accessmode | `"ReadWriteOnce"` |
+| `global.couchDbUser` | CouchDb DB user | `"couchDbSampleUser"` |
+| `global.couchDbUserPass` | CouchDb DB user pass | `"couchDbSampleUserPassword"` |
+| `global.couchSecurityContext` | Global couchdb SecurityContext | `{}` |
+| `global.couchResources` | Default CouchDb resources | `{}` |
+| `global.peerImageRegistry` | Default Peer image registry | `"docker.io"` |
+| `global.peerImageRepo` | Default Peer image repo | `"hyperledger/fabric-peer"` |
+| `global.peerImageTag` | Default Peer image tag | `2.4` |
+| `global.peerContainerPort` | Default Peer container port | `"7051"` |
+| `global.peerDataDir` | Default Peer data directory | `"/var/hyperledger/production"` |
+| `global.peerServiceType` | Default Peer Service type | `"ClusterIP"` |
+| `global.peerServicePort` | Default Peer service port | `"30002"` |
+| `global.peerDiskSize` | Default Peer data DiskSize | `"1G"` |
+| `global.peerCertDiskSize` | Default Peer cert DiskSize | `"50M"` |
+| `global.peerPvcAccessMode` | Default peer PvcAccessMode | `"ReadWriteOnce"` |
+| `global.core_peer_gossip_bootstrap` | Default Core peer endpoint for bootstrapping | `""` |
+| `global.core_ledger_state_couchdbconfig_requesttimeout` | Default Couchdb request timeout | `"180s"` |
+| `global.core_ledger_state_couchdbconfig_maxretries` | DefaultCouchdb maxretries | `"5"` |
+| `global.core_ledger_state_couchdbconfig_maxupdatebatchsize` | Default Couchdb maxupdatebatchsize | `"5000"` |
+| `global.core_ledger_state_couchdbconfig_internalquerylimit` | Default Couchdb internal querylimit | `"5000"` |
+| `global.core_ledger_state_couchdbconfig_totalquerylimit` | Default Couchdb total querylimit | `"5000"` |
+| `global.core_ledger_state_couchdbconfig_couchdbaddress` | Default Couchdb address | `"localhost:5984"` |
+| `global.peerSecurityContext` | Default peerSecurityContext | `{}` |
+| `global.peerResources` | Default peer resources | `{}` |
+| `global.dindImageRegistry` | Default Dind image registry | `"docker.io"` |
+| `global.dindImageRepo` | Default Dind image repo | `"npcioss/dind"` |
+| `global.dindImageTag` | Default Dind image tag | `"dind-20-10-16"` |
+| `global.dindDataDir` | Default Dind data directory | `"/var/lib/docker"` |
+| `global.dindDiskSize` | Default Dind pvc disk size | `"5G"` |
+| `global.dindPvcAccessMode` | Default Dind pvc access mode | `"ReadWriteOnce"` |
+| `global.dindDocker_tls_certdir` | Default Dind docker tls directory | `""` |
+| `global.dindSecurityContext` | Default Dins security context | `privileged:true` |
+| `global.dindResources` | Dind resources | `{}` |
+| `additionalEnvironmentVars.peer` | Default global additional env variables for all peer containers | `[]` |
+| `additionalEnvironmentVars.dind` | Default global additional env variables for all dind containers | `[]` |
+| `additionalEnvironmentVars.couchDb` | Default global additional env variables for all couchDb containers | `[]` |

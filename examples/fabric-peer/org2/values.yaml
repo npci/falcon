@@ -112,10 +112,7 @@ global:
   peerCertDiskSize: 50M
   peerPvcAccessMode: ReadWriteOnce
   peerSecurityContext: {}
-  peerArgs:
-    - peer
-    - node
-    - start
+
   core_peer_gossip_bootstrap: peer0-org2.my-hlf-domain.com:30000
   core_ledger_state_couchdbconfig_requesttimeout: "180s"
   core_ledger_state_couchdbconfig_maxretries: "5"
