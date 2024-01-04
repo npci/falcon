@@ -46,9 +46,9 @@ The following table lists the configurable parameters of the Fabric-ca chart and
 | ------------------------ | ----------------------- | -------------- |
 | `nameOverride` |  | `""` |
 | `fullnameOverride` |  | `""` |
-| `imagePullSecrets` |  | `[]` |
+| `imagePullSecrets` | Default image pull registry secret | `[]` |
 | `additionalLabels` | Additional labels if required | `{}` |
-| `project` | Project name tag of your choice | `"yourproject"` |
+| `project` | Project name string. This will be added to every resource label as `project=yourproject` | `"yourproject"` |
 | `replicaCount` | Number of CA pods. HA is not supported with this version | `1` |
 | `restartPolicy` | Pod restart policy on failure | `"Always"` |
 | `image.repository` | Fabric-ca container image repository | `"hyperledger/fabric-ca"` |
