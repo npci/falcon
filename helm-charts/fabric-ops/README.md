@@ -379,12 +379,13 @@ orderers_to_renew_tls_cert:
 ```bash
 Example; renewing tls certificate of orderer1 in the running network.
 
-1. Prepare a values file with the above information. The `endpoint` in the `orderers_to_renew_tls_cert` array should match to the corresponding orderer's identity present in the network. This is very important, because the entire process is based on this endpoint. 
+1. Prepare a values file with the above information. The `endpoint` in the `orderers_to_renew_tls_cert` array should match to the corresponding orderer identity present in the network. This is very important, because the entire process is based on this endpoint.
+
 2. Run helm install fabric-ops with the this values file and watch the job output and make sure that there is no failures. If all the tasks are success, then you will see some similar logs at the end;
 
 ============ [SUCCESS] Successfully uploaded artifacts of orderer1-orderer to filestore. ============
-File hash = c9d71e5870a5e06675349ff7cefdba7810c0948e0df1410e20b8f6795e38a6d5 orderer1-orderer-orderer-sys-channel_2024_01_04_151953.block
-File hash = d2d550fd31ae156f7a294be37e2be6f710117ce623fb6ab1bdb4da81257c3d82 orderer1-orderer-renewed-tls-certs_2024_01_04_151953.tar.gz
+File hash = c9d71e5870a5e06675349ff7cefdba7810c0948e0df1410e20b8f6795e38a6d5 `orderer1-orderer-orderer-sys-channel_2024_01_04_151953.block`
+File hash = d2d550fd31ae156f7a294be37e2be6f710117ce623fb6ab1bdb4da81257c3d82 `orderer1-orderer-renewed-tls-certs_2024_01_04_151953.tar.gz`
 
 3. There is a slight difference with orderer addition and orderer tls cert renewal/updation process. Now you need to update the `fabric-orderer` values files on the existing orderer for which you have updated the tls cert by explicitily specifying this new block, tls archive and make `renew_orderer_certs` true. So that `helm upgrade`, the init orderer init container will cleanup the existing cert directory and do a fresh enrollment with msp and download the latest tls archive and genesis block file from filestore. So the existing orderer1 entry should be modified as follows;
 
