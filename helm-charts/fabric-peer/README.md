@@ -16,12 +16,14 @@ This chart can deploy Hyperledger Fabric-Peer nodes in kubernetes.
 
 ## Installing the Chart
 
+> **NOTICE**: You must register the peer identities with respective MSP and TLSCA using the fabric-ops `identity` job.
+
 Download the `falcon fabric-peer` charts repo locally:
 
 To install the chart with the release name `peer`:
 
 ```bash
-$ helm install peer -n peerorg helm-charts/fabric-peer/ -f values.yaml
+$ helm install peer -n initialpeerorg helm-charts/fabric-peer/ -f examples/fabric-peer/initialpeerorg/values.yaml
 ```
 
 This above command deploys the peer nodes based on your peer count at peer array. 
@@ -33,7 +35,7 @@ This above command deploys the peer nodes based on your peer count at peer array
 To uninstall/delete the release:
 
 ```bash
-$ helm delete peer -n peerorg
+$ helm delete peer -n initialpeerorg
 ```
 
 ## Configuration
@@ -42,25 +44,49 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `nameOverride` |  | `"initialpeerorg"` |
-| `fullnameOverride` |  | `""` |
-| `project` |  | `"yourproject"` |
-| `imagePullSecrets` |  | `[]` |
-| `csr_names_cn` |  | `"IN"` |
-| `csr_names_st` |  | `"Maharashtra"` |
-| `csr_names_l` |  | `"Mumbai"` |
-| `csr_names_o` |  | `"Your Company Name"` |
-| `init.image.repository` |  | `"npcioss/hlf-builder"` |
-| `init.image.tag` |  | `2.4` |
-| `ica_tls_certfile` |  | `"/tmp/ca-cert.pem"` |
-| `tlsca_tls_certfile` |  | `"/tmp/tlsca-cert.pem"` |
-| `fabric_base_dir` |  | `"/etc/hyperledger/fabric"` |
-| `retry_seconds` |  | `60` |
-| `peers` |  | `[]` |
-| `global.hlf_domain` |  | `"my-hlf-domain.com"` |
-| `global.ica_endpoint` |  | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
-| `global.tlsca_endpoint` |  | `"tls-ca.my-hlf-domain.com:30000"` |
-| `global.storageClass` |  | `"standard"` |
+| `nameOverride` | This has to match with Peer Org name | `"initialpeerorg"` |
+| `fullnameOverride` | Helm default | `""` |
+| `project` | Project name string. This will be added to every resource label as `project=yourproject` | `"yourproject"` |
+| `imagePullSecrets` | The container registry imagePullSecrets | `[]` |
+| `csr_names_cn` | Country name abbreviation in TWO letter | `"IN"` |
+| `csr_names_st` | State | `"Maharashtra"` |
+| `csr_names_l` | Locality | `"Mumbai"` |
+| `csr_names_o` | Organization Name | `"Your Company Name"` |
+| `init.image.repository` | The init container image repository | `"npcioss/hlf-builder"` |
+| `init.image.tag` | The init container image tag | `2.4` |
+| `ica_tls_certfile` | Path for the init container to store the public key cert of `global.ica_endpoint` | `"/tmp/ca-cert.pem"` |
+| `tlsca_tls_certfile` | Path for the init container to store the public key cert of `global.tlsca_endpoint` | `"/tmp/tlsca-cert.pem"` |
+| `fabric_base_dir` | Path to store the `msp/tls` enrollment certificates | `"/etc/hyperledger/fabric"` |
+| `retry_seconds` | Retry period in seconds for any script activities. Eg; enrollment | `60` |
+| `peers` | The list of Peer identities to deploy | `[]` |
+| `peers.[].name` | The name of the peer | `peer[n]` |
+| `peers.[].identity_name` | The identity of peer | `""` |
+| `peers.[].identity_secret` | The identity password of peer | `""` |
+| `peers.[].additionalLabels` | The identity password of peer | `""` |
+| `peers.[].useCouchDB` | `true` if couchdb container should be added to every peer | default `.Values.global.useCouchDB` |
+| `peers.[].couchImageRegistry` | CouchDb image registry | default `.Values.global.couchImageRegistry` |
+| `peers.[].couchImageRepo` | CouchDb image repo | default `.Values.global.couchImageRepo` |
+| `peers.[].couchImageTag` | CouchDb image tag | default `.Values.global.couchImageTag` |
+| `peers.[].couchDbUser` | CouchDb DB user | default `.Values.global.couchDbUser` |
+| `peers.[].couchDbUserPass` | CouchDb DB user password | default `.Values.global.couchDbUserPass` |
+| `peers.[].additionalEnvironmentVars.couchDb` | CouchDb DB additional env variable | default `{}` |
+| `peers.[].couchStartupProbe` | CouchDb startuprobe | default `.Values.couchStartupProbe` |
+| `peers.[].couchLivenessProbe` | CouchDb livenessprobe | default `.Values.couchLivenessProbe` |
+| `peers.[].couchReadinessProbe` | CouchDb readinessprobe | default `.Values.couchReadinessProbe` |
+| `peers.[].disableDefaultCouchStartupProbe` | `true` to disable default CouchDb StartupProbe | default `.Values.global.disableDefaultCouchStartupProbe` |
+| `peers.[].disableDefaultCouchLivenessProbe` | `true` to disable default CouchDb LivenessProbe | default `.Values.global.disableDefaultCouchLivenessProbe` |
+| `peers.[].disableDefaultCouchReadinessProbe` | `true` to disable default CouchDb ReadinessProbe | default `.Values.global.disableDefaultCouchReadinessProbe` |
+| `peers.[].couchResources` | CouchDb resources | default `.Values.global.couchResources` |
+| `peers.[].couchContainerPort` | CouchDb container port | default `.Values.global.couchContainerPort` |
+| `peers.[].couchUseExistingPvcPrefix` | If you want to use an existing pvc for Couch. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-couchdb"` |
+| `peers.[].couchDataDir` | CouchDb data directory| default `.Values.global.couchDataDir` |
+
+
+
+| `global.hlf_domain` | The FQDN suffix for the peers. | `"my-hlf-domain.com"` |
+| `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
+| `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `"tls-ca.my-hlf-domain.com:30000"` |
+| `global.storageClass` | Default Storageclass name | `"standard"` |
 | `global.ingressEnabled` |  | `true` |
 | `global.ingressClass` |  | `"nginx"` |
 | `global.ingressPort` |  | `30000` |

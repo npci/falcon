@@ -93,7 +93,7 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `global.storageAccessMode` | Storageclass access mode `(Globally/Per Orderer)` | `"ReadWriteOnce"` |
 | `global.dataStorageSize` | PVC size of orderer data directory `(Globally/Per Orderer)` | `"10Gi"` |
 | `global.certStorageSize` | PVC size of orderer cert directory `(Globally/Per Orderer)` | `"50M"` |
-| `global.storageClass` | Storageclass name `(Globally/Per Orderer)` | `"standard"` |
+| `global.storageClass` | Default Storageclass name `(Globally/Per Orderer)` | `"standard"` |
 | `global.containerPort` | Default Orderer container port | `7050` |
 | `global.servicePort` | Default Orderer k8s service port | `7050` |
 | `global.serviceType` | Default Orderer k8s service type | `ClusterIP` |
