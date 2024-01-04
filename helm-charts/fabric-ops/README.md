@@ -44,6 +44,9 @@ The following table lists the configurable parameters of the Fabric-ops chart fo
 | `ca_endpoint` | FQDN of the CA server endpoint with port. `Eg; ica-org1.my-hlf-domain.com:30000` | `""` |
 | `ca_secret` | The kubernetes secret contains the CA username and password at `user` and `password` keys. | `""` |
 | `identities` | The array of identities with identity information. [Refer](#Identity-array-example) | `[]` |
+| `identities.[].identity_name` | Name of the identity | `""` |
+| `identities.[].identity_secret` | Password of the identity | `""` |
+| `identities.[].identity_type` | Type of the identity `ica,peer,orderer etc` | `""` |
 
 #### Identity array example;
 
