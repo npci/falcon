@@ -13,6 +13,7 @@ This chart can deploy Hyperledger Fabric-Peer nodes in kubernetes.
 - Helm 3.10.1+
 - PV provisioner support in the underlying infrastructure
 - Ingress
+- Additionally the following prerequisites must be done before deploying peers. https://github.com/npci/falcon/tree/main/examples#prerequisite
 
 ## Installing the Chart
 
