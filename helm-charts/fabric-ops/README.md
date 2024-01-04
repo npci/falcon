@@ -16,39 +16,31 @@ A Helm chart for performing various Fabric CA Server operations Kubernetes.
 - [x] Order addition
 - [x] Order TLS cert renewal
 
+#### The following parameters are common across all fabric-ops job.
+
+| Parameter                | Description             | Default        |
+| ------------------------ | ----------------------- | -------------- |
+| `nameOverride` | Replace with the Org name | `""` |
+| `fullnameOverride` | Helm default to override the resournce name if needed | `""` |
+| `project` | Your project name. | `"yourproject"` |
+| `fabric_actions` | Unique for every job type | `` |
+| `imagePullSecrets` | Image pull secret  | `[]` |
+| `image.repository` | Image repository of the builder container | `"npcioss/hlf-builder"` |
+| `image.pullPolicy` | Image pull policy | `"IfNotPresent"` |
+| `image.tag` | Image tag | `"2.4"` |
+| `csr_names_cn` | Country name abbreviation in TWO letter | `"IN"` |
+| `csr_names_st` | State | `"Maharashtra"` |
+| `csr_names_l` | Locality | `"Mumbai"` |
+| `csr_names_o` | Organization name | `"Your Company Name"` |
+| `hlf_domain` | The FQDN suffix will be used in CSR generation. Eg `peer0-prg1.my-hlf-domain.com` | `"my-hlf-domain.com"` |
+
 ## Identity registration Configuration
 
 The following table lists the configurable parameters of the Fabric-ops chart for Identity registration.
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `nameOverride` |  | `"initialpeerorg"` |
-| `fullnameOverride` |  | `""` |
-| `project` |  | `"yourproject"` |
-| `fabric_actions.identity` |  | `true` |
-| `imagePullSecrets` |  | `[]` |
-| `image.repository` |  | `"npcioss/hlf-builder"` |
-| `image.pullPolicy` |  | `"IfNotPresent"` |
-| `image.tag` |  | `"2.4"` |
-| `csr_names_cn` |  | `"IN"` |
-| `csr_names_st` |  | `"Maharashtra"` |
-| `csr_names_l` |  | `"Mumbai"` |
-| `csr_names_o` |  | `"Your Company Name"` |
-| `hlf_domain` |  | `"my-hlf-domain.com"` |
-| `ca_endpoint` |  | `"ica-initialpeerorg.my-hlf-domain.com:30000"` |
-| `ca_secret` |  | `"initialpeerorg-secret"` |
-| `tlsca_endpoint` |  | `"tls-ca.my-hlf-domain.com:30000"` |
-| `identities` |  | `[]` |
-| `tools.storageAccessMode` |  | `"ReadWriteOnce"` |
-| `tools.storageSize` |  | `"5Gi"` |
-| `tools.storageClass` |  | `"standard"` |
-| `serviceAccount.create` |  | `true` |
-| `serviceAccount.annotations` |  | `{}` |
-| `serviceAccount.name` |  | `""` |
-| `podAnnotations` |  | `{}` |
-| `podSecurityContext` |  | `{}` |
-| `securityContext` |  | `{}` |
-| `resources` |  | `{}` |
-| `nodeSelector` |  | `{}` |
-| `tolerations` |  | `[]` |
-| `affinity` |  | `{}` |
+| `fabric_actions.identity` | `true` to specify the job is an identity registration job | `true` |
+| `ca_endpoint` | FQDN of the CA server endpoint with port. `Eg; ica-org1.my-hlf-domain.com:30000` | `""` |
+| `ca_secret` | The kubernetes secret contains the CA username and password at `user` and `password` keys. | `""` |
+| `identities` | The array of identities with identity information. Refer | `[]` |
