@@ -43,4 +43,22 @@ The following table lists the configurable parameters of the Fabric-ops chart fo
 | `fabric_actions.identity` | `true` to specify the job is an identity registration job | `true` |
 | `ca_endpoint` | FQDN of the CA server endpoint with port. `Eg; ica-org1.my-hlf-domain.com:30000` | `""` |
 | `ca_secret` | The kubernetes secret contains the CA username and password at `user` and `password` keys. | `""` |
-| `identities` | The array of identities with identity information. Refer | `[]` |
+| `identities` | The array of identities with identity information. [Refer](#Identity-array-example) | `[]` |
+
+##### Identity array example;
+
+```bash
+$ identities:
+  - identity_name: ica-orderer
+    identity_secret: icaordererSamplePassword
+    identity_type: ica
+  - identity_name: admin
+    identity_secret: ordererAdminpassword
+    identity_type: admin
+  - identity_name: orderer0-orderer
+    identity_secret: orderer0ordererSamplePassword
+    identity_type: orderer
+  - identity_name: peer10-org
+    identity_secret: peer10orgSamplePassword
+    identity_type: peer
+```
