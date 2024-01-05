@@ -18,11 +18,9 @@ init:
    repository: npcioss/hlf-builder
    tag: 2.4
 
-ica_tls_cert_file: /root/ica-cert.pem
-tlsca_tls_cert_file: /root/tlsca-cert.pem
+ica_tls_certfile: /tmp/ca-cert.pem
+tlsca_tls_certfile: /tmp/tlsca-cert.pem
 fabric_base_dir: /etc/hyperledger/fabric
-enroll_on_every_pod_recreation: true
-renew_peer_certs: false
 retry_seconds: 60
 
 peers:
@@ -38,13 +36,14 @@ global:
   ica_endpoint: ica-org2.my-hlf-domain.com:30000
   tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
   storageClass: standard
+  ingressEnabled: true
   ingressClass: nginx
   ingressPort: 30000
   ingress:
     annotations:
       nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   imageRegistry: hyperledger
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   serviceAccount:
     annotations: []
 
@@ -101,19 +100,6 @@ global:
   couchPvcAccessMode: ReadWriteOnce
   couchSecurityContext: {}
   couchResources: {}
-  #couchStartupProbe: {}
-  couchLivenessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 5984
-  couchReadinessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 5984
   
   peerImageRegistry: docker.io
   peerImageRepo: hyperledger/fabric-peer
@@ -126,10 +112,7 @@ global:
   peerCertDiskSize: 50M
   peerPvcAccessMode: ReadWriteOnce
   peerSecurityContext: {}
-  peerArgs:
-    - peer
-    - node
-    - start
+
   core_peer_gossip_bootstrap: peer0-org2.my-hlf-domain.com:30000
   core_ledger_state_couchdbconfig_requesttimeout: "180s"
   core_ledger_state_couchdbconfig_maxretries: "5"
@@ -138,23 +121,6 @@ global:
   core_ledger_state_couchdbconfig_totalquerylimit: "5000"
   core_ledger_state_couchdbconfig_couchdbaddress: "localhost:5984"
   peerResources: {}
-  #peerStartupProbe: {}
-  peerLivenessProbe:
-    failureThreshold: 3
-    httpGet:
-      path: /healthz
-      port: 9443
-      scheme: HTTP
-    periodSeconds: 10
-    successThreshold: 1
-  peerReadinessProbe:
-    failureThreshold: 3
-    httpGet:
-      path: /healthz
-      port: 9443
-      scheme: HTTP
-    periodSeconds: 10
-    successThreshold: 1
 
   dindImageRegistry: docker.io
   dindImageRepo: npcioss/dind
@@ -166,21 +132,8 @@ global:
   dindResources: {}
   dindSecurityContext:
     privileged: true
-  #dindStartupProbe: {}
-  dindLivenessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 2375
-  dindReadinessProbe:
-    failureThreshold: 3
-    periodSeconds: 10
-    successThreshold: 1
-    tcpSocket:
-      port: 2375
 
-additonalEnvironmentVars:
+additionalEnvironmentVars:
   # couchDb:
   #   - name: EXTRA_ENV_COUCHDB
   #     value: Extra_couch_env_value

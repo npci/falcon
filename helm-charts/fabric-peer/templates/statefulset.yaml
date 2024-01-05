@@ -3,10 +3,13 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $BankName      := .Values.nameOverride }}
-{{- $HlfDomain     := .Values.global.hlf_domain }}
-{{- $IcaEndpoint   := .Values.global.ica_endpoint }}
-{{- $TlsCaEndpoint := .Values.global.tlsca_endpoint }}
+{{- $BankName          := .Values.nameOverride }}
+{{- $HlfDomain         := .Values.global.hlf_domain }}
+{{- $IcaEndPoint       := .Values.global.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.global.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $OverrideMspId     := .Values.MspIdOverride }}
 
 {{- range .Values.peers }}
 ---
@@ -16,6 +19,9 @@ metadata:
   name: {{ .name }}-{{ include "fabric-peer.name" $ }}
   labels:
     {{- include "fabric-peer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   serviceName: {{ .name }}-{{ include "fabric-peer.name" $ }}
   replicas: {{ $.Values.replicaCount }}
@@ -23,6 +29,9 @@ spec:
     matchLabels:
       {{- include "fabric-peer.selectorLabels" $ | nindent 6 }}
       app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+      {{- if .additionalLabels -}}
+      {{ toYaml .additionalLabels | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       {{- with $.Values.global.podAnnotations }}
@@ -32,6 +41,9 @@ spec:
       labels:
         {{- include "fabric-peer.selectorLabels" $ | nindent 8 }}
         app: {{ .name }}-{{ include "fabric-peer.name" $ }}
+        {{- if .additionalLabels -}}
+        {{ toYaml .additionalLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
@@ -46,13 +58,16 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy  | default "Always" }}
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/enroll.sh {{ $IcaEndpoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }} {{ $.Values.tlsca_tls_cert_file }}
+           - /scripts/enroll.sh {{ $IcaEndPoint }} {{ $TlsCaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $IcaTlsCertFile }} {{ $TlsCaTlsCertFile }}
           volumeMounts:
            - name: cert-peer
              mountPath: {{ $.Values.fabric_base_dir }}
            - name: config
              mountPath: /scripts/enroll.sh
              subPath: enroll.sh
+           - name: common
+             mountPath: /scripts/functions.sh
+             subPath: functions.sh
       containers:
         {{- if .useCouchDB | default $.Values.global.useCouchDB }}
         - name: couchdb
@@ -63,17 +78,32 @@ spec:
               value: {{ .couchDbUser | default $.Values.global.couchDbUser | quote  }}
             - name: COUCHDB_PASSWORD
               value: {{ .couchDbUserPass | default $.Values.global.couchDbUserPass | quote }}
-            {{- if $.Values.additonalEnvironmentVars.couchDb }}
-            {{- tpl (toYaml $.Values.additonalEnvironmentVars.couchDb) $ | nindent 12 }}
+            {{- if $.Values.additionalEnvironmentVars.couchDb }}
+            {{- tpl (toYaml $.Values.additionalEnvironmentVars.couchDb) $ | nindent 12 }}
+            {{- end }}
+            {{- if ((.additionalEnvironmentVars).couchDb) }}
+            {{- tpl (toYaml .additionalEnvironmentVars.couchDb) $ | nindent 12 }}
             {{- end }}
           securityContext:
             {{- toYaml $.Values.global.couchSecurityContext | nindent 12 }}
           startupProbe:
-             {{- toYaml (.couchStartupProbe | default $.Values.global.couchStartupProbe) | nindent 12 }}
+          {{- if .couchStartupProbe }}
+             {{- toYaml .couchStartupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultCouchStartupProbe | default $.Values.global.disableDefaultCouchStartupProbe) }}
+             {{- toYaml $.Values.couchStartupProbe | nindent 12 }}
+          {{- end }}
           livenessProbe:
-             {{- toYaml (.couchLivenessProbe | default $.Values.global.couchLivenessProbe) | nindent 12 }}
+          {{- if .couchLivenessProbe }}
+             {{- toYaml .couchLivenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultCouchLivenessProbe | default $.Values.global.disableDefaultCouchLivenessProbe) }}
+             {{- toYaml $.Values.couchLivenessProbe | nindent 12 }}
+          {{- end }} 
           readinessProbe:
-             {{- toYaml (.couchReadinessProbe | default $.Values.global.couchReadinessProbe) | nindent 12 }}
+          {{- if .couchReadinessProbe }}
+             {{- toYaml .couchReadinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultCouchReadinessProbe | default $.Values.global.disableDefaultCouchReadinessProbe) }}
+             {{- toYaml $.Values.couchReadinessProbe | nindent 12 }}
+          {{- end }}
           resources:
              {{- toYaml (.couchResources | default $.Values.global.couchResources) | nindent 12 }}
           ports:
@@ -88,15 +118,30 @@ spec:
           env:
             - name: DOCKER_TLS_CERTDIR
               value: {{ .dindDocker_tls_certdir | default $.Values.global.dindDocker_tls_certdir | quote }}
-            {{- if $.Values.additonalEnvironmentVars.dind }}
-            {{- tpl (toYaml $.Values.additonalEnvironmentVars.dind) $ | nindent 12 }}
+            {{- if $.Values.additionalEnvironmentVars.dind }}
+            {{- tpl (toYaml $.Values.additionalEnvironmentVars.dind) $ | nindent 12 }}
+            {{- end }}
+            {{- if ((.additionalEnvironmentVars).dind) }}
+            {{- tpl (toYaml .additionalEnvironmentVars.dind) $ | nindent 12 }}
             {{- end }}
           startupProbe:
-             {{- toYaml (.dindStartupProbe | default $.Values.global.dindStartupProbe) | nindent 12 }}
+          {{- if .dindStartupProbe }}
+             {{- toYaml .dindStartupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultDindStartupProbe | default $.Values.global.disableDefaultDindStartupProbe) }}
+             {{- toYaml $.Values.dindStartupProbe | nindent 12 }}
+          {{- end }}
           livenessProbe:
-             {{- toYaml (.dindLivenessProbe | default $.Values.global.dindLivenessProbe) | nindent 12 }}
+          {{- if .dindLivenessProbe }}
+             {{- toYaml .dindLivenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultDindLivenessProbe | default $.Values.global.disableDefaultDindLivenessProbe) }}
+             {{- toYaml $.Values.dindLivenessProbe | nindent 12 }}
+          {{- end }} 
           readinessProbe:
-             {{- toYaml (.dindReadinessProbe | default $.Values.global.dindReadinessProbe) | nindent 12 }}
+          {{- if .dindReadinessProbe }}
+             {{- toYaml .dindReadinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultDindReadinessProbe | default $.Values.global.disableDefaultDindReadinessProbe) }}
+             {{- toYaml $.Values.dindReadinessProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml (.dindResources | default $.Values.global.dindResources) | nindent 12 }}
           lifecycle:
@@ -120,7 +165,7 @@ spec:
           ports:
             - containerPort: {{ .peerContainerPort | default $.Values.global.peerContainerPort }}
           {{- $peerServicePort := .peerServicePort | default $.Values.global.peerServicePort }}
-          {{- $IngressPort := $.Values.global.ingressPort }}
+          {{- $IngressPort     := $.Values.global.ingressPort }}
           env:
             - name: CORE_PEER_ADDRESS
               value: {{ .identity_name }}:{{ $peerServicePort }}
@@ -137,7 +182,7 @@ spec:
             - name: CORE_PEER_TLS_CERT_FILE
               value: "{{ $.Values.fabric_base_dir }}/tls/server.crt"
             - name: CORE_PEER_LOCALMSPID
-              value: "{{ $.Values.nameOverride }}"
+              value: "{{ $OverrideMspId | default $.Values.nameOverride }}"
             {{- if .useCouchDB | default $.Values.global.useCouchDB }}
             - name: CORE_LEDGER_STATE_STATEDATABASE
               value: "CouchDB"
@@ -176,15 +221,30 @@ spec:
             {{- else }}
               value: "disabled"
             {{- end }}
-            {{- if $.Values.additonalEnvironmentVars.peer }}
-            {{- tpl (toYaml $.Values.additonalEnvironmentVars.peer) $ | nindent 12 }}
+            {{- if $.Values.additionalEnvironmentVars.peer }}
+            {{- tpl (toYaml $.Values.additionalEnvironmentVars.peer) $ | nindent 12 }}
+            {{- end }}
+            {{- if ((.additionalEnvironmentVars).peer) }}
+            {{- tpl (toYaml .additionalEnvironmentVars.peer) $ | nindent 12 }}
             {{- end }}
           startupProbe:
-             {{- toYaml (.peerStartupProbe | default $.Values.global.peerStartupProbe) | nindent 12 }}
+          {{- if .peerStartupProbe }}
+             {{- toYaml .peerStartupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultPeerStartupProbe | default $.Values.global.disableDefaultPeerStartupProbe) }}
+             {{- toYaml $.Values.peerStartupProbe | nindent 12 }}
+          {{- end }}
           livenessProbe:
-             {{- toYaml (.peerLivenessProbe | default $.Values.global.peerLivenessProbe) | nindent 12 }}
+          {{- if .peerLivenessProbe }}
+             {{- toYaml .peerLivenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultPeerLivenessProbe | default $.Values.global.disableDefaultPeerLivenessProbe) }}
+             {{- toYaml $.Values.peerLivenessProbe | nindent 12 }}
+          {{- end }} 
           readinessProbe:
-             {{- toYaml (.peerReadinessProbe | default $.Values.global.peerReadinessProbe) | nindent 12 }}
+          {{- if .peerReadinessProbe }}
+             {{- toYaml .peerReadinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultPeerReadinessProbe | default $.Values.global.disableDefaultPeerReadinessProbe) }}
+             {{- toYaml $.Values.peerReadinessProbe | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml (.peerResources | default $.Values.global.peerResources) | nindent 12 }}
           volumeMounts:
@@ -196,30 +256,40 @@ spec:
             - name: cert-peer
               mountPath: {{ $.Values.fabric_base_dir }}/tls
               subPath: tls
-            - name: config
+            - name: common
               mountPath: {{ $.Values.fabric_base_dir }}/msp/config.yaml
               subPath: config.yaml
       volumes:
+        - name: common
+          configMap:
+            name: {{ include "fabric-peer.fullname" $ }}-common
+            defaultMode: 0777
         - name: config
           configMap:
-            name: {{ include "fabric-peer.fullname" $ }}-fabric-ops
+            name: {{ .name }}-{{ include "fabric-peer.fullname" $ }}-conf
             defaultMode: 0777
-        {{- if $.Values.enroll_on_every_pod_recreation }}
+        {{- if not .require_certs_dir_persistence }}
         - name: cert-peer
           emptyDir:
            sizeLimit: {{ $.Values.global.peerCertDiskSize }}
         {{- end }}
-      {{- with .nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
+      {{- if .nodeSelector }} 
+        {{- toYaml .nodeSelector | nindent 8 }}
+      {{- else if not (.disableGlobalNodeSelector) }}
+        {{- toYaml $.Values.global.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- with .affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+      {{- if .affinity }} 
+        {{- toYaml .affinity | nindent 8 }}
+      {{- else if not (.disableGlobalAffinity) }}
+        {{- toYaml $.Values.global.affinity | nindent 8 }}
       {{- end }}
-      {{- with .tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+      {{- if .tolerations }} 
+        {{- toYaml .tolerations | nindent 8 }}
+      {{- else if not (.disableGlobalTolerations) }}
+        {{- toYaml $.Values.global.tolerations | nindent 8 }}
       {{- end }}
   volumeClaimTemplates:
   {{- if .useCouchDB | default $.Values.global.useCouchDB }}
@@ -251,7 +321,7 @@ spec:
         requests:
           storage: {{ .peerDiskSize | default $.Values.global.peerDiskSize }}
       storageClassName: {{ .peerStorageClass | default $.Values.global.storageClass }}
-{{- if not $.Values.enroll_on_every_pod_recreation }}
+{{- if (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
   - metadata:
       name: cert-peer
     spec:

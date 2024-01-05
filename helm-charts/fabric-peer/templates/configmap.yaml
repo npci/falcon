@@ -1,0 +1,151 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $HlfDomain := .Values.global.hlf_domain }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-peer.fullname" $ }}-common
+  labels:
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+data:
+  config.yaml: |
+      NodeOUs:
+        Enable: true
+        ClientOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: client
+        PeerOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: peer
+        AdminOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: admin
+        OrdererOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: orderer
+  functions.sh: |
+    function fabric_public_key_fetch() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_TLS_CERT_FILE=$2
+
+    while true; do
+      http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
+      if [ "$http_response" -eq "200" ]; then
+        echo "======== Fetching public key cert of https://$FABRIC_CA_URL, received HTTP response with 200. ========"
+          if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
+            echo "======== The downloaded public key cert of https://$FABRIC_CA_URL ========"
+            cat $FABRIC_TLS_CERT_FILE
+            break;
+          else
+            echo "======== There are some issues with fetching the public key using 'jq' OR 'curl' command. ========"
+          fi
+      else
+        echo "======== Fetching public key cert of https://$FABRIC_CA_URL, but received non 200 HTTP response $http_response. Init container will retry until it gets 200 response from https://$FABRIC_CA_URL. Cannot proceed without the public key cert. ========"
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+
+    function fabric_msp_enroll() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_CA_IDENTITY=$2
+    FABRIC_CA_SECRET=$3
+    FABRIC_TLS_CERT_FILE=$4
+
+    while true; do
+      echo "======== Enrolling $FABRIC_CA_IDENTITY to $FABRIC_CA_URL ========"
+      fabric-ca-client enroll \
+            --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
+            --mspdir {{ .Values.fabric_base_dir }}/msp \
+            --tls.certfiles $FABRIC_TLS_CERT_FILE \
+            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
+            --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
+      if [ $? -eq 0 ]; then
+        echo "======== Identity $FABRIC_CA_IDENTITY is valid and enrollment is successful. Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY ========"
+        cp {{ .Values.fabric_base_dir }}/msp/intermediatecerts/* {{ .Values.fabric_base_dir }}/msp/intermediatecerts/ca-cert.pem
+        echo "======== MSP directory has been configured successfully. ========"
+        break;
+      else
+        echo "======== Cannot login with the given Identity $FABRIC_CA_IDENTITY, will retry in {{ .Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints. ========"
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+   
+    function fabric_tls_enroll() {
+
+    FABRIC_CA_URL=$1
+    FABRIC_CA_IDENTITY=$2
+    FABRIC_CA_SECRET=$3
+    FABRIC_TLS_CERT_FILE=$4
+
+    while true; do
+      echo "======== Enrolling $FABRIC_CA_IDENTITY to $FABRIC_CA_URL ========"
+      fabric-ca-client enroll \
+            --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
+            --mspdir {{ .Values.fabric_base_dir }}/tls \
+            --tls.certfiles $FABRIC_TLS_CERT_FILE \
+            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
+            --enrollment.profile tls \
+            --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
+      if [ $? -eq 0 ]; then
+        echo "======== Identity $FABRIC_CA_IDENTITY is valid and enrollment is successful. Rearranging tls certificate directory structure for $FABRIC_CA_IDENTITY ========"
+        cp {{ .Values.fabric_base_dir }}/tls/tlscacerts/* {{ .Values.fabric_base_dir }}/tls/ca.crt;
+        cp {{ .Values.fabric_base_dir }}/tls/signcerts/* {{ .Values.fabric_base_dir }}/tls/server.crt;
+        cp {{ .Values.fabric_base_dir }}/tls/keystore/* /{{ .Values.fabric_base_dir }}/tls/server.key;
+        echo "======== TLS directory has been configured successfully. ========"
+        break;
+      else
+        echo "======== Cannot login with the given Identity $FABRIC_CA_IDENTITY, will retry in {{ .Values.retry_seconds }} seconds. Meanwhile kindly verify the identities and endpoints ========"
+        sleep {{ .Values.retry_seconds }}
+      fi
+    done
+    }
+
+{{- range .Values.peers }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}-{{ include "fabric-peer.fullname" $ }}-conf
+  labels:
+    {{- include "fabric-peer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
+data:
+  enroll.sh: |
+    source /scripts/functions.sh
+
+  {{- if .renew_peer_certs }}
+    echo "======== Peer cert renewal is set to true. This will remove the existing peer msp/tls certificates and generate new certs ========"
+    rm -rf {{ $.Values.fabric_base_dir }}/msp/
+    rm -rf {{ $.Values.fabric_base_dir }}/tls/
+    echo "Cleanup finished."
+  {{- end }}
+
+    if [ -f "{{ $.Values.fabric_base_dir }}/msp/signcerts/cert.pem" ]; then
+      echo "======== Found a client certificate at {{ $.Values.fabric_base_dir }}/msp/signcerts/cert.pem. Peer will re-use the existing msp certificates present in the msp directory ========"
+    else
+      echo "======== Cound not find a client certificate at {{ $.Values.fabric_base_dir }}/msp/signcerts/cert.pem. Proceeding to further msp enrollment ========"
+      rm -rf {{ $.Values.fabric_base_dir }}/msp/
+      fabric_public_key_fetch $1 $5
+      fabric_msp_enroll $1 $3 $4 $5
+    fi
+
+    if [ -f "{{ $.Values.fabric_base_dir }}/tls/signcerts/cert.pem" ]; then
+      echo "======== Found a client certificate at {{ $.Values.fabric_base_dir }}/tls/signcerts/cert.pem. Peer will re-use the existing tls certificates present in the tls directory ========"
+    else
+      echo "======== Cound not find a client certificate at {{ $.Values.fabric_base_dir }}/tls/signcerts/cert.pem. Proceeding to further msp enrollment ========"
+      rm -rf {{ $.Values.fabric_base_dir }}/tls/
+      fabric_public_key_fetch $2 $6
+      fabric_tls_enroll $2 $3 $4 $6
+    fi
+
+{{- end }}

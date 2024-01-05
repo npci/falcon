@@ -14,6 +14,7 @@ metadata:
     {{- include "fabric-ca.labels" . | nindent 4 }}
 data:
   init.sh: |
+    FABRIC_TLS_CERT_FILE=$4
     function fabric_public_key_fetch() {
 
     FABRIC_CA_URL=$1
@@ -67,7 +68,25 @@ data:
     done
     }
 
-    fabric_public_key_fetch $1 $4
-    fabric_validate_identity $1 $2 $3 $4
+    {{- if .Values.recreate_intermediate_cert | default false }}
+    echo "----------------------------------------------------------"
+    echo "Intermediate cert re-creation is set to true at Values.recreate_intermediate_cert. This will remove the existing intermediate public key certificate and fetch new cert."
+    echo "----------------------------------------------------------"
+    rm -rf ${FABRIC_TLS_CERT_FILE}
+    {{- end }}
+
+    if [ -f "${FABRIC_TLS_CERT_FILE}" ]; then
+      echo "----------------------------------------------------------"
+      echo "Found an intermediate certificate at ${FABRIC_TLS_CERT_FILE}"
+      echo "----------------------------------------------------------"
+    else
+      echo "----------------------------------------------------------"
+      echo "Cound not find an intermediate certificate at ${FABRIC_TLS_CERT_FILE}, downloading the public key cert."
+      echo "----------------------------------------------------------"
+      rm -rf ${FABRIC_TLS_CERT_FILE}
+      fabric_public_key_fetch $1 $4
+      fabric_validate_identity $1 $2 $3 $4
+      
+    fi
 
 {{- end }}

@@ -15,13 +15,86 @@ fullnameOverride: ""
 #     couchUseExistingPvcPrefix: couch-pvc # If you want to use an existing pvc for Couch. A pvc must exists with name couch-pvc-peer0-org-0
 #     peerUseExistingPvcPrefix: peer-pvc # If you want to use an existing pvc for Peer. A pvc must exists with name peer-pvc-peer0-org-0
 #     dindUseExistingPvcPrefix: dind-pvc # If you want to use an existing pvc for Dind. A pvc must exists with name dind-pvc-peer0-org1-0
-
-ica_tls_cert_file: /root/ica-cert.pem
-tlsca_tls_cert_file: /root/tlsca-cert.pem
+#     require_certs_dir_persistence: true # If you want PVC to store the msp/tls certs.
+#     renew_peer_certs: true # If you want to generate new msp/tls certificates on the next reboot.
+#     #Add additional env variables unique to this peer
+#     additionalEnvironmentVars:
+#      peer:
+#      - name: PEER_ENV_NAME
+#        value: peer_env_value
+#      dind:
+#      - name: DIND_ENV_NAME
+#        value: dind_env_value
+#      couchDb:
+#      - name: COUCHDB_ENV_NAME
+#        value: couchdb_env_value
+#     # Additional labels unique for this peer  
+#     additionalLabels:
+#       extraPeerLabel1: extraPeerLabelvalue1
+#       extraPeerLabel2: extraPeerLabelvalue2
 fabric_base_dir: /etc/hyperledger/fabric
-enroll_on_every_pod_recreation: true
-renew_peer_certs: false
 retry_seconds: 60
+
+couchStartupProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  tcpSocket:
+    port: 5984
+  initialDelaySeconds: 20
+couchLivenessProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  successThreshold: 1
+  tcpSocket:
+    port: 5984
+couchReadinessProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  successThreshold: 1
+  tcpSocket:
+    port: 5984
+
+peerStartupProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  tcpSocket:
+    port: 7051
+  initialDelaySeconds: 20
+peerLivenessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /healthz
+    port: 9443
+    scheme: HTTP
+  periodSeconds: 10
+  successThreshold: 1
+peerReadinessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /healthz
+    port: 9443
+    scheme: HTTP
+  periodSeconds: 10
+  successThreshold: 1
+
+dindStartupProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  tcpSocket:
+    port: 2375
+  initialDelaySeconds: 20 
+dindLivenessProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  successThreshold: 1
+  tcpSocket:
+    port: 2375
+dindReadinessProbe:
+  failureThreshold: 3
+  periodSeconds: 10
+  successThreshold: 1
+  tcpSocket:
+    port: 2375
 
 podAnnotations: {}
 podSecurityContext: {}
@@ -33,18 +106,5 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-autoscaling:
-nodeSelector: {}
-tolerations: []
-affinity: {}
+
+

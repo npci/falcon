@@ -54,6 +54,9 @@ Selector labels
 project: {{ .Values.project }}
 app.kubernetes.io/name: {{ include "fabric-ca.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if .Values.additionalLabels }}
+{{ toYaml .Values.additionalLabels }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -92,7 +95,7 @@ Common env variables
 - name: FABRIC_CA_SERVER_PORT
   value: {{ .Values.ca_server.container_port | quote }}
 - name: FABRIC_CA_SERVER_CSR_HOSTS
-  value: "{{ include "fabric-ca.fullname" . }},{{ include "fabric-ca.fullname" . }}.{{ .Values.tls_domain }}"
+  value: "{{ include "fabric-ca.fullname" . }},{{ include "fabric-ca.fullname" . }}.{{ .Values.tls_domain }} {{- if .Values.ca_server.additional_sans }},{{ join "," .Values.ca_server.additional_sans }} {{- end }}"
 - name: FABRIC_CA_SERVER_DEBUG
   value: {{ .Values.ca_server.debug | quote }}
 - name: FABRIC_CA_SERVER_CA_NAME

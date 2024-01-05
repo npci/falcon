@@ -74,11 +74,11 @@ Common env variables
 - name: CA_ADMIN_USER
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.ca.admin_secret }}
+      name: {{ .Values.ca_secret }}
       key: user
 - name: CA_ADMIN_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.ca.admin_secret }}
+      name: {{ .Values.ca_secret }}
       key: password
 {{- end }}

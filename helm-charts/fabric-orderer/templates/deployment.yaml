@@ -3,7 +3,8 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $IcaEndpoint := .Values.ca.ica_endpoint }}
+{{ $IcaEndpoint    := .Values.global.ica_endpoint }}
+{{ $OverrideMspId  := .Values.MspIdOverride }}
 
 {{- range .Values.orderers }}
 
@@ -15,6 +16,9 @@ metadata:
   labels:
     {{- include "fabric-orderer.labels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ $.Values.global.replicaCount }}
   strategy:
@@ -23,6 +27,9 @@ spec:
     matchLabels:
       {{- include "fabric-orderer.selectorLabels" $ | nindent 6 }}
       app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+      {{- if .additionalLabels -}}
+      {{ toYaml .additionalLabels | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -33,6 +40,9 @@ spec:
         {{- include "fabric-orderer.selectorLabels" $ | nindent 8 }}
         app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
         type: {{ $.Values.project }}-{{ include "fabric-orderer.fullname" $ }}
+        {{- if .additionalLabels -}}
+        {{ toYaml .additionalLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with $.Values.global.image.imagePullSecrets }}
       imagePullSecrets:
@@ -49,6 +59,9 @@ spec:
           args:
            - /scripts/enroll.sh {{ $IcaEndpoint }} {{ .identity_name }} {{ .identity_secret }} {{ $.Values.ica_tls_cert_file }}
           volumeMounts:
+           - name: common
+             subPath: functions.sh
+             mountPath: /scripts/functions.sh
            - name: config
              subPath: enroll.sh
              mountPath: /scripts/enroll.sh
@@ -64,6 +77,14 @@ spec:
           args:
             - orderer
           env:
+            - name: ORDERER_GENERAL_GENESISFILE
+              {{- if .block_file }}
+              value: "{{ $.Values.orderer_cert_base_dir }}/{{ .block_file }}"
+              {{- else }}
+              value: "{{ $.Values.orderer_cert_base_dir }}/{{ $.Values.global.block_file }}"
+              {{- end }}
+            - name: ORDERER_GENERAL_LOCALMSPID
+              value: {{ $OverrideMspId | default $.Values.nameOverride }}
             - name: ORDERER_OPERATIONS_LISTENADDRESS
               value: 0.0.0.0:8443
             {{- tpl (toYaml $.Values.global.env) $ | nindent 12 }}
@@ -81,6 +102,29 @@ spec:
             {{- else }}
               value: "disabled"
             {{- end }}
+            {{- if .additionalEnvironmentVars }}
+            {{- tpl (toYaml .additionalEnvironmentVars) $ | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+          {{- if .livenessProbe }}
+             {{- toYaml .livenessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultLivenessProbe | default $.Values.global.disableDefaultLivenessProbe) }}
+             {{- toYaml $.Values.livenessProbe | nindent 12 }}
+          {{- end }}          
+          startupProbe:
+          {{- if .startupProbe }}
+             {{- toYaml .startupProbe | nindent 12 }}
+          {{- else if not (.disableDefaultStartupProbe | default $.Values.global.disableDefaultStartupProbe) }}
+             {{- toYaml $.Values.startupProbe | nindent 12 }}
+          {{- end }}
+          readinessProbe:
+          {{- if .readinessProbe }}
+             {{- toYaml .readinessProbe | nindent 12 }}
+          {{- else if not (.disableDefaultReadinessProbe | default $.Values.global.disableDefaultReadinessProbe) }}
+             {{- toYaml $.Values.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+             {{- toYaml (.resources | default $.Values.global.resources) | nindent 12 }}
           ports:
             - name: http
               containerPort: {{ $.Values.global.containerPort }}
@@ -90,15 +134,19 @@ spec:
               name: data
             - mountPath: {{ $.Values.orderer_cert_base_dir }}
               name: certs
-            - name: config
+            - name: common
               subPath: config.yaml
               mountPath: {{ $.Values.orderer_cert_base_dir }}/msp/config.yaml
       volumes:
         - name: data
           persistentVolumeClaim:
+            {{- if .use_existing_pvc_data }}
+            claimName: {{ .use_existing_pvc_data }}
+            {{- else }}
             claimName: data-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
+            {{- end }}
         - name: certs
-          {{- if not $.Values.enroll_on_every_pod_recreation }}
+          {{- if (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
           persistentVolumeClaim:
             claimName: cert-{{ .name }}-{{ include "fabric-orderer.fullname" $ }}
           {{- else }}
@@ -107,19 +155,28 @@ spec:
           {{- end }}          
         - name: config
           configMap:
-            name: {{ include "fabric-orderer.fullname" $ }}-conf
+            name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}-conf
             defaultMode: 0777
-      {{- with $.Values.nodeSelector }}
+        - name: common
+          configMap:
+            name: {{ include "fabric-orderer.fullname" $ }}-common
+            defaultMode: 0777
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
+      {{- if .nodeSelector }} 
+        {{- toYaml .nodeSelector | nindent 8 }}
+      {{- else if not (.disableGlobalNodeSelector) }}
+        {{- toYaml $.Values.global.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- with $.Values.affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+      {{- if .affinity }} 
+        {{- toYaml .affinity | nindent 8 }}
+      {{- else if not (.disableGlobalAffinity) }}
+        {{- toYaml $.Values.global.affinity | nindent 8 }}
       {{- end }}
-      {{- with $.Values.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+      {{- if .tolerations }} 
+        {{- toYaml .tolerations | nindent 8 }}
+      {{- else if not (.disableGlobalTolerations) }}
+        {{- toYaml $.Values.global.tolerations | nindent 8 }}
       {{- end }}
-
 {{- end }}

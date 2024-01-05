@@ -4,6 +4,7 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{- range .Values.peers }}
+  {{- if .ingressEnabled | default $.Values.global.ingressEnabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -12,6 +13,9 @@ metadata:
   labels:
     app: {{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.labels" $ | nindent 4 }}
+    {{- if .additionalLabels -}}
+    {{ toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
   {{- with $.Values.global.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -29,4 +33,5 @@ spec:
                 name: {{ .name }}-{{ include "fabric-peer.name" $ }}
                 port:
                   number: {{ .peerServicePort | default $.Values.global.peerServicePort }}
+  {{- end }}
 {{- end }}

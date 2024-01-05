@@ -4,5 +4,5 @@ apiVersion: v2
 name: filestore
 description: A Helm chart for deploying an Nginx file sharing web server in Kubernetes.
 type: application
-version: 1.0.2
+version: 1.1.0
 appVersion: "1.16.0"

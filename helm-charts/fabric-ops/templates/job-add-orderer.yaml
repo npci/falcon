@@ -1,0 +1,100 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- if .Values.fabric_actions.add_orderer }}
+
+{{ $BankName         := .Values.nameOverride }}
+{{ $HlfDomain        := .Values.hlf_domain }}
+{{ $ChannelName      := .Values.channel_name }}
+{{ $Msp_base_dir     := printf "%s%s" .Values.workdir "/orderer/users/" }}
+{{ $OverrideMspId    := .Values.MspIdOverride }}
+
+{{- range .Values.admin_identity }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+spec:
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fabric-ops.selectorLabels" $ | nindent 8 }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fabric-ops.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Never
+      initContainers:
+      containers:
+        - name: cli
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          workingDir: {{ $.Values.workdir }}/peer
+          command: ["/bin/sh","-c"]
+          args:
+           - /scripts/fabric_add_orderer.sh;
+          tty: true
+          env: 
+            - name: FABRIC_LOGGING_SPEC
+              value: INFO
+            - name: CORE_PEER_LOCALMSPID
+              value: {{ $OverrideMspId | default $BankName }}
+            - name: CORE_PEER_MSPCONFIGPATH
+              value: {{ $.Values.core_peer_mspconfigpath_override | default (printf "%s%s%s" $Msp_base_dir .identity_name "/msp") }}
+            - name: CORE_PEER_TLS_ENABLED
+              value: "true"
+            - name: GOPATH
+              value: /opt/gopath
+            - name: ORDERER_CA
+              value: {{ $.Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+          volumeMounts:
+            - name: fabric-ops
+              subPath: config.yaml
+              mountPath: /tmp/config.yaml
+            - name: fabric-ops
+              subPath: fabric_enroll.sh
+              mountPath: /scripts/fabric_enroll.sh
+            - name: scripts
+              subPath: fabric_add_orderer.sh
+              mountPath: /scripts/fabric_add_orderer.sh
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}
+            defaultMode: 0777
+        - name: fabric-ops
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-functions
+            defaultMode: 0777
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}
+{{- end }}

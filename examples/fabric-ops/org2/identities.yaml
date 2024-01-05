@@ -2,16 +2,18 @@
 # # This is a YAML-formatted file.
 # # Declare variables to be passed into your templates.
 
-job_type: identity
 nameOverride: "org2"
 fullnameOverride: ""
 project: yourproject
 
+fabric_actions:
+  identity: true
+
 imagePullSecrets: []
 image:
   repository: npcioss/hlf-builder
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
+  pullPolicy: IfNotPresent
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN
@@ -19,16 +21,15 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-ca:
- ca_endpoint: ica-org2.my-hlf-domain.com:30000
- admin_secret: org2-secret
- tlss_ca_endpoint: tls-ca.my-hlf-domain.com:30000
-
 hlf_domain: my-hlf-domain.com
+
+ca_endpoint: ica-org2.my-hlf-domain.com:30000
+ca_secret: org2-secret
+tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 
 identities:
   - identity_name: admin
-    identity_secret: adminSamplePassword
+    identity_secret: org2AdminSamplePassword
     identity_type: admin
   - identity_name: peer0-org2
     identity_secret: peer0org2SamplePassword
@@ -36,12 +37,6 @@ identities:
   - identity_name: peer1-org2
     identity_secret: peer1org2SamplePassword
     identity_type: peer
-
-# .Values.core_peer_mspconfigpath_override - Use only if your admin username is not "admin". 
-# Not required for identity registration, but we use the same values file for deploying fabric-tools helm chart. 
-# This must be under /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/
-# Eg; /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/<admin-user>/msp
-# core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-org2/msp
 
 tools:
   storageAccessMode: ReadWriteOnce

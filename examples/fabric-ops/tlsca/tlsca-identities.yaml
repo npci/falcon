@@ -2,15 +2,17 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-job_type: identity
 nameOverride: "tlsca"
 fullnameOverride: ""
 project: yourproject
 
+fabric_actions:
+  identity: true
+
 image:
   repository: npcioss/hlf-builder
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
+  pullPolicy: IfNotPresent
+  ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
 
 csr_names_cn: IN
@@ -18,10 +20,10 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: "Your Company Name"
 
-ca:
- ca_endpoint: tls-ca.my-hlf-domain.com:30000
- admin_secret: tlsca-secret
+ca_endpoint: tls-ca.my-hlf-domain.com:30000
+ca_secret: tlsca-secret
 
+hlf_domain: my-hlf-domain.com
 identities:
   - identity_name: orderer0-orderer
     identity_secret: orderer0ordererSamplePassword

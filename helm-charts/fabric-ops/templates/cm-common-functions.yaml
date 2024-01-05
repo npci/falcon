@@ -1,0 +1,177 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}-functions
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  config.yaml: |
+      NodeOUs:
+        Enable: true
+        ClientOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: client
+        PeerOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: peer
+        AdminOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: admin
+        OrdererOUIdentifier:
+          Certificate: intermediatecerts/ca-cert.pem
+          OrganizationalUnitIdentifier: orderer
+  fabric_enroll.sh: |
+      function fabric_public_key_fetch() {
+
+      FABRIC_CA_URL=$1
+      FABRIC_TLS_CERT_FILE=$2
+
+      while true; do
+        http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
+        if [ "$http_response" -eq "200" ]; then
+          echo "============ Fetching public key cert of https://$FABRIC_CA_URL, received HTTP response with 200. ============"
+            if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
+              echo "--------------------------------"
+              echo "The downloaded public key cert of https://$FABRIC_CA_URL "
+              echo "--------------------------------"
+              cat $FABRIC_TLS_CERT_FILE
+              break;
+            else
+              echo "There are some issues with fetching the public key using 'jq' OR 'curl' command."
+            fi
+        else
+          echo "============ Fetching public key cert of https://$FABRIC_CA_URL, but received non 200 HTTP response $http_response. Cannot proceed without the public key cert. This process will retry until it gets 200 response from https://$FABRIC_CA_URL.============"
+          sleep {{ .Values.retry_seconds | default 10 }}
+        fi
+      done
+      }
+
+
+      function enroll() {
+
+      FABRIC_IDENTITY="${1}"
+      FABRIC_IDENTITY_SECRET="${2}"
+      FABRIC_IDENTITY_MSP_DIR="${3}"
+      FABRIC_ICA_URL="${4}"
+      FABRIC_TLS_CA_URL="${5}"
+      FABRIC_ICA_TLS_CERTFILES="${6}"
+      FABRIC_TLSCA_TLS_CERTFILES="${7}"
+      FABRIC_HLF_DOMAIN="${8}"
+      REQUIRE_MSP_ENROLLMENT="${9}"
+      REQUIRE_TLS_ENROLLMENT="${10}"
+
+      if [[ $REQUIRE_MSP_ENROLLMENT == "true" ]]
+        then
+          fabric_public_key_fetch $FABRIC_ICA_URL $FABRIC_ICA_TLS_CERTFILES
+          while true; do
+            echo "============ Enrolling to https://$FABRIC_ICA_URL as $FABRIC_IDENTITY ============"
+              fabric-ca-client enroll \
+                  {{- if .Values.debug_enroll }}
+                  --debug \
+                  {{- end }}
+                  --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_ICA_URL \
+                  --mspdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp \
+                  --tls.certfiles $FABRIC_ICA_TLS_CERTFILES \
+                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN \
+                  --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
+            if [ $? -eq 0 ]; then
+              echo "============ Re-arranging the MSP cert directory ============"
+              cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/intermediatecerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/intermediatecerts/ca-cert.pem 2>/dev/null;
+              cp /tmp/config.yaml $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/config.yaml 2>/dev/null;
+              break;
+            else
+              echo "============ Cannot login with the given identity $FABRIC_IDENTITY ============"
+              rm -rf $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp
+              sleep {{ .Values.retry_seconds  | default 10 }}
+            fi
+          done
+      else
+        echo "============ Skipping MSP enrollment ============"
+      fi  
+      sleep 2;
+
+      if [[ $REQUIRE_TLS_ENROLLMENT == "true" ]]
+        then
+          fabric_public_key_fetch $FABRIC_TLS_CA_URL $FABRIC_TLSCA_TLS_CERTFILES
+          while true; do
+            echo "============ Enrolling to https://$FABRIC_TLS_CA_URL as $FABRIC_IDENTITY ============"
+              fabric-ca-client enroll \
+                  {{- if .Values.debug_enroll }}
+                  --debug \
+                  {{- end }}
+                  --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_TLS_CA_URL \
+                  --mspdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls \
+                  --tls.certfiles $FABRIC_TLSCA_TLS_CERTFILES \
+                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN \
+                  --enrollment.profile tls \
+                  --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
+            if [ $? -eq 0 ]; then
+              echo "============ Re-arranging the TLS cert directory ============"
+              cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/tlscacerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/ca.crt;
+              cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/signcerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/server.crt;
+              cp $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/keystore/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls/server.key;
+              break;
+            else
+              echo "============ Cannot login with the given identity $FABRIC_IDENTITY ============"
+              rm -rf $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls
+              sleep {{ .Values.retry_seconds  | default 10 }}
+            fi
+          done
+        else
+          echo "============ Skipping TLS enrollment ============"
+      fi
+      }
+
+      function get_file() {
+
+        file_name=$1
+        filestore_download_url=$2
+                
+        while true; do
+          if [ -e "$file_name" ]; then
+            echo "============ File $file_name available. Proceeding to next step ============"
+            break;
+          else
+            echo "============ Atempting to download $file_name from $filestore_download_url ============"
+            if curl --silent --head --fail "$filestore_download_url" {{- if .Values.filestore_ssl  }} --insecure {{- end }}; then
+              echo "============ Received success http response, downloading $file_name from $filestore_download_url ============"
+              curl $filestore_download_url -o $file_name {{- if .Values.filestore_ssl  }} --insecure {{- end }}
+              echo "Received file SHA256 value is = $(sha256sum $file_name)"
+              break;
+            else
+              echo "============ Received non success http response for $file_name, retry in 10 seconds ============"
+              sleep {{ .Values.retry_seconds  | default 10 }}
+            fi
+          fi
+        done
+      }
+
+      function upload_file() {
+
+        file_name=$1
+        filestore_upload_url=$2
+
+        if [ -e "$file_name" ]; then
+          echo "============ File $file_name available. Proceeding to next step ============"
+          echo "============ Uploading $file_name to filestore ============"
+          curl --fail -T $file_name $filestore_upload_url {{- if $.Values.filestore_ssl  }} --insecure {{- end }}
+            if [ $? -eq 0 ]; then
+              echo "Successfully uploaded $file_name to filestore."
+              sha256sum $file_name
+              echo "============ [SUCCESS] ============"
+              break;
+            else
+              echo "============ [ERROR] Filestore upload failed, please re-run this job if necessary. ============"
+              exit
+            fi
+        else
+          echo "============ [ERROR] Could not find the file $file_name. Exiting. ============"
+          exit
+        fi
+
+      }

@@ -1,0 +1,125 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Project           := .Values.project }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndPoint       := .Values.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if .Values.fabric_actions.renew_orderer_tls | default false }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  fabric_renew_orderer_tls.sh: |
+    source /scripts/fabric_enroll.sh
+    export DATE=$(date +"%Y_%m_%d_%H%M%S")
+  {{- range .Values.admin_identity }}
+    enroll \
+      {{ .identity_name }} \
+      {{ .identity_secret }} \
+      {{ .msp_base_dir | default $Msp_base_dir }} \
+      {{ .ica_endpoint | default $IcaEndPoint }} \
+      {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+      {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
+      {{ .tlsca_tls_certfile | default $TlsCaTlsCertFile }} \
+      {{ .hlf_domain | default $.Values.hlf_domain }} \
+      {{ .require_msp_enrollment }} \
+      {{ .require_tls_enrollment }}
+  {{- end }}
+
+    echo "============================ Enrolling orderer identity ============================"
+    {{- range .Values.orderers_to_renew_tls_cert }}
+    {{ $identity_name := .identity_name }}
+    {{ $endpoint      := .endpoint }}
+    {{ $port          := .port }}
+  
+    enroll \
+      {{ .identity_name }} \
+      {{ .identity_secret }} \
+      {{ .msp_base_dir | default $Msp_base_dir }} \
+      {{ .ica_endpoint | default $IcaEndPoint }} \
+      {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+      {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
+      {{ .tlsca_tls_certfile | default $TlsCaTlsCertFile }} \
+      {{ .hlf_domain | default $.Values.hlf_domain }} \
+      {{ .require_msp_enrollment }} \
+      {{ .require_tls_enrollment }}
+    
+    echo "============================ Setting up necessary env variables for {{ .identity_name }} ============================"
+    TLS_FILE={{ .msp_base_dir }}/{{ .identity_name }}/tls/server.crt
+    TLS_CERT_BASE64=$(base64 -w 0 $TLS_FILE)
+    
+    echo "-------------------------------------------------------------------"
+    echo "Archiving {{ .identity_name }} tls directory for orderer deployment."
+    echo "-------------------------------------------------------------------"
+    tar -zcvf {{ .identity_name }}-renewed-tls-certs_$DATE.tar.gz --directory={{ .msp_base_dir | default $Msp_base_dir }}/{{ .identity_name }}/ tls
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+    else
+      echo "============ [SUCCESS] Successfully archived {{ .identity_name }} TLS cert directory ============"
+    fi
+
+  {{- range .update_channels }}
+    echo "============ Starting channel update on {{ . }} ============"
+    echo "============ Fetching latest block of the channel {{ . }} for adding new TLS cert. ============"
+    peer channel fetch config config_block.pb -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA
+    echo "============ Proto decoding the above fetched block file ============"
+    configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+    echo "============ Updating the above .json with new TLS cert (jq) ============"
+    jq --arg client_cert_value "$TLS_CERT_BASE64" '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters[] |= if .host == "{{ $endpoint }}" then .client_tls_cert = $client_cert_value else . end' config.json  > client_cert_updated.json
+    jq --arg server_cert_value "$TLS_CERT_BASE64" '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters[] |= if .host == "{{ $endpoint }}" then .server_tls_cert = $server_cert_value else . end' client_cert_updated.json  > final_cert_updated.json
+    
+    echo "============ configtxlator proto_encode --input config.json --type common.Config --output config.pb ============"
+    configtxlator proto_encode --input config.json --type common.Config --output config.pb
+    echo "============ configtxlator proto_encode --input final_cert_updated.json --type common.Config --output modified_config.pb ============"
+    configtxlator proto_encode --input final_cert_updated.json --type common.Config --output modified_config.pb
+    echo "============ configtxlator compute_update --channel_id {{ . }} --original config.pb --updated modified_config.pb --output orderer_update.pb ============"
+    configtxlator compute_update --channel_id {{ . }} --original config.pb --updated modified_config.pb --output orderer_update.pb
+    echo "============ configtxlator proto_decode --input orderer_update.pb --type common.ConfigUpdate | jq . > orderer_update.json ============"
+    configtxlator proto_decode --input orderer_update.pb --type common.ConfigUpdate | jq . > orderer_update.json
+    echo "============ Creating orderer_update_in_envelope.json with updated values. ============"
+    echo '{"payload":{"header":{"channel_header":{"channel_id":"'{{ . }}'", "type":2}},"data":{"config_update":'$(cat orderer_update.json)'}}}' | jq . > orderer_update_in_envelope.json
+    echo "============ configtxlator proto_encode --input orderer_update_in_envelope.json --type common.Envelope --output orderer_update_in_envelope.pb ============"
+    configtxlator proto_encode --input orderer_update_in_envelope.json --type common.Envelope --output orderer_update_in_envelope.pb
+
+    echo "============ Updating channel {{ . }} with new {{ $identity_name }} tls cert ============"
+    peer channel update -f orderer_update_in_envelope.pb -c {{ . }} -o {{ $.Values.orderer_endpoint }} --tls --cafile $ORDERER_CA
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] Channel update failed for {{ $identity_name }} on channel {{ . }}. Please debug it manually using cli pod and re-run this job if necessary ============"
+    else
+      echo "============ [UPDATE SUCCESS] Successfuly updated TLS cert on the channel {{ . }} for {{ $identity_name }}"
+      echo "============ [CLEANUP] ============"
+      rm -f *.json
+      rm -f *.pb
+      sleep {{ $.Values.seconds_to_wait_after_channel_update }}
+      echo "============ [CLEANUP COMPLETED] ============"
+    fi
+  {{- end }}
+
+  {{- range .upload_latest_channel_block_to_filestore }}
+    echo "============ Fetching latest block file from channel {{ . }} for new Genesis block. I'm pausing for a while to propagate the previous channel updates. ============"
+    sleep {{ $.Values.seconds_to_wait_after_channel_update }}
+    peer channel fetch config {{ $identity_name }}-{{ . }}_$DATE.block -o {{ $.Values.orderer_endpoint }} -c {{ . }} --tls --cafile $ORDERER_CA --connTimeout {{ $.Values.connTimeout }}
+    echo "============ Uploading artifacts for {{ $identity_name }} to filestore ============"
+    upload_file {{ $identity_name }}-{{ . }}_$DATE.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/
+    upload_file {{ $identity_name }}-renewed-tls-certs_$DATE.tar.gz {{ $.Values.filestore_endpoint }}/{{ $Project }}/
+    if [ $? -ne 0 ]; then
+      echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary ============"
+    else
+      echo "============ [SUCCESS] Successfully uploaded artifacts of {{ $identity_name }} to filestore. ============"
+      echo "File hash =" $(sha256sum {{ $identity_name }}-{{ . }}_$DATE.block)
+      echo "File hash =" $(sha256sum {{ $identity_name }}-renewed-tls-certs_$DATE.tar.gz)            
+    fi
+  {{- end }}
+{{- end }}
+{{- end }}

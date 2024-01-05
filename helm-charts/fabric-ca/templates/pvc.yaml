@@ -18,5 +18,20 @@ spec:
     requests:
       storage: {{ .Values.storage.size | default "1Gi" }}
   storageClassName: {{ .Values.storage.storageClass | default "default" }}
-
+{{- end }}
+---
+{{- if .Values.ica.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "fabric-ca.fullname" . }}-cert
+  labels:
+    {{- include "fabric-ca.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - {{ .Values.storage.accessMode | default "ReadWriteOnce" }} 
+  resources:
+    requests:
+      storage: {{ .Values.ica.intermediate_tls_cert_pvc_size | default "5Mi" }}
+  storageClassName: {{ .Values.storage.storageClass | default "default" }}
 {{- end }}

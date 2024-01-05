@@ -2,7 +2,7 @@
 # SPDX-License-Identifier:  GPL-3.0
 apiVersion: v2
 name: fabric-ops
-description: A Helm chart for performing various Fabric CA Server operations Kubernetes.
+description: A Helm chart for performing various operations in Hyperledger fabric network.
 type: application
-version: 1.0.2
+version: 1.1.0
 appVersion: "1.5.0"
