@@ -9,7 +9,7 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 - [x] [Genesis block creation](#how-to-create-genesis-block--channel-transaction-tx-)
 - [x] [Channel creation](#how-to-create-new-channel-in-hyperpedger-fabric-)
 - [x] [Anchorpeer list update on channel](#how-to-update-anchorpeer-on-channel-)
-- [x] [Add/remove Orgs in channel](#how-to-add-a-new-org-to-channel-)
+- [x] [Add/remove Orgs in channel](#how-to-addremove-an-org-in-channel-)
 - [x] [Chaincode installation](#how-to-install-chaincode-on-peers-)
 - [x] [Chaincode approval](#how-to-approve-chaincode-for-an-org-)
 - [x] [Chaincode commit](#how-to-commmit-chaincode-from-an-org-)
@@ -299,7 +299,7 @@ peer_identities:
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
 
 
-## How to add new Order node into a running hyperpedger fabric network ?
+## How to add new Orderer node into a running hyperpedger fabric network ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -313,7 +313,7 @@ peer_identities:
 | `additional_orderers` | List of additional oderers. Execute one at a time. [Refer](#New-orderer-for-order-addition) | `[]` |
 | `MspIdOverride` | To override `nameOverride` with a different MSPID | `""` |
 
-#### Admin identity for order operation;
+#### Admin identity for Orderer operation;
 
 ```bash
 admin_identity:
