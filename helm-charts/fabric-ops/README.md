@@ -9,12 +9,12 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 - [x] [Genesis block creation](#how-to-create-genesis-block--channel-transaction-tx-)
 - [x] [Channel creation](#how-to-create-new-channel-in-hyperpedger-fabric-)
 - [x] [Anchorpeer list update on channel](#how-to-update-anchorpeer-on-channel-)
-- [x] [Adding Orgs to channel](#how-to-add-a-new-org-to-channel-)
+- [x] [Add/remove Orgs in channel](#how-to-add-a-new-org-to-channel-)
 - [x] [Chaincode installation](#how-to-install-chaincode-on-peers-)
 - [x] [Chaincode approval](#how-to-approve-chaincode-for-an-org-)
 - [x] [Chaincode commit](#how-to-commmit-chaincode-from-an-org-)
-- [x] [Order addition](#how-to-add-new-order-node-into-a-running-hyperpedger-fabric-network-)
-- [x] [Order TLS cert renewal](#how-to-updaterenew-orderer-node-tls-certificates-in-a-running-hyperpedger-fabric-network-)
+- [x] [Orderer addition](#how-to-add-new-order-node-into-a-running-hyperpedger-fabric-network-)
+- [x] [Orderer TLS cert renewal](#how-to-updaterenew-orderer-node-tls-certificates-in-a-running-hyperpedger-fabric-network-)
 
 #### The following parameters are common across all fabric-ops job.
 
@@ -198,7 +198,7 @@ anchor_peers:
      port: "30000"
 ```
 
-## How to add a new Org to channel ?
+## How to add/remove an Org in channel ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -220,12 +220,14 @@ organizatons:
    identity_secret: org1AdminSamplePassword
    anchor_peer: peer0-org1.my-hlf-domain.com
    anchor_peer_port: 30000
+   status: active # `active` to add an org to the network.
  - name: org2
    ica_endpoint: ica-org2.my-hlf-domain.com:30000
    identity_name: admin
    identity_secret: org2AdminSamplePassword
    anchor_peer: peer0-org2.my-hlf-domain.com
    anchor_peer_port: 30000
+   status: disabled # `disabled` to remove an org from the network.
 ```
 
 ## How to install Chaincode on peers ?
