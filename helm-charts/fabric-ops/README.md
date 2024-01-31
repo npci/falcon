@@ -13,7 +13,7 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 - [x] [Chaincode installation](#how-to-install-chaincode-on-peers-)
 - [x] [Chaincode approval](#how-to-approve-chaincode-for-an-org-)
 - [x] [Chaincode commit](#how-to-commmit-chaincode-from-an-org-)
-- [x] [Orderer addition](#how-to-add-new-order-node-into-a-running-hyperpedger-fabric-network-)
+- [x] [Orderer addition](#how-to-add-new-orderer-node-into-a-running-hyperpedger-fabric-network-)
 - [x] [Orderer TLS cert renewal](#how-to-updaterenew-orderer-node-tls-certificates-in-a-running-hyperpedger-fabric-network-)
 
 #### The following parameters are common across all fabric-ops job.
