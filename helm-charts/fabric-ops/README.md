@@ -208,12 +208,12 @@ anchor_peers:
 | `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
 | `hlf_channel` | The channel to update | `""` |
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
-| `organizatons` | List of organizations to add. [Refer](#Organization-list-format) | `[]` |
+| `organizations` | List of organizations to add. [Refer](#Organization-list-format) | `[]` |
 
 #### Organization list format;
 
 ```bash
-organizatons:
+organizations:
  - name: org1
    ica_endpoint: ica-org1.my-hlf-domain.com:30000
    identity_name: admin

@@ -21,7 +21,7 @@ metadata:
   labels:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 data:
-{{- range .Values.organizatons }}
+{{- range .Values.organizations }}
   configtx_{{ .name }}.yaml: |
       Organizations:
         - &{{ .name }}

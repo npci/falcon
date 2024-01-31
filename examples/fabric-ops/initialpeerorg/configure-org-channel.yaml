@@ -36,7 +36,7 @@ admin_identity:
 # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-initialpeerorg/msp
 
 # Organizations to be added
-organizatons:
+organizations:
  - name: org1
    ica_endpoint: ica-org1.my-hlf-domain.com:30000
    identity_name: admin

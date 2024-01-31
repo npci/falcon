@@ -10,7 +10,7 @@ SPDX-License-Identifier:  GPL-3.0
 {{ $ChannelName            := .Values.channel_name }}
 {{ $CorePeerMspConfigPath  := printf "%s%s" .Values.workdir "/peer/crypto/users/admin/msp" }}
 
-{{- range .Values.organizatons }}
+{{- range .Values.organizations }}
 ---
 apiVersion: batch/v1
 kind: Job
