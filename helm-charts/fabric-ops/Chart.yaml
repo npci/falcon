@@ -4,5 +4,5 @@ apiVersion: v2
 name: fabric-ops
 description: A Helm chart for performing various operations in Hyperledger fabric network.
 type: application
-version: 1.1.0
+version: 1.1.1
 appVersion: "1.5.0"

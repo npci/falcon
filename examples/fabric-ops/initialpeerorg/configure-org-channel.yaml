@@ -36,19 +36,21 @@ admin_identity:
 # core_peer_mspconfigpath_override: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/users/admin-initialpeerorg/msp
 
 # Organizations to be added
-organizatons:
+organizations:
  - name: org1
    ica_endpoint: ica-org1.my-hlf-domain.com:30000
    identity_name: admin
    identity_secret: org1AdminSamplePassword
    anchor_peer: peer0-org1.my-hlf-domain.com
    anchor_peer_port: 30000
+   status: active # Set to `disabled` to remove an org from the network.
  - name: org2
    ica_endpoint: ica-org2.my-hlf-domain.com:30000
    identity_name: admin
    identity_secret: org2AdminSamplePassword
    anchor_peer: peer0-org2.my-hlf-domain.com
    anchor_peer_port: 30000
+   status: active
 
 csr_names_cn: IN
 csr_names_st: Maharashtra
