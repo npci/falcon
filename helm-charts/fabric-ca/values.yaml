@@ -55,8 +55,7 @@ service:
 ingress:
   enabled: true
   className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  annotations: {}
   path: /
   pathType: Prefix
 
