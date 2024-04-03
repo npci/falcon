@@ -3,14 +3,15 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $Project           := .Values.project }}
-{{- $HlfDomain         := .Values.hlf_domain }}
-{{- $IcaEndPoint       := .Values.ica_endpoint }}
-{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
-{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
-{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
-{{- $ChannelName       := .Values.hlf_channel }}
-{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+{{- $Project            := .Values.project }}
+{{- $HlfDomain          := .Values.hlf_domain }}
+{{- $IcaEndPoint        := .Values.ica_endpoint }}
+{{- $TlsCaEndpoint      := .Values.tlsca_endpoint }}
+{{- $IcaTlsCertFile     := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile   := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $ChannelName        := .Values.hlf_channel }}
+{{- $MspBaseDir         := .Values.workdir }}
+{{- $ChannelArtifactDir := .Values.channel_artifact_dir | default "/scripts" }}
 
 {{- if .Values.fabric_actions.create_channel | default false }}
 
@@ -22,13 +23,14 @@ metadata:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 data:
   fabric_create_channel.sh: |
+      channel_name=$1
       source /scripts/fabric_enroll.sh
       fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
-      {{- range .Values.admin_identity }}
+      {{- range .Values.admin_organizations }}
       enroll \
-        {{ .identity_name }} \
-        {{ .identity_secret }} \
-        {{ .msp_base_dir | default $Msp_base_dir }} \
+        {{ .admin_identity }} \
+        {{ .admin_secret }} \
+        {{ .msp_base_dir | default (printf "%s%s%s" $MspBaseDir "/" .org_name) }} \
         {{ .ica_endpoint | default $IcaEndPoint }} \
         {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
         {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
@@ -36,19 +38,32 @@ data:
         {{ .hlf_domain | default $.Values.hlf_domain }} \
         {{ .require_msp_enrollment }} \
         {{ .require_tls_enrollment }}
-    {{- end }}
+      {{- end }}
 
-      get_file {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/{{ .Values.config_transaction_filename }}
-      echo "Printing the downloaded file {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }}"
-      cat {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }}
+      echo "--------------------------------------------------------------------"
+      echo "Generating Configuration transaction file ${channel_name}.tx at {{ $ChannelArtifactDir }}/${channel_name}.tx";
+      echo "--------------------------------------------------------------------"
+      configtxgen -profile ConsortiumOrgProfile -outputCreateChannelTx {{ $ChannelArtifactDir }}/${channel_name}.tx -channelID ${channel_name} -configPath {{ $.Values.workdir }}/peer/
+      check_exit_status $?
+      sleep 5
+      echo "--------------------------------"
+      echo "Printing generated ${channel_name}.tx"
+      echo "--------------------------------"
+      configtxgen -inspectChannelCreateTx {{ $ChannelArtifactDir }}/${channel_name}.tx || jq .
+      echo "\n"
+      echo "--------------------------------------------------------------------"
+      CHANNELTX_SHA=$(sha256sum {{ $ChannelArtifactDir }}/${channel_name}.tx)
+      echo "SHA256 value = $CHANNELTX_SHA"
+      
+      echo "============ Creating channel ${channel_name} ============"
+      peer channel create -o {{ $.Values.orderer_endpoint }} -c ${channel_name} -f {{ $ChannelArtifactDir }}/${channel_name}.tx --outputBlock {{ $ChannelArtifactDir }}/${channel_name}.block --tls true --cafile $ORDERER_CA --connTimeout {{ $.Values.connTimeout }}
+      check_exit_status $?
 
-      echo "============ Creating channel ============"
-      peer channel create -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} -f {{ $.Values.workdir }}/peer/{{ .Values.config_transaction_filename }} --tls true --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
-      echo "============ Uploading {{ .Values.channel_block_filename }} to Filestore at {{ .Values.filestore_endpoint }} ============"
-      upload_file {{ .Values.channel_block_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
-      if [ $? -ne 0 ]; then
-        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
-      else
-        echo "============ [SUCCESS] All steps have been executed successfully. ============"
-      fi
-  {{- end }}
+      echo "Printing generated ${channel_name}.tx"
+      configtxgen -inspectBlock {{ $ChannelArtifactDir }}/${channel_name}.block | jq .
+      echo "============ Uploading {{ $ChannelArtifactDir }}/${channel_name}.block to Filestore at {{ $.Values.filestore_endpoint }} ============"
+      upload_file {{ $ChannelArtifactDir }}/${channel_name}.block {{ $.Values.filestore_endpoint }}/{{ $Project }}/
+      echo "============ Uploading {{ $ChannelArtifactDir }}/${channel_name}.tx to Filestore at {{ $.Values.filestore_endpoint }} ============"
+      upload_file {{ $ChannelArtifactDir }}/${channel_name}.tx {{ $.Values.filestore_endpoint }}/{{ $Project }}/ 
+
+ {{- end }}

@@ -3,10 +3,10 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- if .Values.fabric_actions.cryptogen }}
+{{- if or (.Values.fabric_actions.cryptogen) (.Values.fabric_actions.create_channel) }}
 
 {{- $HlfDomain      := .Values.hlf_domain }}
-{{- $BaseDir        := .Values.base_dir }}
+{{- $BaseDir        := .Values.workdir }}
 {{- $OrdererOrgName := .Values.orderer_org_name }}
 {{- $PeerOrgName    := .Values.peer_org_name }}
 
@@ -20,7 +20,7 @@ metadata:
 data:
  configtx.yaml: |
   Organizations:
-  {{- range .Values.organizations }}
+  {{- range .Values.admin_organizations }}
     - &{{ .org_name }}
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
@@ -246,25 +246,27 @@ data:
     #
     ################################################################################
   Profiles:
-
-  {{- range .Values.organizations }}
-    {{- if eq "peerorg" .org_type }}
-    TwoOrgsChannel:
+  {{- if eq "ConsortiumOrgProfile" .Values.configTxProfileType }}
+    ConsortiumOrgProfile:
         Consortium: SampleConsortium
         <<: *ChannelDefaults
         Application:
             <<: *ApplicationDefaults
             Organizations:
+              {{- range .Values.admin_organizations }}
+              {{- if eq "peerorg" .org_type }}
                 - *{{ .org_name }}
+              {{- end }}
+              {{- end }}
             Capabilities:
                 <<: *ApplicationCapabilities
-    {{- end }}
   {{- end }}
-    SampleMultiNodeEtcdRaft:
+  {{- if eq "OrdererNodeEtcdRaftProfile" .Values.configTxProfileType }}
+    OrdererNodeEtcdRaftProfile:
         <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
-    {{- range .Values.organizations }}
+    {{- range .Values.admin_organizations }}
     {{ $Org_name := .org_name }}
       {{- if eq "orderer" .org_type }}
         Orderer:
@@ -293,13 +295,13 @@ data:
             - <<: *{{ $Org_name }}
       {{- end }}
     {{- end }}
-    {{- range .Values.organizations }}
-        {{- if eq "peerorg" .org_type }}    
         Consortiums:
-            SampleConsortium:
-                Organizations:
-                - *{{ .org_name }}
-        {{- end }}
-    {{- end }}
-
+          SampleConsortium:
+            Organizations:
+            {{- range .Values.admin_organizations }}
+            {{- if eq "peerorg" .org_type }} 
+             - *{{ .org_name }}
+            {{- end }}
+            {{- end }}
+  {{- end }}
 {{- end }}

@@ -19,25 +19,34 @@ tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
-config_transaction_filename: channel.tx
-channel_block_filename: mychannel.block
-
 
 hlf_domain: my-hlf-domain.com
-hlf_channel: mychannel
 fabric_actions: 
  create_channel: true
- 
+
+app_channels:
+  - mychannel
+   
+admin_organizations:
+  - org_type: peerorg
+    org_name: initialpeerorg
+    ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+    cert_path: /root/initialpeerorg.pem
+    admin_identity: admin
+    admin_secret: initialpeerorgAdminSamplePassword
+    require_msp_enrollment: true
+    require_tls_enrollment: false
+    anchor_peers:
+    - host: peer0-initialpeerorg.my-hlf-domain.com
+      port: "30000"
+
 csr_names_cn: IN
 csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-admin_identity:
-  - identity_name: admin
-    identity_secret: initialpeerorgAdminSamplePassword
-    require_msp_enrollment: true
-    require_tls_enrollment: false
+configTxProfileType: ConsortiumOrgProfile
+core_peer_mspconfigpath_override: "" # Required only if admin_identity name is not "admin". You will have to add the complete path to the msp directory in this case.
 
 serviceAccount:
   # Specifies whether a service account should be created
