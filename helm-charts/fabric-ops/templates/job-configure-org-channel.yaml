@@ -46,7 +46,7 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_configure_org_channel.sh {{ .name }} {{ .ica_endpoint }} {{ .identity_name }} {{ .identity_secret }} {{ .msp_dir | default "/crypto-config/peerOrganizations" }} {{ .status }};
+           - /scripts/fabric_configure_org_channel.sh {{ .name }} {{ .ica_endpoint }} {{ .msp_dir | default "/crypto-config/peerOrganizations" }} {{ .status }};
           tty: true
           env: 
             - name: FABRIC_LOGGING_SPEC
