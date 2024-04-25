@@ -40,7 +40,7 @@ peer_identities:
  - peer_endpoint: peer1-initialpeerorg:30002
  - peer_endpoint: peer2-initialpeerorg:30002
 
-cron_schedule: "*/1 * * * *"
+cron_schedule: "*/10 * * * *"
 registry_endpoint: https://npci-registry-endpoint.com:55454/apiendpoint
 cc_version_file_latest: chaincode_version.json
 cc_version_file_current: chaincode_version_current.json

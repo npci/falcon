@@ -237,65 +237,62 @@ data:
             )
         echo "$DATA"
     }
-    echo "Testing....."
-    sleep 1000
 
-    # ITR=0
-    # while [ $ITR -lt $LIMIT ]; do
-    #     http_response=$(curl -sL -w  "%{http_code}" "$REGISTRY_URL/version" --insecure -o /dev/null)
-    #     if [ "$http_response" -eq "200" ]; then
-    #         echo "--------------------------------"
-    #         echo "Fetching chaincode version information from $REGISTRY_URL, received HTTP response with 200."
-    #         echo "--------------------------------"
-    #         if curl $REGISTRY_URL/version --insecure | jq .rcbdc > $CC_VERSION_FILE_LATEST; then
-    #             echo "--------------------------------"
-    #             echo "Fetched the version details from $REGISTRY_URL"
-    #             echo "--------------------------------"
+    ITR=0
+    while [ $ITR -lt $LIMIT ]; do
+        http_response=$(curl -sL -w  "%{http_code}" "$REGISTRY_URL/version" --insecure -o /dev/null)
+        if [ "$http_response" -eq "200" ]; then
+            echo "--------------------------------"
+            echo "Fetching chaincode version information from $REGISTRY_URL, received HTTP response with 200."
+            echo "--------------------------------"
+            if curl $REGISTRY_URL/version --insecure | jq .rcbdc > $CC_VERSION_FILE_LATEST; then
+                echo "--------------------------------"
+                echo "Fetched the version details from $REGISTRY_URL"
+                echo "--------------------------------"
 
-    #             if [ -e "$CC_VERSION_FILE_CURRENT" ]; then
-    #                 echo "--------------------------------"
-    #                 echo "Current Version of chaincode"
-    #                 echo "--------------------------------"
-    #                 cat $CC_VERSION_FILE_CURRENT
-    #             else
-    #                 CC_NAME="$(jq -r '.cc_name' $CC_VERSION_FILE_LATEST)"
-    #                 CHANNEL_NAME="$(jq -r '.channel_name' $CC_VERSION_FILE_LATEST)"
-    #                 peer lifecycle chaincode queryapproved -n $CC_NAME -C $CHANNEL_NAME -O JSON | jq .source.Type.LocalPackage > $CC_VERSION_FILE_CURRENT
-    #             fi 
+                if [ -e "$CC_VERSION_FILE_CURRENT" ]; then
+                    echo "--------------------------------"
+                    echo "Current Version of chaincode"
+                    echo "--------------------------------"
+                    cat $CC_VERSION_FILE_CURRENT
+                else
+                    CC_NAME="$(jq -r '.cc_name' $CC_VERSION_FILE_LATEST)"
+                    CHANNEL_NAME="$(jq -r '.channel_name' $CC_VERSION_FILE_LATEST)"
+                    peer lifecycle chaincode queryapproved -n $CC_NAME -C $CHANNEL_NAME -O JSON | jq .source.Type.LocalPackage > $CC_VERSION_FILE_CURRENT
+                fi 
                 
-    #             # Verify the current version and latest version
-    #             CC_CURRENT_VERSION="$(jq -r '.package_id' $CC_VERSION_FILE_CURRENT)"
-    #             CC_LATEST_VERSION="$(jq -r '.package_id' $CC_VERSION_FILE_LATEST)"
+                # Verify the current version and latest version
+                CC_CURRENT_VERSION="$(jq -r '.package_id' $CC_VERSION_FILE_CURRENT)"
+                CC_LATEST_VERSION="$(jq -r '.package_id' $CC_VERSION_FILE_LATEST)"
 
-    #             if [ $CC_CURRENT_VERSION != $CC_LATEST_VERSION ]; then
-    #                 echo "--------------------------------"
-    #                 echo "Latest version of chaincode ($CC_LATEST_VERSION) is different from current version ($CC_CURRENT_VERSION)"
-    #                 echo "--------------------------------"
-    #                 process_chaincode "$CC_VERSION_FILE_LATEST"
+                if [ $CC_CURRENT_VERSION != $CC_LATEST_VERSION ]; then
+                    echo "--------------------------------"
+                    echo "Latest version of chaincode ($CC_LATEST_VERSION) is different from current version ($CC_CURRENT_VERSION)"
+                    echo "--------------------------------"
+                    process_chaincode "$CC_VERSION_FILE_LATEST"
 
-    #                 # Updating the chaincode version details
-    #                 peer lifecycle chaincode queryapproved -n $CC_NAME -C $CHANNEL_NAME -O JSON | jq .source.Type.LocalPackage > $CC_VERSION_FILE_CURRENT
+                    # Updating the chaincode version details
+                    peer lifecycle chaincode queryapproved -n $CC_NAME -C $CHANNEL_NAME -O JSON | jq .source.Type.LocalPackage > $CC_VERSION_FILE_CURRENT
 
-    #             else
-    #                 echo "Already on the latest version of chaincode "$CC_CURRENT_VERSION
-    #             fi
+                else
+                    echo "Already on the latest version of chaincode "$CC_CURRENT_VERSION
+                fi
 
-    #             # Feedbacking to upstream registry on the job completion
-    #             CHANNEL_NAME="$(jq -r '.channel_name' $CC_VERSION_FILE_LATEST)"
-    #             CC_NAME="$(jq -r '.cc_name' $CC_VERSION_FILE_LATEST)"
-    #             cc_ops_feedback_to_upstream $CHANNEL_NAME $CC_NAME
+                # Feedbacking to upstream registry on the job completion
+                CHANNEL_NAME="$(jq -r '.channel_name' $CC_VERSION_FILE_LATEST)"
+                CC_NAME="$(jq -r '.cc_name' $CC_VERSION_FILE_LATEST)"
+                cc_ops_feedback_to_upstream $CHANNEL_NAME $CC_NAME
 
-    #         else
-    #             echo "There are some issues with fetching the chaincode version using 'jq' OR 'curl' command."
-    #         fi
-    #         break;
-    #     else
-    #         echo "------------------------------------"
-    #         echo "Fetching chaincode version from $REGISTRY_URL, but received non 200 HTTP response $http_response. Cannot proceed without the chaincode version file. This process will retry until it gets 200 response from https://$REGISTRY_URL."
-    #         echo "------------------------------------"
-    #     fi
-    #     ITR=$((ITR + 1))
-    # done
-
+            else
+                echo "There are some issues with fetching the chaincode version using 'jq' OR 'curl' command."
+            fi
+            break;
+        else
+            echo "------------------------------------"
+            echo "Fetching chaincode version from $REGISTRY_URL, but received non 200 HTTP response $http_response. Cannot proceed without the chaincode version file. This process will retry until it gets 200 response from https://$REGISTRY_URL."
+            echo "------------------------------------"
+        fi
+        ITR=$((ITR + 1))
+    done
 
 {{- end }}
