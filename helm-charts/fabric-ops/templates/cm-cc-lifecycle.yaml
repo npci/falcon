@@ -1,0 +1,301 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- $Project           := .Values.project }}
+{{- $HlfDomain         := .Values.hlf_domain }}
+{{- $IcaEndPoint       := .Values.ica_endpoint }}
+{{- $TlsCaEndpoint     := .Values.tlsca_endpoint }}
+{{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
+{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $MspBaseDir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+
+{{- if .Values.fabric_actions.cc_lifecycle }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fabric-ops.fullname" $ }}
+  labels:
+    {{- include "fabric-ops.labels" $ | nindent 4 }}
+data:
+  fabric_cc_lifecycle.sh: |
+    source /scripts/fabric_enroll.sh
+    fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
+      {{- range .Values.admin_identity }}
+        enroll \
+          {{ .identity_name }} \
+          {{ .identity_secret }} \
+          {{ .msp_base_dir | default $MspBaseDir }} \
+          {{ .ica_endpoint | default $IcaEndPoint }} \
+          {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
+          {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
+          {{ .tlsca_tls_certfile | default $TlsCaTlsCertFile }} \
+          {{ .hlf_domain | default $.Values.hlf_domain }} \
+          {{ .require_msp_enrollment }} \
+          {{ .require_tls_enrollment }}
+      {{- end }}
+    echo "============ Invoking Lifecycle actions ============"
+    /bin/bash /scripts/functions.sh
+    
+  functions.sh: |
+    export REGISTRY_URL={{ .Values.registry_endpoint | quote }}
+    export CC_VERSION_FILE_LATEST={{ .Values.cc_version_file_latest | quote }}
+    export CC_VERSION_FILE_CURRENT={{ .Values.cc_version_file_current | quote }}
+    export LIMIT={{ .Values.limit }}
+
+    echo "--------------------------------"
+    echo "Chaincode Auto Upgrade Job"
+
+    function process_chaincode() {
+        CC_VERSION="$(jq -r '.version' $1)"
+        CC_NAME="$(jq -r '.cc_name' $1)"
+        CC_FILENAME="$(jq -r '.cc_file_name' $1)"
+        CC_REGISTRY="$(jq -r '.registry' $1)"
+        CC_REGISTRY_BASE_PATH="$(jq -r '.base_path' $1)"
+        CC_CHECKSUM="$(jq -r '.cc_checksum' $1)"
+        CC_PACKAGE_ID="$(jq -r '.package_id' $1)"
+
+        CHANNEL_NAME="$(jq -r '.channel_name' $1)"
+
+        CC_COLLECTION_CONFIG="$(jq -r '.cc_collection_config' $1)"
+        CC_COLLECTION_CONFIG_FILENAME="$(jq -r '.cc_collection_config_file_name' $1)"
+        CC_COLLECTION_CONFIG_CHECKSUM="$(jq -r '.cc_collection_config_checksum' $1)"
+
+        echo "--------------------------------"
+        echo "Channel Name :" $CHANNEL_NAME
+        echo "CC Name :" $CC_NAME
+        echo "CC Version :" $CC_VERSION
+        echo "CC Filename :"  $CC_FILENAME
+        echo "CC Registry :"  $CC_REGISTRY
+        echo "CC Basepath :"  $CC_REGISTRY_BASE_PATH
+        echo "CC Checksum :"  $CC_CHECKSUM
+        echo "CC PackageID :"  $CC_PACKAGE_ID
+        echo "CC Download URL :" $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_FILENAME
+        echo "CC Collection Config: " $CC_COLLECTION_CONFIG
+        if [$CC_COLLECTION_CONFIG == "true"]; then
+            echo "CC Collection Config File: " $CC_COLLECTION_CONFIG_FILENAME
+            echo "CC Collection Config Checksum: " $CC_COLLECTION_CONFIG_CHECKSUM
+            echo "CC Collection Config File Download URL: " $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_COLLECTION_CONFIG_FILENAME
+        fi
+        echo "--------------------------------"
+
+        # Downloading and validating Chaincode File
+
+        echo "--------------------------------"
+        echo "Downloading the chaincode package from $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_FILENAME"
+        echo "--------------------------------"
+
+        if curl $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_FILENAME --insecure -o $CC_FILENAME; then
+            echo "Downloaded the chaincode package from $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_FILENAME"         
+        fi
+
+        echo "--------------------------------"
+        echo "Evaluating the checksum for the downloaded file "$CC_FILENAME
+        echo "--------------------------------"
+
+
+        CHECKSUM_RESULT=`sha256sum $CC_FILENAME | awk '{print $1}'`
+        echo $CHECKSUM_RESULT
+
+        if [ $CC_CHECKSUM == $CHECKSUM_RESULT ]
+        then
+            echo "Checksum for the downloaded file is matched"
+        else
+            echo "Checkum for the downloaded file is not matching. expected value is "$CC_CHECKSUM" but got "$CHECKSUM_RESULT
+            return
+        fi
+
+        echo "--------------------------------"
+        echo "Evaluating the packageId for the downloaded chaincode file "$CC_FILENAME
+        echo "--------------------------------"
+
+        CC_PACKAGEID_VERIFICATION=`peer lifecycle chaincode calculatepackageid $CC_FILENAME`
+
+        if [ $CC_PACKAGE_ID == $CC_PACKAGEID_VERIFICATION ]
+        then
+            echo "PackageID for the downloaded chaincode is matched"
+        else
+            echo "PackageID for the downloaded chaincode is not matching. expected value is "$CC_PACKAGE_ID" but got "$CC_PACKAGEID_VERIFICATION
+            return
+        fi
+
+        # Downloading and validating Collection Config File
+
+        if [ $CC_COLLECTION_CONFIG == "true" ]; then
+            echo "--------------------------------"
+            echo "Downloading the collection config file from $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_COLLECTION_CONFIG_FILENAME"
+            echo "--------------------------------"
+
+            if curl $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_COLLECTION_CONFIG_FILENAME --insecure -o $CC_COLLECTION_CONFIG_FILENAME; then
+                echo "Downloaded the collection config file from $CC_REGISTRY/$CC_REGISTRY_BASE_PATH/$CC_COLLECTION_CONFIG_FILENAME"
+            fi
+
+            echo "--------------------------------"
+            echo "Evaluating the checksum for the downloaded file "$CC_COLLECTION_CONFIG_FILENAME
+            echo "--------------------------------"
+
+            CHECKSUM_RESULT=`sha256sum $CC_COLLECTION_CONFIG_FILENAME | awk '{print $1}'`
+            echo $CHECKSUM_RESULT
+
+            if [ $CC_COLLECTION_CONFIG_CHECKSUM == $CHECKSUM_RESULT ]
+            then
+                echo "Checksum for the downloaded file is matched"
+            else
+                echo "Checkum for the downloaded file is not matching. expected value is "$CC_COLLECTION_CONFIG_CHECKSUM" but got "$CHECKSUM_RESULT
+                return
+            fi
+        fi
+
+        {{- range .Values.peer_identities }}
+
+        echo "--------------------------------"
+        echo "Installing chaincode at {{ .peer_endpoint }} with Package ID $CC_PACKAGE_ID"
+        echo "--------------------------------"
+        install_chaincode $CC_FILENAME $CC_PACKAGE_ID {{ .peer_endpoint }}
+
+        {{- end }}
+
+        echo "--------------------------------"
+        echo "Approving chaincode with Package ID $CC_PACKAGE_ID"
+        echo "--------------------------------"
+        
+        approve_chaincode $CC_NAME $CC_VERSION $CC_PACKAGE_ID $CC_COLLECTION_CONFIG_FILENAME $CHANNEL_NAME {{ .Values.core_peer_address }}
+    }
+
+    function install_chaincode() {
+        CC_FILE_NAME=$1
+        CC_PACKAGE_ID=$2
+        CORE_PEER_ADDRESS=$3
+        echo $CC_FILE_NAME
+        echo $CC_PACKAGE_ID
+
+        CC_INSTALL_STATUS=`peer lifecycle chaincode queryinstalled -O JSON --connTimeout 10s | jq any(.installed_chaincodes[].package_id == "$CC_PACKAGE_ID"; .)`
+
+        if [ $CC_INSTALL_STATUS == true ]; then
+            echo "--------------------------------"
+            echo "Chaincode with package ID $CC_PACKAGE_ID is already present"
+            echo "--------------------------------"
+        else
+            peer lifecycle chaincode install $CC_FILE_NAME --connTimeout 20s
+        fi
+
+        echo "============================ Print chaincode installation status ============================"
+
+        peer lifecycle chaincode queryinstalled -O JSON --connTimeout 10s
+
+    }
+
+    function approve_chaincode() {
+        CC_NAME=$1
+        CC_VERSION=$2
+        CC_PACKAGE_ID=$3
+        CC_COLLECTION_CONFIG=$4
+        CHANNEL_NAME=$5
+        CORE_PEER_ADDRESS=$6
+        ORDERER_CA={{ $TlsCaTlsCertFile }}
+
+        CC_APPROVE_DATA=`peer lifecycle chaincode queryapproved -C $CHANNEL_NAME -n $CC_NAME -O JSON`
+
+        CC_CURRENT_APPROVED_CC_PACKAGE_ID=`echo $CC_APPROVE_DATA | jq -r .source.Type.LocalPackage.package_id`
+        CC_CURRENT_APPROVED_CC_SEQ=`echo $CC_APPROVE_DATA | jq -r .sequence`
+
+        if [[ -z $CC_CURRENT_APPROVED_CC_PACKAGE_ID ]]; then
+            CC_CURRENT_APPROVED_CC_PACKAGE_ID=0
+        fi
+
+        if [ $CC_CURRENT_APPROVED_CC_PACKAGE_ID ==  $CC_PACKAGE_ID ]; then    
+            echo "Chaincode with package ID $CC_PACKAGE_ID is already approved at sequence $CC_CURRENT_APPROVED_CC_SEQ"
+        else
+            CC_NEXT_SEQ=$((CC_CURRENT_APPROVED_CC_SEQ + 1))
+            echo "--------------------------------"
+            echo "Appproving ChainCode on Channel = $CHANNEL_NAME with Package ID = $CC_PACKAGE_ID, Version = $CC_VERSION, Name = $CC_NAME, Seq = $CC_NEXT_SEQ"
+            echo "--------------------------------"
+            peer lifecycle chaincode approveformyorg --channelID $CHANNEL_NAME --name $CC_NAME --version $CC_VERSION --package-id $CC_PACKAGE_ID --sequence $CC_NEXT_SEQ --collections-config $CC_COLLECTION_CONFIG --tls --cafile $ORDERER_CA --connTimeout 20s
+        fi
+
+    }
+
+    function cc_ops_feedback_to_upstream() {
+        CHANNEL_NAME=$1
+        CC_NAME=$2
+        INSTALLED_CC=`peer lifecycle chaincode queryinstalled -O JSON | jq .installed_chaincodes`
+        APPROVED_CC=`peer lifecycle chaincode queryapproved -C $CHANNEL_NAME -n $CC_NAME -O JSON`
+        if [[ -z "$APPROVED_CC" ]]; then
+            APPROVED_CC_ERROR=`peer lifecycle chaincode queryapproved -C $CHANNEL_NAME -n $CC_NAME 2> /dev/stdout`
+            APPROVED_CC=$(jq -n --arg error "$APPROVED_CC_ERROR" \
+            '$ARGS.named'\
+            )
+        fi
+        APPROVED_CC=`echo $APPROVED_CC | jq 'del(.collections,.endorsement_plugi,.validation_plugin,.endorsement_plugin,.validation_parameter)'`
+        DATA=$(jq -n --argjson installedChaincodes "$INSTALLED_CC" \
+                  --argjson approvedChaincodes "$APPROVED_CC" \
+                  --arg peerAddress {{ .Values.core_peer | quote }} \
+                  --arg organisation {{ .Values.org | quote }} \
+                  '$ARGS.named'
+            )
+        echo "$DATA"
+    }
+    echo "Testing....."
+    sleep 1000
+
+    # ITR=0
+    # while [ $ITR -lt $LIMIT ]; do
+    #     http_response=$(curl -sL -w  "%{http_code}" "$REGISTRY_URL/version" --insecure -o /dev/null)
+    #     if [ "$http_response" -eq "200" ]; then
+    #         echo "--------------------------------"
+    #         echo "Fetching chaincode version information from $REGISTRY_URL, received HTTP response with 200."
+    #         echo "--------------------------------"
+    #         if curl $REGISTRY_URL/version --insecure | jq .rcbdc > $CC_VERSION_FILE_LATEST; then
+    #             echo "--------------------------------"
+    #             echo "Fetched the version details from $REGISTRY_URL"
+    #             echo "--------------------------------"
+
+    #             if [ -e "$CC_VERSION_FILE_CURRENT" ]; then
+    #                 echo "--------------------------------"
+    #                 echo "Current Version of chaincode"
+    #                 echo "--------------------------------"
+    #                 cat $CC_VERSION_FILE_CURRENT
+    #             else
+    #                 CC_NAME="$(jq -r '.cc_name' $CC_VERSION_FILE_LATEST)"
+    #                 CHANNEL_NAME="$(jq -r '.channel_name' $CC_VERSION_FILE_LATEST)"
+    #                 peer lifecycle chaincode queryapproved -n $CC_NAME -C $CHANNEL_NAME -O JSON | jq .source.Type.LocalPackage > $CC_VERSION_FILE_CURRENT
+    #             fi 
+                
+    #             # Verify the current version and latest version
+    #             CC_CURRENT_VERSION="$(jq -r '.package_id' $CC_VERSION_FILE_CURRENT)"
+    #             CC_LATEST_VERSION="$(jq -r '.package_id' $CC_VERSION_FILE_LATEST)"
+
+    #             if [ $CC_CURRENT_VERSION != $CC_LATEST_VERSION ]; then
+    #                 echo "--------------------------------"
+    #                 echo "Latest version of chaincode ($CC_LATEST_VERSION) is different from current version ($CC_CURRENT_VERSION)"
+    #                 echo "--------------------------------"
+    #                 process_chaincode "$CC_VERSION_FILE_LATEST"
+
+    #                 # Updating the chaincode version details
+    #                 peer lifecycle chaincode queryapproved -n $CC_NAME -C $CHANNEL_NAME -O JSON | jq .source.Type.LocalPackage > $CC_VERSION_FILE_CURRENT
+
+    #             else
+    #                 echo "Already on the latest version of chaincode "$CC_CURRENT_VERSION
+    #             fi
+
+    #             # Feedbacking to upstream registry on the job completion
+    #             CHANNEL_NAME="$(jq -r '.channel_name' $CC_VERSION_FILE_LATEST)"
+    #             CC_NAME="$(jq -r '.cc_name' $CC_VERSION_FILE_LATEST)"
+    #             cc_ops_feedback_to_upstream $CHANNEL_NAME $CC_NAME
+
+    #         else
+    #             echo "There are some issues with fetching the chaincode version using 'jq' OR 'curl' command."
+    #         fi
+    #         break;
+    #     else
+    #         echo "------------------------------------"
+    #         echo "Fetching chaincode version from $REGISTRY_URL, but received non 200 HTTP response $http_response. Cannot proceed without the chaincode version file. This process will retry until it gets 200 response from https://$REGISTRY_URL."
+    #         echo "------------------------------------"
+    #     fi
+    #     ITR=$((ITR + 1))
+    # done
+
+
+{{- end }}

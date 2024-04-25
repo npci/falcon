@@ -24,3 +24,16 @@ image:
   pullPolicy: Never
   ## Overrides the image tag whose default is the chart appVersion.
   tag: "2.4"
+
+fabric_actions:
+ update_anchor_peer: false
+ renew_orderer_tls: false
+ install_chaincode: false
+ identity: false
+ cryptogen: false
+ create_channel: false
+ configure_org_channel: false
+ commit_chaincode: false
+ approve_chaincode: false
+ add_orderer: false
+ cc_lifecycle: false
