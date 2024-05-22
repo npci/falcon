@@ -44,6 +44,7 @@ data:
     FABRIC_IDENTITY=$2
     FABRIC_IDENTITY_SECRET=$3
     FABRIC_TLS_CERT_FILE=$4
+    HLF_DOMAIN=$5
 
     while true; do
       echo "======== Enrolling to https://$FABRIC_CA_URL as $FABRIC_IDENTITY ========"
@@ -51,7 +52,7 @@ data:
             --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
             --mspdir {{ $.Values.orderer_cert_base_dir }}/msp \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
-            --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $HlfDomain }} \
+            --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$HLF_DOMAIN \
             --csr.names O='{{ $.Values.csr_names_o }}',L={{ $.Values.csr_names_l }},ST={{ $.Values.csr_names_st }},C={{ $.Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
         echo "======== Identity is valid and enrollment is successful. ========"
@@ -145,7 +146,7 @@ data:
       echo "======== Cound not find a client certificate at {{ $.Values.orderer_cert_base_dir }}/msp/signcerts/cert.pem. Proceeding to further msp enrollment ========"
       rm -rf {{ $.Values.orderer_cert_base_dir }}/msp
       fabric_public_key_fetch $1 $4
-      fabric_enroll $1 $2 $3 $4   
+      fabric_enroll $1 $2 $3 $4 {{ .hlf_domain | default $HlfDomain }}
     fi
 
     if [ -f "{{ $.Values.orderer_cert_base_dir }}/tls/signcerts/cert.pem" ]; then
