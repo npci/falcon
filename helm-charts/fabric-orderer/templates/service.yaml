@@ -16,12 +16,15 @@ metadata:
     {{ toYaml .additionalLabels | nindent 4 }}
     {{- end }}
 spec:
-  type: {{ $.Values.global.serviceType | default "ClusterIP" }}
+  type: {{ .serviceType | default ($.Values.global.serviceType | default "ClusterIP") }}
   ports:
-    - port: {{ $.Values.global.servicePort }}
-      targetPort: {{ $.Values.global.containerPort }}
+    - name: http
+      port: {{ .servicePort | default $.Values.global.servicePort }}
+      targetPort: {{ .containerPort | default $.Values.global.containerPort }}
       protocol: TCP
-      name: http
+      {{- if and (eq .serviceType "NodePort") (not (empty .serviceNodePort)) }}
+      nodePort: {{ .serviceNodePort }}
+      {{- end }}
   selector:
     {{- include "fabric-orderer.selectorLabels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
@@ -38,12 +41,15 @@ metadata:
     {{ toYaml .additionalLabels | nindent 4 }}
     {{- end }}
 spec:
-  type: {{ $.Values.global.operations.serviceType | default "ClusterIP" }}
+  type: {{ .operationsServiceType | default ($.Values.global.operations.serviceType | default "ClusterIP") }}
   ports:
-    - port: {{ $.Values.global.operations.servicePort }}
+    - name: {{ $.Values.global.operations.serviceName }}
+      port: {{ .operationsServicePort | default $.Values.global.operations.servicePort }}
       targetPort: 8443
       protocol: TCP
-      name: {{ $.Values.global.operations.serviceName }}
+      {{- if and (eq .operationsServiceType "NodePort") (not (empty .operationServiceNodePort)) }}
+      nodePort: {{ .operationServiceNodePort }}
+      {{- end }}
   selector:
     {{- include "fabric-orderer.selectorLabels" $ | nindent 4 }}
     app: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
