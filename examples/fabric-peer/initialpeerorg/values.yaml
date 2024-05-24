@@ -111,7 +111,7 @@ global:
   peerContainerPort: "7051"
   peerDataDir: /var/hyperledger/production
   peerServiceType: ClusterIP
-  peerServicePort: "30002"
+  peerServicePort: "7051"
   peerDiskSize: 1G
   peerCertDiskSize: 50M
   peerPvcAccessMode: ReadWriteOnce

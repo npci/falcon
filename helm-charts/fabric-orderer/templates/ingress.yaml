@@ -30,7 +30,7 @@ metadata:
 spec:
   ingressClassName: {{ $ClassName }}
   rules:
-    - host: {{ .identity_name }}.{{ .hlf_domain| default $.Values.hlf_domain }}
+    - host: {{ .identity_name }}.{{ .hlf_domain | default $.Values.hlf_domain }}
       http:
         paths:
           - path: /
@@ -39,7 +39,7 @@ spec:
               service:
                 name: {{ .name }}-{{ include "fabric-orderer.fullname" $ }}
                 port:
-                  number: {{ $.Values.global.servicePort }}
+                  number: {{ .servicePort | default $.Values.global.servicePort }}
 {{- end }}
 {{- end }}
 {{- end }}
