@@ -4,5 +4,5 @@ apiVersion: v2
 name: fabric-peer
 description: A Helm chart for deploying Fabric Peers in Kubernetes.
 type: application
-version: 1.1.1
+version: 1.2.0
 appVersion: "2.4"
