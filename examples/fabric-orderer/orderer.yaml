@@ -101,6 +101,8 @@ global:
       value: file
     - name: ORDERER_GENERAL_LISTENADDRESS
       value: 0.0.0.0
+    # - name: ORDERER_ADMIN_LISTENADDRESS
+    #   value: "0.0.0.0:9443"
     - name: ORDERER_GENERAL_TLS_ENABLED
       value: "true"
     - name: ORDERER_GENERAL_LOCALMSPDIR

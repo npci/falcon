@@ -28,7 +28,7 @@ app_channels:
   - mychannel
    
 admin_organizations:
-  - org_type: peerorg
+  - org_type: consortium
     org_name: initialpeerorg
     ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
     cert_path: /root/initialpeerorg.pem
@@ -45,7 +45,8 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-configTxProfileType: ConsortiumOrgProfile
+configTxProfileType: ConsortiumProfile
+consortiumName: InitialConsortium
 core_peer_mspconfigpath_override: "" # Required only if admin_identity name is not "admin". You will have to add the complete path to the msp directory in this case.
 
 serviceAccount:

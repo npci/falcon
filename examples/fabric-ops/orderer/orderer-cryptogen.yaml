@@ -35,7 +35,7 @@ admin_organizations:
     - identity_name: orderer2-orderer
       identity_secret: orderer2ordererSamplePassword
       port: "30000"
-  - org_type: peerorg
+  - org_type: consortium
     org_name: initialpeerorg
     ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
     cert_path: /root/peerorg.pem
@@ -48,7 +48,8 @@ admin_organizations:
 hlf_domain: my-hlf-domain.com
 orderer_system_channel: "orderer-sys-channel"
 block_file: genesis.block
-configTxProfileType: OrdererNodeEtcdRaftProfile
+configTxProfileType: OrdererEtcdRaftProfile
+consortiumName: InitialConsortium
 
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001

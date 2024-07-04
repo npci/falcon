@@ -43,7 +43,7 @@ data:
       echo "--------------------------------------------------------------------"
       echo "Generating Configuration transaction file ${channel_name}.tx at {{ $ChannelArtifactDir }}/${channel_name}.tx";
       echo "--------------------------------------------------------------------"
-      configtxgen -profile ConsortiumOrgProfile -outputCreateChannelTx {{ $ChannelArtifactDir }}/${channel_name}.tx -channelID ${channel_name} -configPath {{ $.Values.workdir }}/peer/
+      configtxgen -profile {{ .Values.configTxProfileType }} -outputCreateChannelTx {{ $ChannelArtifactDir }}/${channel_name}.tx -channelID ${channel_name} -configPath {{ $.Values.workdir }}/peer/
       check_exit_status $?
       sleep 5
       echo "--------------------------------"

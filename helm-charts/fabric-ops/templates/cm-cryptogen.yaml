@@ -79,7 +79,7 @@ data:
      echo "--------------------------------------------------------------------"
      echo "Generating Genesis block file {{ .Values.block_file }} at {{ $ChannelArtifactDir }}/{{ .Values.block_file }}";
      echo "--------------------------------------------------------------------"
-     configtxgen -profile OrdererNodeEtcdRaftProfile -channelID {{ .Values.orderer_system_channel }} -outputBlock {{ $ChannelArtifactDir }}/{{ .Values.block_file }};
+     configtxgen -profile {{ .Values.configTxProfileType }} -channelID {{ .Values.orderer_system_channel }} -outputBlock {{ $ChannelArtifactDir }}/{{ .Values.block_file }};
      
      if [ $? -ne 0 ]; then
         echo "============ [ERROR] Genesis block creation failed with an error, please debug it manually using cli pod and re-run this job if necessary. ============"

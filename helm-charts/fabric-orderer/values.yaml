@@ -15,22 +15,30 @@ podSecurityContext: {}
 securityContext: {}
 resources: {}
 startupProbe:
-  tcpSocket:
-    port: 7050
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 1
   failureThreshold: 3
+  httpGet:
+    path: /healthz
+    port: 8443
+    scheme: HTTP
+  periodSeconds: 10
+  successThreshold: 1
 readinessProbe:
-  tcpSocket:
-    port: 7050
-  periodSeconds: 10
   failureThreshold: 3
+  httpGet:
+    path: /healthz
+    port: 8443
+    scheme: HTTP
+  periodSeconds: 10
+  successThreshold: 1
 livenessProbe:
-  tcpSocket:
-    port: 7050
-  periodSeconds: 10
   failureThreshold: 3
+  httpGet:
+    path: /healthz
+    port: 8443
+    scheme: HTTP
+  periodSeconds: 10
+  successThreshold: 1
+
 
 ## Example complete list of orderer deployment values.
 # orderers:

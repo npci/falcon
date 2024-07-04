@@ -7,8 +7,6 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $HlfDomain      := .Values.hlf_domain }}
 {{- $BaseDir        := .Values.workdir }}
-{{- $OrdererOrgName := .Values.orderer_org_name }}
-{{- $PeerOrgName    := .Values.peer_org_name }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -22,20 +20,10 @@ data:
   Organizations:
   {{- range .Values.admin_organizations }}
     - &{{ .org_name }}
-        # DefaultOrg defines the organization which is used in the sampleconfig
-        # of the fabric.git development environment
         Name: {{ .org_name }} 
-
-        # ID to load the MSP definition as
         ID: {{ .org_name }}
-
-        # MSPDir is the filesystem path which contains the MSP configuration
         {{- $Msp_dir := printf "%s/%s/%s/%s" $BaseDir .org_name .admin_identity "msp" }}
         MSPDir: {{ .msp_dir | default $Msp_dir }}
-
-        # Policies defines the set of policies at this level of the config tree
-        # For organization policies, their canonical path is usually
-        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
       {{- if eq "orderer" .org_type }}
         Policies:
             Readers:
@@ -52,7 +40,7 @@ data:
             - {{ printf "%s.%s:%s" .identity_name $HlfDomain .port }}
         {{- end }}        
       {{- end }}
-      {{- if eq "peerorg" .org_type }}
+      {{- if eq "consortium" .org_type }}
         Policies:
             Readers:
                 Type: Signature
@@ -66,12 +54,7 @@ data:
             Endorsement:
                 Type: Signature
                 Rule: "OR('{{ .org_name }}.peer')"
-
-        # leave this flag set to true.
         AnchorPeers:
-            # AnchorPeers defines the location of peers which can be used
-            # for cross org gossip communication.  Note, this value is only
-            # encoded in the genesis block in the Application section context
             {{- range .anchor_peers }}
             - Host: {{ .host }}
               Port: {{ .port }}
@@ -79,59 +62,14 @@ data:
       {{- end }}
   {{- end }}
   Capabilities:
-    # Channel capabilities apply to both the orderers and the peers and must be
-    # supported by both.
-    # Set the value of the capability to true to require it.
     Channel: &ChannelCapabilities
-        # V2_0 capability ensures that orderers and peers behave according
-        # to v2.0 channel capabilities. Orderers and peers from
-        # prior releases would behave in an incompatible way, and are therefore
-        # not able to participate in channels at v2.0 capability.
-        # Prior to enabling V2.0 channel capabilities, ensure that all
-        # orderers and peers on a channel are at v2.0.0 or later.
         V2_0: true
-
-    # Orderer capabilities apply only to the orderers, and may be safely
-    # used with prior release peers.
-    # Set the value of the capability to true to require it.
     Orderer: &OrdererCapabilities
-        # V2_0 orderer capability ensures that orderers behave according
-        # to v2.0 orderer capabilities. Orderers from
-        # prior releases would behave in an incompatible way, and are therefore
-        # not able to participate in channels at v2.0 orderer capability.
-        # Prior to enabling V2.0 orderer capabilities, ensure that all
-        # orderers on channel are at v2.0.0 or later.
         V2_0: true
-
-    # Application capabilities apply only to the peer network, and may be safely
-    # used with prior release orderers.
-    # Set the value of the capability to true to require it.
     Application: &ApplicationCapabilities
-        # V2_0 application capability ensures that peers behave according
-        # to v2.0 application capabilities. Peers from
-        # prior releases would behave in an incompatible way, and are therefore
-        # not able to participate in channels at v2.0 application capability.
-        # Prior to enabling V2.0 application capabilities, ensure that all
-        # peers on channel are at v2.0.0 or later.
         V2_0: true
-
-    ################################################################################
-    #
-    #   SECTION: Application
-    #
-    #   - This section defines the values to encode into a config transaction or
-    #   genesis block for application related parameters
-    #
-    ################################################################################
   Application: &ApplicationDefaults
-
-    # Organizations is the list of orgs which are defined as participants on
-    # the application side of the network
     Organizations:
-
-    # Policies defines the set of policies at this level of the config tree
-    # For Application policies, their canonical path is
-    #   /Channel/Application/<PolicyName>
     Policies:
         Readers:
             Type: ImplicitMeta
@@ -148,47 +86,16 @@ data:
         Endorsement:
             Type: ImplicitMeta
             Rule: "ANY Endorsement"
-
     Capabilities:
         <<: *ApplicationCapabilities
-    ################################################################################
-    #
-    #   SECTION: Orderer
-    #
-    #   - This section defines the values to encode into a config transaction or
-    #   genesis block for orderer related parameters
-    #
-    ################################################################################
   Orderer: &OrdererDefaults
-
-    # Orderer Type: The orderer implementation to start
     OrdererType: etcdraft
-
-    # Batch Timeout: The amount of time to wait before creating a batch
     BatchTimeout: 1s
-
-    # Batch Size: Controls the number of messages batched into a block
     BatchSize:
-
-        # Max Message Count: The maximum number of messages to permit in a batch
         MaxMessageCount: 150
-
-        # Absolute Max Bytes: The absolute maximum number of bytes allowed for
-        # the serialized messages in a batch.
         AbsoluteMaxBytes: 99 MB
-
-        # Preferred Max Bytes: The preferred maximum number of bytes allowed for
-        # the serialized messages in a batch. A message larger than the preferred
-        # max bytes will result in a batch larger than preferred max bytes.
         PreferredMaxBytes: 99 MB
-
-    # Organizations is the list of orgs which are defined as participants on
-    # the orderer side of the network
     Organizations:
-
-    # Policies defines the set of policies at this level of the config tree
-    # For Orderer policies, their canonical path is
-    #   /Channel/Orderer/<PolicyName>
     Policies:
         Readers:
             Type: ImplicitMeta
@@ -199,70 +106,40 @@ data:
         Admins:
             Type: ImplicitMeta
             Rule: "ANY Admins"
-        # BlockValidation specifies what signatures must be included in the block
-        # from the orderer for the peer to validate it.
         BlockValidation:
             Type: ImplicitMeta
             Rule: "ANY Writers"
-
-    ################################################################################
-    #
-    #   CHANNEL
-    #
-    #   This section defines the values to encode into a config transaction or
-    #   genesis block for channel related parameters.
-    #
-    ################################################################################
   Channel: &ChannelDefaults
-    # Policies defines the set of policies at this level of the config tree
-    # For Channel policies, their canonical path is
-    #   /Channel/<PolicyName>
     Policies:
-        # Who may invoke the 'Deliver' API
         Readers:
             Type: ImplicitMeta
             Rule: "ANY Readers"
-        # Who may invoke the 'Broadcast' API
         Writers:
             Type: ImplicitMeta
             Rule: "ANY Writers"
-        # By default, who may modify elements at this config level
         Admins:
             Type: ImplicitMeta
             Rule: "ANY Admins"
-
-    # Capabilities describes the channel level capabilities, see the
-    # dedicated Capabilities section elsewhere in this file for a full
-    # description
     Capabilities:
         <<: *ChannelCapabilities
-
-    ################################################################################
-    #
-    #   Profile
-    #
-    #   - Different configuration profiles may be encoded here to be specified
-    #   as parameters to the configtxgen tool
-    #
-    ################################################################################
   Profiles:
-  {{- if eq "ConsortiumOrgProfile" .Values.configTxProfileType }}
-    ConsortiumOrgProfile:
-        Consortium: SampleConsortium
+  {{- if eq "ConsortiumProfile" .Values.configTxProfileType }}
+    ConsortiumProfile:
+        Consortium: {{ $.Values.consortiumName }}
         <<: *ChannelDefaults
         Application:
             <<: *ApplicationDefaults
             Organizations:
               {{- range .Values.admin_organizations }}
-              {{- if eq "peerorg" .org_type }}
+              {{- if eq "consortium" .org_type }}
                 - *{{ .org_name }}
               {{- end }}
               {{- end }}
             Capabilities:
                 <<: *ApplicationCapabilities
   {{- end }}
-  {{- if eq "OrdererNodeEtcdRaftProfile" .Values.configTxProfileType }}
-    OrdererNodeEtcdRaftProfile:
+  {{- if eq "OrdererEtcdRaftProfile" .Values.configTxProfileType }}
+    OrdererEtcdRaftProfile:
         <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
@@ -296,10 +173,10 @@ data:
       {{- end }}
     {{- end }}
         Consortiums:
-          SampleConsortium:
+          {{ $.Values.consortiumName }}:
             Organizations:
             {{- range .Values.admin_organizations }}
-            {{- if eq "peerorg" .org_type }} 
+            {{- if eq "consortium" .org_type }} 
              - *{{ .org_name }}
             {{- end }}
             {{- end }}
