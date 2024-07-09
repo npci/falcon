@@ -153,7 +153,7 @@ configTxProfileType: OrdererEtcdRaftProfile
 consortiumName: InitialConsortium
 ```
 
-## How to create new Channel in hyperpedger fabric ?
+## How to create new Channels in hyperpedger fabric ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -168,7 +168,7 @@ consortiumName: InitialConsortium
 | `consortiumName` | Consortium name which is part of orderer gensis block creation| `InitialConsortium` |
 | `admin_organizations` | Admin organization information which is already part of Consortium. [Refer](#Admin-organizations) | `[]` |
 
-NOTE: Prior to Falcon 1.2.0, the default name was "SampleConsortium".
+`NOTE: Prior to Falcon 1.2.0, the default name consortium name was "SampleConsortium".`
 
 #### Admin-organizations;
 
