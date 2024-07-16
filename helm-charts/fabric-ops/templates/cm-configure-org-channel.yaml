@@ -10,7 +10,7 @@ SPDX-License-Identifier:  GPL-3.0
 {{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
 {{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 {{- $ChannelName       := .Values.hlf_channel }}
-{{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
+{{- $MspBaseDir        := printf "%s%s" .Values.workdir "/peer/crypto/users" }}
 
 {{- if .Values.fabric_actions.configure_org_channel | default false }}
 
@@ -21,13 +21,13 @@ metadata:
   labels:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 data:
-{{- range .Values.organizatons }}
+{{- range .Values.organizations }}
   configtx_{{ .name }}.yaml: |
       Organizations:
         - &{{ .name }}
           Name: {{ .name }}
           ID: {{ .name }}
-          {{- $MSPDir := printf "%s/%s/%s" (.msp_dir | default "/crypto-config/peerOrganizations" ) .identity_name "msp" }}
+          {{- $MSPDir := printf "%s/%s/%s" (.msp_dir | default "/crypto-config/peerOrganizations" ) .name "msp" }}
           MSPDir: {{ $MSPDir }}
           Policies:
             Readers:
@@ -47,13 +47,17 @@ data:
               Port: {{ .anchor_peer_port }}
 {{- end }}
   fabric_configure_org_channel.sh: |
+      ORG_NAME=$1
+      ORG_STATUS=$4
+      
+      echo "============ Org status is set to $ORG_STATUS ============"
       source /scripts/fabric_enroll.sh
       fabric_public_key_fetch {{ $TlsCaEndpoint }} {{ $TlsCaTlsCertFile }}
       {{- range .Values.admin_identity }}
         enroll \
           {{ .identity_name }} \
           {{ .identity_secret }} \
-          {{ .msp_base_dir | default $Msp_base_dir }} \
+          {{ .msp_base_dir | default $MspBaseDir }} \
           {{ .ica_endpoint | default $IcaEndPoint }} \
           {{ .tlsca_endpoint | default $TlsCaEndpoint }} \
           {{ .ica_tls_certfile | default $IcaTlsCertFile }} \
@@ -63,53 +67,85 @@ data:
           {{ .require_tls_enrollment }}
       {{- end }}
 
-      ORG_NAME=$1
       FABRIC_CA_URL=$2
-      FABRIC_IDENTITY=$3
-      FABRIC_IDENTITY_SECRET=$4
-      FABRIC_IDENTITY_MSP_DIR=$5
-      FABRIC_TLS_CERT_FILE=/tmp/$ORG_NAME-cert.pem
+      FABRIC_IDENTITY_MSP_DIR=$3
 
-      echo "============ Updating channel for $ORG_NAME ============"
-      enroll \
-        $FABRIC_IDENTITY \
-        $FABRIC_IDENTITY_SECRET \
-        $FABRIC_IDENTITY_MSP_DIR \
-        $FABRIC_CA_URL \
-        null \
-        $FABRIC_TLS_CERT_FILE \
-        null \
-        {{ .Values.hlf_domain }} \
-        {{ .require_msp_enrollment | default "true" }} \
-        {{ .require_tls_enrollment | default "false" }}
+      if [ $ORG_STATUS = "active" ]; then
+       
+        echo "============ Rearranging Org specific msp directory ============"
+        mkdir -p $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/tlscacerts
+        mkdir -p $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/cacerts/
+        mkdir -p $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/intermediatecerts/
+        fabric_public_key_fetch $FABRIC_CA_URL $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/cacerts/ca-cert.pem
+        cp $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/cacerts/ca-cert.pem $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/intermediatecerts/ca-cert.pem 
+        cp {{ $TlsCaTlsCertFile }} $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/tlscacerts/ca.crt
+        cp /tmp/config.yaml $FABRIC_IDENTITY_MSP_DIR/$ORG_NAME/msp/config.yaml
+
+        echo "============ Generating org material for $ORG_NAME ============"
+        configtxgen -configPath {{ $.Values.workdir }}/peer -printOrg $ORG_NAME > $ORG_NAME.json
+        
+        echo "============ Fetching config block ============"
+        peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+        echo "============ Converting the configuration to JSON (jq) ============"
+        configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+        echo "============ Adding the org information to JSON (jq) ============"
+        jq -s '.[0] * {"channel_group":{"groups":{"Application":{"groups": {"'${ORG_NAME}'":.[1]}}}}}' config.json $ORG_NAME.json > modified_config.json
+        echo "============ Converting config.json and modified_config.json files to protocol buffer ============"
+        configtxlator proto_encode --input config.json --type common.Config --output config.pb
+        configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
+        echo "============ Compute the delta between original and modified pb files ============"
+        configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output org_update.pb
+        echo "============ Convert org_update.pb to JSON format (jq) ============"
+        configtxlator proto_decode --input org_update.pb --type common.ConfigUpdate | jq . > org_update.json
+        echo "============ Update header to Envelop JSON file. ============"
+        echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat org_update.json)'}}}' | jq . > org_update_in_envelope.json        
+        echo "============ Encode the Envelop JSON file to Protocol buffer. ============"
+        configtxlator proto_encode --input org_update_in_envelope.json --type common.Envelope --output org_update_in_envelope.pb        
+        echo "============ Signing the Channel Configuration Update ============"
+        peer channel signconfigtx -f org_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}        
+        echo "============ Updating Channel configuration by adding the org $ORG_NAME ============"
+        peer channel update -f org_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+
+        if [ $? -ne 0 ]; then
+          echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+        else
+          echo "============ [SUCCESS] All steps have been executed successfully. ============"
+        fi
       
-      echo "Rearranging Org specific msp directory"
-      mkdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/tlscacerts
-      cp -pr $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/cacerts/* $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/cacerts/ca-cert.pem      
-      cp {{ $TlsCaTlsCertFile }} $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp/tlscacerts/ca.crt
+      elif [ $ORG_STATUS = "disabled" ]; then
 
-      echo "============ Generating org material for $ORG_NAME ============"
-      configtxgen -configPath {{ $.Values.workdir }}/peer -printOrg $ORG_NAME > $ORG_NAME.json
-      echo "============ Fetching config block ============"
-      peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
-      echo "============ Converting the configuration to JSON ============"
-      configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
-      echo "============ Add the new Org $ORG_NAME crypto material ============"
-      jq -s '.[0] * {"channel_group":{"groups":{"Application":{"groups": {"'${ORG_NAME}'":.[1]}}}}}' config.json $ORG_NAME.json > modified_config.json
-      configtxlator proto_encode --input config.json --type common.Config --output config.pb
-      configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
-      configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output org3_update.pb
-      configtxlator proto_decode --input org3_update.pb --type common.ConfigUpdate | jq . > org3_update.json
-      echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat org3_update.json)'}}}' | jq . > org3_update_in_envelope.json
-      configtxlator proto_encode --input org3_update_in_envelope.json --type common.Envelope --output org3_update_in_envelope.pb
-      echo "============ Signing the Channel Configuration Update ============"
-      peer channel signconfigtx -f org3_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
-      echo "============ Updating Channel configuration ============"
-      peer channel update -f org3_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
-
-      if [ $? -ne 0 ]; then
-        echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+        echo "=========================================================================="
+        echo "============ Triggering org removal of $ORG_NAME from channel ============"
+        echo "=========================================================================="
+        echo "============ Fetching config block ============"
+        peer channel fetch config config_block.pb -o {{ .Values.orderer_endpoint }} -c {{ $ChannelName }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+        echo "============ Converting the configuration to JSON (jq) ============"
+        configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+        echo "============ Removing the org information from JSON (jq) ============"
+        jq 'del(.channel_group.groups.Application.groups.'$ORG_NAME')' config.json > modified_config.json
+        echo "============ Converting config.json and modified_config.json files to protocol buffer ============"
+        configtxlator proto_encode --input config.json --type common.Config --output config.pb
+        configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
+        echo "============ Compute the delta between original and modified pb files ============"
+        configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output config_update.pb
+        echo "============ Convert config_update.pb to JSON format ============"
+        configtxlator proto_decode --input config_update.pb --type common.ConfigUpdate --output config_update.json
+        echo "============ Update header to Envelop JSON file. ============"
+        echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat config_update.json)'}}}' | jq . > config_update_in_envelope.json
+        echo "============ Encode the Envelop JSON file to Protocol buffer. ============"
+        configtxlator proto_encode --input config_update_in_envelope.json --type common.Envelope --output config_update_in_envelope.pb
+        echo "============ Signing the Channel Configuration Update ============"
+        peer channel signconfigtx -f config_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
+        echo "============ Updating Channel configuration by removing the org $ORG_NAME ============"
+        peer channel update -f config_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
+        
+        if [ $? -ne 0 ]; then
+          echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+        else
+          echo "============ [SUCCESS] All steps have been executed successfully. ============"
+        fi
       else
-        echo "============ [SUCCESS] All steps have been executed successfully. ============"
+        echo "Wrong Org status value. It must be either active or disabled"
       fi
+        
   {{- end }}

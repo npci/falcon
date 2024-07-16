@@ -165,7 +165,7 @@ helm install org1-ca-ops -n org1 helm-charts/fabric-ops/ -f examples/fabric-ops/
 ```
 3. **Add Org1 to the network**
 
-Once the `Org1` ICA started successfully, you would need to add this `Org1` to the network. For that, you need to run the following Job in `initialpeerorg`. Comment out the `org2` section from the `Values.organizatons` array in the values file [examples/fabric-ops/initialpeerorg/configure-org-channel.yaml](./fabric-ops/initialpeerorg/configure-org-channel.yaml) for now since we have not deployed the `Org2` yet.
+Once the `Org1` ICA started successfully, you would need to add this `Org1` to the network. For that, you need to run the following Job in `initialpeerorg`. Comment out the `org2` section from the `Values.organizations` array in the values file [examples/fabric-ops/initialpeerorg/configure-org-channel.yaml](./fabric-ops/initialpeerorg/configure-org-channel.yaml) for now since we have not deployed the `Org2` yet.
 ```
 helm install configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examples/fabric-ops/initialpeerorg/configure-org-channel.yaml
 ```
@@ -196,7 +196,7 @@ helm install org2-ca-ops -n org2 helm-charts/fabric-ops/ -f examples/fabric-ops/
 ```
 3. **Add Org2 to network**
 
-Once the `Org2` ICA started successfully, you would need to add this `Org2` to the network. For that, you need to upgrade the following `configorgchannel` Job in `initialpeerorg`. This time, uncomment the `org2` section in the `Values.organizatons` array in the values file [examples/fabric-ops/initialpeerorg/configure-org-channel.yaml](./fabric-ops/initialpeerorg/configure-org-channel.yaml).
+Once the `Org2` ICA started successfully, you would need to add this `Org2` to the network. For that, you need to upgrade the following `configorgchannel` Job in `initialpeerorg`. This time, uncomment the `org2` section in the `Values.organizations` array in the values file [examples/fabric-ops/initialpeerorg/configure-org-channel.yaml](./fabric-ops/initialpeerorg/configure-org-channel.yaml).
 ```
 helm upgrade configorgchannel -n initialpeerorg helm-charts/fabric-ops/ -f examples/fabric-ops/initialpeerorg/configure-org-channel.yaml
 ```

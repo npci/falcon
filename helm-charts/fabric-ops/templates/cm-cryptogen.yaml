@@ -5,12 +5,12 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- if .Values.fabric_actions.cryptogen }}
 
-{{- $BaseDir           := .Values.base_dir }}
-{{- $Project           := .Values.project }}
-{{- $TlsCaEndPoint     := .Values.tlsca_endpoint }}
-{{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
-{{- $HlfDomain         := .Values.hlf_domain }}
-{{- $ChannelName       := .Values.hlf_channel }}
+{{- $BaseDir            := .Values.workdir }}
+{{- $Project            := .Values.project }}
+{{- $TlsCaEndPoint      := .Values.tlsca_endpoint }}
+{{- $TlsCaTlsCertFile   := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $HlfDomain          := .Values.hlf_domain }}
+{{- $ChannelArtifactDir := .Values.channel_artifact_dir | default "/scripts" }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -24,14 +24,15 @@ data:
     source /scripts/fabric_enroll.sh 
     fabric_public_key_fetch {{ $TlsCaEndPoint }} {{ $TlsCaTlsCertFile }}
      
-    {{- range .Values.organizations }}
+    {{- range .Values.admin_organizations }}
       {{- if eq "orderer" .org_type }}
         {{ $org_name     := .org_name }}
         {{ $ica_endpoint := .ica_endpoint }}
         {{ $cert_path    := .cert_path }}
         {{- range .orderer_identities }}
-          
-          {{- $msp_dir := printf "%s/%s" $BaseDir $org_name }}
+
+        echo "============ Starting Orderer identity enrollments. ============"          
+        {{- $msp_dir := printf "%s/%s" $BaseDir $org_name }}
         enroll \
           {{ .identity_name }} \
           {{ .identity_secret }} \
@@ -56,7 +57,7 @@ data:
 
      echo "============ Starting Org admin enrollments. ============"
 
-     {{- range .Values.organizations }}
+     {{- range .Values.admin_organizations }}
      {{- $msp_dir := printf "%s/%s" $BaseDir .org_name }}
     
      enroll \
@@ -76,32 +77,25 @@ data:
      {{- end }}
 
      echo "--------------------------------------------------------------------"
-     echo "Generating Genesis block file {{ .Values.block_file }} at {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }}";
+     echo "Generating Genesis block file {{ .Values.block_file }} at {{ $ChannelArtifactDir }}/{{ .Values.block_file }}";
      echo "--------------------------------------------------------------------"
-     configtxgen -profile SampleMultiNodeEtcdRaft -channelID {{ .Values.orderer_system_channel }} -outputBlock {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }};
+     configtxgen -profile {{ .Values.configTxProfileType }} -channelID {{ .Values.orderer_system_channel }} -outputBlock {{ $ChannelArtifactDir }}/{{ .Values.block_file }};
+     
+     if [ $? -ne 0 ]; then
+        echo "============ [ERROR] Genesis block creation failed with an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+        exit
+      else
+        echo "============ [SUCCESS] Genesis block creation has been executed successfully. ============"
+      fi
+
      sleep 5;
      echo "--------------------------------"
      echo "Printing generated {{ .Values.block_file }}"     
      echo "--------------------------------"
-     cat {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }}
+     configtxgen -inspectBlock {{ $ChannelArtifactDir }}/{{ .Values.block_file }} | jq .
      echo "--------------------------------"
-     GENESIS_SHA=$(sha256sum {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }})
+     GENESIS_SHA=$(sha256sum {{ $ChannelArtifactDir }}/{{ .Values.block_file }})
      echo "SHA256 value = $GENESIS_SHA"
      echo "--------------------------------"
-
-     echo "--------------------------------------------------------------------"
-     echo "Generating Configuration transaction file {{ .Values.config_transaction_filename }} at {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }}";
-     echo "--------------------------------------------------------------------"
-     configtxgen -profile TwoOrgsChannel -outputCreateChannelTx {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }} -channelID {{ $ChannelName }};
-     sleep 5
-     echo "--------------------------------"
-     echo "Printing generated {{ .Values.config_transaction_filename }}"
-     echo "--------------------------------"
-     cat {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }}
-     echo "\n"
-     echo "--------------------------------------------------------------------"
-     CHANNELTX_SHA=$(sha256sum {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }})
-     echo "SHA256 value = $CHANNELTX_SHA"
-     upload_file {{ .Values.channel_artifact_dir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
-     upload_file {{ .Values.channel_artifact_dir }}/{{ .Values.config_transaction_filename }} {{ .Values.filestore_endpoint }}/{{ $Project }}/ 
+     upload_file {{ $ChannelArtifactDir }}/{{ .Values.block_file }} {{ .Values.filestore_endpoint }}/{{ $Project }}/
 {{- end }}
