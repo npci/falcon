@@ -175,3 +175,16 @@ data:
         fi
 
       }
+
+      function check_exit_status() {
+
+          local exit_status=$1
+
+          if [ $exit_status -eq 0 ]; then
+            echo "============ [SUCCESS] ============"
+            break;
+          else
+            echo "============ [ERROR] One of the previous step returned an error, please debug it manually using cli pod and re-run this job if necessary. ============"
+            exit
+          fi
+      }

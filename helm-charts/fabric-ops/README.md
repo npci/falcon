@@ -9,12 +9,12 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 - [x] [Genesis block creation](#how-to-create-genesis-block--channel-transaction-tx-)
 - [x] [Channel creation](#how-to-create-new-channel-in-hyperpedger-fabric-)
 - [x] [Anchorpeer list update on channel](#how-to-update-anchorpeer-on-channel-)
-- [x] [Adding Orgs to channel](#how-to-add-a-new-org-to-channel-)
+- [x] [Add/remove Orgs in channel](#how-to-addremove-an-org-in-channel-)
 - [x] [Chaincode installation](#how-to-install-chaincode-on-peers-)
 - [x] [Chaincode approval](#how-to-approve-chaincode-for-an-org-)
 - [x] [Chaincode commit](#how-to-commmit-chaincode-from-an-org-)
-- [x] [Order addition](#how-to-add-new-order-node-into-a-running-hyperpedger-fabric-network-)
-- [x] [Order TLS cert renewal](#how-to-updaterenew-orderer-node-tls-certificates-in-a-running-hyperpedger-fabric-network-)
+- [x] [Orderer addition](#how-to-add-new-orderer-node-into-a-running-hyperpedger-fabric-network-)
+- [x] [Orderer TLS cert renewal](#how-to-updaterenew-orderer-node-tls-certificates-in-a-running-hyperpedger-fabric-network-)
 
 #### The following parameters are common across all fabric-ops job.
 
@@ -106,13 +106,11 @@ identities:
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
 | `fabric_actions.cryptogen` | `true` to specify the job is a cryptogen job | `true` |
-| `organizations` | The array to specify the Orderer organization and Initial peer org. [Refer](#Cryptogen-array-example)  | `[]` |
-| `channel_artifact_dir` | Directory in which the channel artifacts will be generated inside the job pod | `"/scripts/channel-artifacts"` |
-| `base_dir` | Base directory for all identity registration inside the job pod | `"/scripts/crypto-config"` |
+| `admin_organizations` | The array to specify the Orderer organization and Initial peer org. [Refer](#Cryptogen-array-example)  | `[]` |
 | `orderer_system_channel` | Orderer system channel name | `"orderer-sys-channel"` |
-| `hlf_channel` | Application channel name | `""` |
+| `configTxProfileType` | cc | `OrdererEtcdRaftProfile` |
+| `consortiumName` | Consortium Name | `InitialConsortium` |
 | `block_file` | Genesisblock file name to be generated | `"genesis.block"` |
-| `config_transaction_filename` | Channel transaction file name to be generated | `"channel.tx"` |
 | `tlsca_endpoint` | FQDN of the TLSCA server endpoint with port | `"tls-ca.my-hlf-domain.com:30000"` |
 | `filestore_endpoint` | FQDN of filestore server endpoint with port | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https. | `false` |
@@ -121,7 +119,7 @@ identities:
 #### Cryptogen array example;
 
 ```bash
-organizations:
+admin_organizations:
   - org_type: orderer
     org_name: orderer
     ica_endpoint: ica-orderer.my-hlf-domain.com:30000
@@ -138,7 +136,7 @@ organizations:
     - identity_name: orderer2-orderer
       identity_secret: orderer2ordererSamplePassword
       port: "30000"
-  - org_type: peerorg
+  - org_type: consortium
     org_name: initialpeerorg
     ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
     cert_path: /root/peerorg.pem
@@ -147,9 +145,15 @@ organizations:
     anchor_peers:
     - host: peer0-initialpeerorg.my-hlf-domain.com
       port: "30000"
+
+hlf_domain: my-hlf-domain.com
+orderer_system_channel: "orderer-sys-channel"
+block_file: genesis.block
+configTxProfileType: OrdererEtcdRaftProfile
+consortiumName: InitialConsortium
 ```
 
-## How to create new Channel in hyperpedger fabric ?
+## How to create new Channels in hyperpedger fabric ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -159,19 +163,34 @@ organizations:
 | `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
 | `filestore_endpoint` | The filestore endpoint | `"http://filestore.my-hlf-domain.com:30001"` |
 | `filestore_ssl` | `true` if `filestore_endpoint` is over https | `false` |
-| `config_transaction_filename` | Transaction filename in the filestore project dirctory | `"channel.tx"` |
-| `channel_block_filename` | Initial channel block filename to be created and uploaded to filestore project dirctory | `""` |
-| `hlf_channel` | Application channel name | `""` |
-| `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
+| `app_channels` | Application channel list | `""` |
+| `configTxProfileType` | Config txn creation profile name  | `ConsortiumProfile` |
+| `consortiumName` | Consortium name which is part of orderer gensis block creation| `InitialConsortium` |
+| `admin_organizations` | Admin organization information which is already part of Consortium. [Refer](#Admin-organizations) | `[]` |
 
-#### Admin-identity;
+`NOTE: Prior to Falcon 1.2.0, the default name consortium name was "SampleConsortium".`
+
+#### Admin-organizations;
 
 ```bash
-admin_identity:
-  - identity_name: admin
-    identity_secret: initialpeerorgAdminSamplePassword
+app_channels:
+  - mychannel
+   
+admin_organizations:
+  - org_type: consortium
+    org_name: initialpeerorg
+    ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
+    cert_path: /root/initialpeerorg.pem
+    admin_identity: admin
+    admin_secret: initialpeerorgAdminSamplePassword
     require_msp_enrollment: true
     require_tls_enrollment: false
+    anchor_peers:
+    - host: peer0-initialpeerorg.my-hlf-domain.com
+      port: "30000"
+
+configTxProfileType: ConsortiumProfile
+consortiumName: InitialConsortium
 ```
 
 ## How to update AnchorPeer on channel ?
@@ -198,7 +217,7 @@ anchor_peers:
      port: "30000"
 ```
 
-## How to add a new Org to channel ?
+## How to add/remove an Org in channel ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -208,24 +227,22 @@ anchor_peers:
 | `orderer_endpoint` | FQDN of the Orderer node endpoint with port | `"orderer0-orderer.my-hlf-domain.com:30000"` |
 | `hlf_channel` | The channel to update | `""` |
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
-| `organizatons` | List of organizations to add. [Refer](#Organization-list-format) | `[]` |
+| `organizations` | List of organizations to add. [Refer](#Organization-list-format) | `[]` |
 
 #### Organization list format;
 
 ```bash
-organizatons:
+organizations:
  - name: org1
    ica_endpoint: ica-org1.my-hlf-domain.com:30000
-   identity_name: admin
-   identity_secret: org1AdminSamplePassword
    anchor_peer: peer0-org1.my-hlf-domain.com
    anchor_peer_port: 30000
+   status: active
  - name: org2
    ica_endpoint: ica-org2.my-hlf-domain.com:30000
-   identity_name: admin
-   identity_secret: org2AdminSamplePassword
    anchor_peer: peer0-org2.my-hlf-domain.com
    anchor_peer_port: 30000
+   status: disabled
 ```
 
 ## How to install Chaincode on peers ?
@@ -297,7 +314,7 @@ peer_identities:
 | `admin_identity` | Any valid Admin user identity array in `ica_endpoint`. [Refer](#Admin-identity) | `[]` |
 
 
-## How to add new Order node into a running hyperpedger fabric network ?
+## How to add new Orderer node into a running hyperpedger fabric network ?
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
@@ -311,7 +328,7 @@ peer_identities:
 | `additional_orderers` | List of additional oderers. Execute one at a time. [Refer](#New-orderer-for-order-addition) | `[]` |
 | `MspIdOverride` | To override `nameOverride` with a different MSPID | `""` |
 
-#### Admin identity for order operation;
+#### Admin identity for Orderer operation;
 
 ```bash
 admin_identity:

@@ -13,8 +13,8 @@ Whether you're a blockchain enthusiast, developer, or enterprise seeking to harn
 
 ### Features
 - [x] CA Management (Root CA, TLS CA & Intermediate CAs)
-- [x] Peer Creation
-- [x] Orderer Creation
+- [x] Peer Creation, Cert renewal
+- [x] Orderer Creation, Addition, Cert renewal
 - [x] Channel Management
 - [x] Chaincode Lifecycle Management (Install, Approve, Commit and CC Upgrades)
 - [x] Cryptographic operations support and certification management
@@ -23,9 +23,10 @@ Whether you're a blockchain enthusiast, developer, or enterprise seeking to harn
 - [x] File Registry support for centralised config files
 - [x] Support for Hyperledger Fabric 2.3+
 - [x] Multi-zone, Multi-DC, Private Network (On-prem DCs) deployment support
+- [x] Multi-channel support
 
 ### Roadmap
-- [ ] Multi-channel support
+
 - [ ] Automatic certificate renewal
 - [ ] GUI based deployment support
 - [ ] Optional Fabric Explorer
@@ -34,7 +35,8 @@ Whether you're a blockchain enthusiast, developer, or enterprise seeking to harn
 - [ ] Key Management using HSM / Vault
 
 ### Releases
-- [v1.1.0](https://github.com/npci/falcon/releases/latest)
+- [v1.2.0](https://github.com/npci/falcon/releases/latest)
+- [v1.1.0](https://github.com/npci/falcon/releases/tag/v1.1.0)
 - [v1.0.2](https://github.com/npci/falcon/releases/tag/v1.0.2)
 - [v1.0.1](https://github.com/npci/falcon/releases/tag/v1.0.1)
 - [v1.0.0](https://github.com/npci/falcon/releases/tag/v1.0.0)

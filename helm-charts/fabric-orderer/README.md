@@ -71,6 +71,9 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `orderers.[].name` | The name of the orderer | `orderer[n]` |
 | `orderers.[].identity_name` | The identity of orderer | `""` |
 | `orderers.[].identity_secret` | The identity password of orderer | `""` |
+| `orderers.[].command` | To override command for this orderer | `"` Default to container image spec |
+| `orderers.[].args` | To override args for this orderer | `orderer` |
+| `orderers.[].hlf_domain` | If want to override the `.Values.hlf_domain` for this orderer. Make sure this is matching with the endpoint in channel config. | `""` |
 | `orderers.[].tls_cert_archive` | The tls cert archive file name of orderer in the filestore | `"orderer[n]-orderer-tls-certs.tar.gz"` |
 | `orderers.[].use_existing_pvc_data` | If want to mount an existing orderer pvc instead of creating new pvc. | `""` |
 | `orderers.[].additionalEnvironmentVars` | If want to add additional env variables per orderer | `""` |

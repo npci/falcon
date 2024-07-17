@@ -5,17 +5,15 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- if .Values.fabric_actions.create_channel | default false }}
 
-{{ $BankName          := .Values.nameOverride }}
-{{ $HlfDomain         := .Values.hlf_domain }}
-{{ $ChannelName       := .Values.channel_name }}
-{{ $Msp_base_dir      := printf "%s%s" .Values.workdir "/peer/crypto/users/" }}
+{{ $BankName               := .Values.nameOverride }}
+{{ $CorePeerMspConfigPath  := printf "%s%s%s%s%s" .Values.workdir "/" $BankName "/admin" "/msp" }}
 
-{{- range .Values.admin_identity }}
+{{- range .Values.app_channels }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "fabric-ops.fullname" $ }}
+  name: {{ $.Release.Name }}-{{ . }}
   labels:
     {{- include "fabric-ops.labels" $ | nindent 4 }}
 spec:
@@ -46,7 +44,7 @@ spec:
           workingDir: {{ $.Values.workdir }}/peer
           command: ["/bin/sh","-c"]
           args:
-           - /scripts/fabric_create_channel.sh;
+           - /scripts/fabric_create_channel.sh {{ . }};
           tty: true
           env: 
             - name: FABRIC_LOGGING_SPEC
@@ -54,7 +52,7 @@ spec:
             - name: CORE_PEER_LOCALMSPID
               value: {{ $BankName }}
             - name: CORE_PEER_MSPCONFIGPATH
-              value: {{ $.Values.core_peer_mspconfigpath_override | default (printf "%s%s%s" $Msp_base_dir .identity_name "/msp") }}
+              value: {{ $.Values.core_peer_mspconfigpath_override | default $CorePeerMspConfigPath }}
             - name: CORE_PEER_TLS_ENABLED
               value: "true"
             - name: GOPATH
@@ -71,12 +69,19 @@ spec:
             - name: scripts
               subPath: fabric_create_channel.sh
               mountPath: /scripts/fabric_create_channel.sh
+            - name: configtx
+              subPath: configtx.yaml
+              mountPath: {{ $.Values.workdir }}/peer/configtx.yaml
           resources:
             {{- toYaml $.Values.resources | nindent 12 }}
       volumes:
         - name: scripts
           configMap:
             name: {{ include "fabric-ops.fullname" $ }}
+            defaultMode: 0777
+        - name: configtx
+          configMap:
+            name: {{ include "fabric-ops.fullname" $ }}-configtx
             defaultMode: 0777
         - name: fabric-ops
           configMap:

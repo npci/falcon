@@ -21,7 +21,7 @@ csr_names_st: Maharashtra
 csr_names_l: Mumbai
 csr_names_o: Your Company Name
 
-#MspIdOverride: ordererorg
+#MspIdOverride: MyOrdererOrg, by default it is `orderer`
 orderer_endpoint: orderer0-orderer.my-hlf-domain.com:30000
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.

@@ -3,8 +3,15 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
+{{- $Chart               := .Chart.Name -}}
+{{- $Name                := .Values.nameOverride | default .Chart.Name -}}
+{{- $Annotations         := .Values.global.ingress.annotations -}}
+{{- $ClassName           := .Values.global.ingressClass -}}
+{{- $IngressEnabled      := .Values.global.ingressEnabled -}}
+
 {{- range .Values.peers }}
-  {{- if .ingressEnabled | default $.Values.global.ingressEnabled }}
+{{- if or $IngressEnabled .ingressEnabled }}
+{{- if (ne .ingressEnabled false) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -16,12 +23,12 @@ metadata:
     {{- if .additionalLabels -}}
     {{ toYaml .additionalLabels | nindent 4 }}
     {{- end }}
-  {{- with $.Values.global.ingress.annotations }}
+  {{- with $Annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  ingressClassName: {{ .ingressClass | default $.Values.global.ingressClass }}
+  ingressClassName: {{ .ingressClass | default $ClassName }}
   rules:
     - host: {{ .name }}-{{ include "fabric-peer.name" $ }}.{{ $.Values.global.hlf_domain }}
       http:
@@ -33,5 +40,6 @@ spec:
                 name: {{ .name }}-{{ include "fabric-peer.name" $ }}
                 port:
                   number: {{ .peerServicePort | default $.Values.global.peerServicePort }}
-  {{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

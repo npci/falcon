@@ -268,7 +268,7 @@ spec:
           configMap:
             name: {{ .name }}-{{ include "fabric-peer.fullname" $ }}-conf
             defaultMode: 0777
-        {{- if not .require_certs_dir_persistence }}
+        {{- if not (.require_certs_dir_persistence | default $.Values.global.require_certs_dir_persistence) }}
         - name: cert-peer
           emptyDir:
            sizeLimit: {{ $.Values.global.peerCertDiskSize }}

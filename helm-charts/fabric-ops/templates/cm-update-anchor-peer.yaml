@@ -46,21 +46,20 @@ data:
       configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
       echo "============ Add the anchor peer configs ============"
       jq --argjson hostList "$(cat anchorpeer.json)" '.channel_group.groups.Application.groups.{{ $BankName }}.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": $hostList},"version": "0"}}' config.json > modified_config.json
-      echo "Executing configtxlator commands"
-      echo "============ Executing - configtxlator proto_encode --input config.json --type common.Config --output config.pb ============"
+      echo "============ Converting config.json and modified_config.json files to protocol buffer ============"
       configtxlator proto_encode --input config.json --type common.Config --output config.pb
-      echo "============ Executing - configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb ============"
       configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
-      echo "============ Executing - configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb ============================"
+      echo "============ Compute the delta between original and modified pb files ============"
       configtxlator compute_update --channel_id {{ $ChannelName }} --original config.pb --updated modified_config.pb --output anchor_update.pb
-      echo "============ Executing - configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json ============"
+      echo "============ Convert config_update.pb to JSON format ============"
       configtxlator proto_decode --input anchor_update.pb --type common.ConfigUpdate | jq . > anchor_update.json
+      echo "============ Update header to Envelop JSON file. ============"
       echo '{"payload":{"header":{"channel_header":{"channel_id":"{{ $ChannelName }}", "type":2}},"data":{"config_update":'$(cat anchor_update.json)'}}}' | jq . > anchor_update_in_envelope.json
-      echo "============ configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb ============"
+      echo "============ Encode the Envelop JSON file to Protocol buffer. ============"
       configtxlator proto_encode --input anchor_update_in_envelope.json --type common.Envelope --output anchor_update_in_envelope.pb
       echo "============ Signing the Channel Configuration ============"
       peer channel signconfigtx -f anchor_update_in_envelope.pb --connTimeout {{ .Values.connTimeout }}
-      echo "============ Running peer channel update ============"
+      echo "============ Updating Channel configuration with anchor peers list ============"
       peer channel update -f anchor_update_in_envelope.pb -c {{ $ChannelName }} -o {{ .Values.orderer_endpoint }} --tls --cafile $ORDERER_CA --connTimeout {{ .Values.connTimeout }}
 
       if [ $? -ne 0 ]; then

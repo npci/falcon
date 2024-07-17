@@ -18,7 +18,7 @@ imagePullSecrets: []
 
 ## These organizations are the list of initial organizations required to generate the genesis.block file. 
 
-organizations:
+admin_organizations:
   - org_type: orderer
     org_name: orderer
     ica_endpoint: ica-orderer.my-hlf-domain.com:30000
@@ -35,7 +35,7 @@ organizations:
     - identity_name: orderer2-orderer
       identity_secret: orderer2ordererSamplePassword
       port: "30000"
-  - org_type: peerorg
+  - org_type: consortium
     org_name: initialpeerorg
     ica_endpoint: ica-initialpeerorg.my-hlf-domain.com:30000
     cert_path: /root/peerorg.pem
@@ -45,16 +45,13 @@ organizations:
     - host: peer0-initialpeerorg.my-hlf-domain.com
       port: "30000"
 
-channel_artifact_dir: /scripts/channel-artifacts
-base_dir: /scripts/crypto-config
 hlf_domain: my-hlf-domain.com
 orderer_system_channel: "orderer-sys-channel"
-hlf_channel: "mychannel"
 block_file: genesis.block
-config_transaction_filename: channel.tx
+configTxProfileType: OrdererEtcdRaftProfile
+consortiumName: InitialConsortium
 
 tlsca_endpoint: tls-ca.my-hlf-domain.com:30000
-
 filestore_endpoint: http://filestore.my-hlf-domain.com:30001
 filestore_ssl: false # Make it `true` if `filestore_endpoint` is over https.
 

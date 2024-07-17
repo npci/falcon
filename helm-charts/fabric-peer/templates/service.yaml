@@ -21,8 +21,11 @@ spec:
   ports:
     - name: peer
       port: {{ .peerServicePort | default $.Values.global.peerServicePort }}
-      targetPort: 7051
+      targetPort: {{ .peerContainerPort | default $.Values.global.peerContainerPort }}
       protocol: TCP
+      {{- if and (eq .peerServiceType "NodePort") (not (empty .peerServiceNodePort)) }}
+      nodePort: {{ .peerServiceNodePort }}
+      {{- end }}
   selector:
     app: {{ .name }}-{{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
@@ -47,8 +50,11 @@ spec:
   ports:
   - name: couchdb
     port: {{ .couchServicePort | default $.Values.global.couchServicePort }}
-    targetPort: 5984
+    targetPort: {{ .couchContainerPort | default $.Values.global.couchContainerPort }}
     protocol: TCP
+    {{- if and (eq .couchServiceType "NodePort") (not (empty .couchServiceNodePort)) }}
+    nodePort: {{ .couchServiceNodePort }}
+    {{- end }}
   selector:
     app: {{ .name }}-{{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
@@ -74,6 +80,9 @@ spec:
       port: {{ .operationsServicePort | default $.Values.global.operations.servicePort }}
       targetPort: 9443
       protocol: TCP
+      {{- if and (eq .operationsServiceType "NodePort") (not (empty .operationServiceNodePort)) }}
+      nodePort: {{ .operationServiceNodePort }}
+      {{- end }}
   selector:
     app: {{ .name }}-{{ include "fabric-peer.name" $ }}
     {{- include "fabric-peer.selectorLabels" $ | nindent 4 }}
