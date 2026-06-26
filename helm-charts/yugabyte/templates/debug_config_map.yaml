@@ -1,0 +1,46 @@
+{{- $root := . -}}
+{{- $stsTsStart := int $root.Values.stsIndex.tserver.start -}}
+{{- $stsTsEnd := int $root.Values.stsIndex.tserver.end -}}
+{{- $stsMasterStart := int $root.Values.stsIndex.master.start -}}
+{{- $stsMasterEnd := int $root.Values.stsIndex.master.end -}}
+{{- $hasMoveOpMaster := ne $stsMasterStart $stsMasterEnd -}}
+{{- $hasMoveOpTserver := ne $stsTsStart $stsTsEnd -}}
+{{- $masterReplicas := $root.Values.replicas.master -}}
+{{- $masterMoveOpReplicas := $root.Values.moveOp.replicas.master -}}
+{{- $tserverReplicas := $root.Values.replicas.tserver -}}
+{{- $tserverMoveOpReplicas := $root.Values.moveOp.replicas.tserver -}}
+{{- $maxMasterReplicas := ($hasMoveOpMaster | ternary (max (int $masterReplicas) (int $masterMoveOpReplicas)) (int $masterReplicas)) | int }}
+{{- $maxTserverReplicas := ($hasMoveOpTserver | ternary (max (int $tserverReplicas) (int $tserverMoveOpReplicas)) (int $tserverReplicas)) | int }}
+
+---
+{{ $appLabelArgs := dict "label" "yb-master" "root" $root }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yugabyte.fullname" $root }}-master-hooks
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+data:
+{{- range $index := until $maxMasterReplicas }}
+  yb-master-{{.}}-pre_debug_hook.sh: "echo 'hello-from-pre' "
+  yb-master-{{.}}-post_debug_hook.sh: "echo 'hello-from-post' "
+{{- end }}
+
+---
+{{ $appLabelArgs := dict "label" "yb-tserver" "root" $root }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yugabyte.fullname" $root }}-tserver-hooks
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+data:
+{{- range $index := until $maxTserverReplicas }}
+  yb-tserver-{{.}}-pre_debug_hook.sh: "echo 'hello-from-pre' "
+  yb-tserver-{{.}}-post_debug_hook.sh: "echo 'hello-from-post' "
+{{- end }}
+---

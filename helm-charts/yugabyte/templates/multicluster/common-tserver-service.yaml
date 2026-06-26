@@ -1,0 +1,23 @@
+{{- if (and .Values.multicluster.createCommonTserverService (not .Values.oldNamingStyle)) }}
+{{- range $service := .Values.serviceEndpoints }}
+{{- if eq $service.name "yb-tserver-service" }}
+{{- $appLabelArgs := dict "label" $service.app "root" $ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "yb-tserver-common"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $ | indent 4 }}
+spec:
+  ports:
+    {{- range $label, $port := $service.ports }}
+    - name: {{ $label | quote }}
+      port: {{ $port }}
+    {{- end }}
+  selector:
+    {{- include "yugabyte.appselector" ($appLabelArgs) | indent 4 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

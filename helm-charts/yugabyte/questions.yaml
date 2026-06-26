@@ -1,0 +1,200 @@
+---
+questions:
+  ## Default images for yugabyte
+  - variable: questions.defaultYugabyteDB
+    default: true
+    description: "Use default settings for YugabyteDB"
+    label: Use default
+    type: boolean
+    show_subquestion_if: false
+    group: "YugabyteDB"
+    subquestions:
+      - variable: Image.repository
+        default: "yugabytedb/yugabyte"
+        required: true
+        type: string
+        label: YugabyteDB image repository
+        description: "YugabyteDB image repository"
+      - variable: Image.tag
+        default: "2.5.1.0-b153"
+        required: true
+        type: string
+        label: YugabyteDB image tag
+        description: "YugabyteDB image tag"
+      - variable: Image.pullPolicy
+        default: "IfNotPresent"
+        required: false
+        type: enum
+        options:
+          - "Always"
+          - "IfNotPresent"
+        label: YugabyteDB image pull policy
+        description: "YugabyteDB image pull policy"
+      - variable: storage.ephemeral
+        default: false
+        required: false
+        type: boolean
+        label: YugabyteDB ephemeral storage
+        description: "Won't allocate PVs when true"
+      - variable: replicas.master
+        default: 3
+        description: "Number of replicas for Master"
+        type: int
+        required: true
+        label: Replication Factor Master
+      - variable: replicas.tserver
+        default: 3
+        description: "Number of replicas for TServer"
+        type: int
+        required: true
+        label: Replication Factor TServer
+      - variable: statefulSetAnnotations
+        description: Annotations for the StatefulSet
+        type: dict
+        required: false
+        label: "Annotations for the StatefulSet"
+  - variable: questions.defaultMasterStorage
+    default: true
+    description: "Use default storage configurations for YugabyteDB Master"
+    label: Use default storage configurations
+    type: boolean
+    show_subquestion_if: false
+    group: "Master Storage"
+    subquestions:
+      - variable: storage.master.count
+        default: 2
+        required: true
+        type: int
+        label: YugabyteDB master storage disk count
+        description: "YugabyteDB master storage disk count"
+      - variable: storage.master.size
+        default: "10Gi"
+        required: true
+        type: string
+        label: YugabyteDB master storage size
+        description: "YugabyteDB master storage size"
+      - variable: storage.master.storageClass
+        default: ""
+        required: false
+        type: storageclass
+        label: YugabyteDB master storage class
+        description: "YugabyteDB master storage class"
+  - variable: questions.defaultTServerStorage
+    default: true
+    description: "Use default storage configurations for YugabyteDB TServer"
+    label: Use default storage configuration
+    type: boolean
+    show_subquestion_if: false
+    group: "TServer Storage"
+    subquestions:
+      - variable: storage.tserver.count
+        default: 2
+        required: true
+        type: int
+        label: YugabyteDB TServer storage disk count
+        description: "YugabyteDB TServer storage disk count"
+      - variable: storage.tserver.size
+        default: "10Gi"
+        required: true
+        type: string
+        label: YugabyteDB TServer storage size
+        description: "YugabyteDB TServer storage size"
+      - variable: storage.tserver.storageClass
+        default: ""
+        required: false
+        type: storageclass
+        label: YugabyteDB TServer storage class
+        description: "YugabyteDB TServer storage class"
+  ## Default resources
+  - variable: questions.defaultResources
+    default: true
+    description: "Use default resources for YugabyteDB"
+    label: Use default resources
+    type: boolean
+    show_subquestion_if: false
+    group: "Resources"
+    subquestions:
+      - variable: resource.master.requests.cpu
+        default: "2"
+        description: "Master vcpu allocation for YugabyteDB"
+        type: string
+        required: true
+        label: vcpu allocation for master
+      - variable: resource.master.requests.memory
+        default: "2Gi"
+        description: "Master RAM allocation for YugabyteDB"
+        type: string
+        required: true
+        label: RAM allocation for master
+      - variable: resource.tserver.requests.cpu
+        default: "2"
+        description: "TServer vcpu allocation for YugabyteDB"
+        type: string
+        required: true
+        label: vcpu allocation for tserver
+      - variable: resource.tserver.requests.memory
+        default: "4Gi"
+        description: "TServer RAM allocation for YugabyteDB"
+        type: string
+        required: true
+        label: RAM allocation for tserver
+  ## TLS
+  - variable: tls.enabled
+    default: false
+    description: "Enable TLS - TLS disabled by default"
+    label: Enable TLS
+    type: boolean
+    show_subquestion_if: true
+    group: "TLS"
+    subquestions:
+      - variable: tls.nodeToNode
+        default: true
+        description: "Node to Node"
+        type: boolean
+        required: false
+        label: Node to Node
+      - variable: tls.clientToServer
+        default: true
+        description: "Client to server"
+        type: boolean
+        required: false
+        label: Client to server
+      - variable: tls.insecure
+        default: false
+        description: "Insecure - no service will connect on unencrypted connection"
+        type: boolean
+        required: false
+        label: Insecure communication
+      - variable: tls.certManager.enabled
+        default: false
+        description: "Use cert-manager to provide cluster certificates"
+        type: boolean
+        required: false
+        label: Cert-Manager Support
+  - variable: containerSecurityContext.enabled
+    default: false
+    description: "Enable Container Security Context"
+    label: Enable Container Security Context
+    type: boolean
+    show_subquestion_if: true
+    group: "Security Context"
+    subquestions:
+      - variable: containerSecurityContext.runAsUser
+        default: 10001
+        required: false
+        type: int
+        label: runAsUser
+        description: "runAsUser"
+      - variable: containerSecurityContext.runAsGroup
+        default: 10001
+        required: false
+        type: int
+        label: runAsGroup
+        description: "runAsGroup"
+      - variable: containerSecurityContext.runAsNonRoot
+        default: true
+        required: false
+        type: boolean
+        label: runAsNonRoot
+        description: "runAsNonRoot"
+

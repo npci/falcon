@@ -1,0 +1,127 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/quintush/helm-unittest/master/schema/helm-testsuite.json
+suite: priorityClassName on StatefulSet pod template
+tests:
+# Use oldNamingStyle so StatefulSet names are "yb-master" and "yb-tserver" for documentSelector
+# With default values (no priorityClassName), field is omitted on both StatefulSets
+- it: priorityClassName omitted when not set (master)
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  set:
+    oldNamingStyle: true
+  documentSelector:
+    path: metadata.name
+    value: yb-master
+  asserts:
+  - notExists:
+      path: spec.template.spec.priorityClassName
+
+- it: priorityClassName omitted when not set (tserver)
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  set:
+    oldNamingStyle: true
+  documentSelector:
+    path: metadata.name
+    value: yb-tserver
+  asserts:
+  - notExists:
+      path: spec.template.spec.priorityClassName
+
+# Global priorityClassName applies to both master and tserver StatefulSets
+- it: global priorityClassName on master StatefulSet
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  - ./values_priority_class_name_global.yaml
+  set:
+    oldNamingStyle: true
+  documentSelector:
+    path: metadata.name
+    value: yb-master
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: global-priority
+
+- it: global priorityClassName on tserver StatefulSet
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  - ./values_priority_class_name_global.yaml
+  set:
+    oldNamingStyle: true
+  documentSelector:
+    path: metadata.name
+    value: yb-tserver
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: global-priority
+
+# Component-specific priorityClassName overrides per StatefulSet
+- it: master priorityClassName set separately
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  set:
+    oldNamingStyle: true
+    master.priorityClassName: master-priority
+    tserver.priorityClassName: tserver-priority
+  documentSelector:
+    path: metadata.name
+    value: yb-master
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: master-priority
+
+- it: tserver priorityClassName set separately
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  set:
+    oldNamingStyle: true
+    master.priorityClassName: master-priority
+    tserver.priorityClassName: tserver-priority
+  documentSelector:
+    path: metadata.name
+    value: yb-tserver
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: tserver-priority
+
+# Component-specific overrides global
+- it: master priorityClassName overrides global
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  set:
+    oldNamingStyle: true
+    priorityClassName: default-priority
+    master.priorityClassName: master-priority
+  documentSelector:
+    path: metadata.name
+    value: yb-master
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: master-priority
+
+- it: tserver uses global when not overridden
+  template: templates/service.yaml
+  values:
+  - ./values_priority_class_name.yaml
+  set:
+    oldNamingStyle: true
+    priorityClassName: default-priority
+    master.priorityClassName: master-priority
+  documentSelector:
+    path: metadata.name
+    value: yb-tserver
+  asserts:
+  - equal:
+      path: spec.template.spec.priorityClassName
+      value: default-priority

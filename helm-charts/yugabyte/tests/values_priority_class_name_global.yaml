@@ -1,0 +1,6 @@
+# Values for "global priorityClassName" test
+replicas:
+  master: 1
+  tserver: 1
+
+priorityClassName: global-priority

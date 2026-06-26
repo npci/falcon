@@ -1,0 +1,110 @@
+{{- $sm := .Values.serviceMonitor }}
+{{ if and $sm.enabled (or $sm.tserver.enabled $sm.ycql.enabled $sm.ysql.enabled $sm.yedis.enabled) }}
+{{- $appLabelArgs := dict "label" "yb-tserver" "root" . -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "yugabyte.fullname" . }}-yb-tserver
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" . | indent 4 }}
+    {{- with .Values.serviceMonitor.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  jobLabel: "release"
+  selector:
+    matchLabels:
+      {{- if .Values.oldNamingStyle }}
+      app: "yb-tserver"
+      {{- else }}
+      app.kubernetes.io/name: "yb-tserver"
+      {{- end }}
+      release: {{ .Release.Name | quote }}
+      service-type: "headless"
+  endpoints:
+
+  {{- with .Values.serviceMonitor.tserver }}
+  {{- if .enabled }}
+  - port: {{ .port }}
+    path: {{ .path }}
+    {{- if .interval }}
+    interval: {{ .interval }}
+    {{- else }}
+    interval: {{ $.Values.serviceMonitor.interval }}
+    {{- end }}
+    relabelings:
+    - targetLabel: "group"
+      replacement: "yb-tserver"
+    - targetLabel: "export_type"
+      replacement: "tserver_export"
+    - targetLabel: "node_prefix"
+      replacement: {{ $.Release.Name | quote }}
+    metricRelabelings:
+    {{- toYaml $.Values.serviceMonitor.commonMetricRelabelings | nindent 4 }}
+  {{- end }}
+  {{- end }}
+
+  {{- with .Values.serviceMonitor.ycql }}
+  {{- if .enabled }}
+  - port: {{ .port }}
+    path: {{ .path }}
+    {{- if .interval }}
+    interval: {{ .interval }}
+    {{- else }}
+    interval: {{ $.Values.serviceMonitor.interval }}
+    {{- end }}
+    relabelings:
+    - targetLabel: "group"
+      replacement: "ycql"
+    - targetLabel: "export_type"
+      replacement: "cql_export"
+    - targetLabel: "node_prefix"
+      replacement: {{ $.Release.Name | quote }}
+    metricRelabelings:
+    {{- toYaml $.Values.serviceMonitor.commonMetricRelabelings | nindent 4 }}
+  {{- end }}
+  {{- end }}
+
+  {{- with .Values.serviceMonitor.ysql }}
+  {{- if .enabled }}
+  - port: {{ .port }}
+    path: {{ .path }}
+    {{- if .interval }}
+    interval: {{ .interval }}
+    {{- else }}
+    interval: {{ $.Values.serviceMonitor.interval }}
+    {{- end }}
+    relabelings:
+    - targetLabel: "group"
+      replacement: "ysql"
+    - targetLabel: "export_type"
+      replacement: "ysql_export"
+    - targetLabel: "node_prefix"
+      replacement: {{ $.Release.Name | quote }}
+    metricRelabelings:
+    {{- toYaml $.Values.serviceMonitor.commonMetricRelabelings | nindent 4 }}
+  {{- end }}
+  {{- end }}
+
+  {{- with .Values.serviceMonitor.yedis }}
+  {{- if .enabled }}
+  - port: {{ .port }}
+    path: {{ .path }}
+    {{- if .interval }}
+    interval: {{ .interval }}
+    {{- else }}
+    interval: {{ $.Values.serviceMonitor.interval }}
+    {{- end }}
+    relabelings:
+    - targetLabel: "group"
+      replacement: "yedis"
+    - targetLabel: "export_type"
+      replacement: "redis_export"
+    - targetLabel: "node_prefix"
+      replacement: {{ $.Release.Name | quote }}
+    metricRelabelings:
+    {{- toYaml $.Values.serviceMonitor.commonMetricRelabelings | nindent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}

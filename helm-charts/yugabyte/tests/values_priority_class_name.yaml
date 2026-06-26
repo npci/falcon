@@ -1,0 +1,11 @@
+# Minimal values for priorityClassName tests (merge with chart defaults).
+# Tests override these via the test's `set` or additional values.
+replicas:
+  master: 1
+  tserver: 1
+
+master:
+  priorityClassName: ""
+
+tserver:
+  priorityClassName: ""

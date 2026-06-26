@@ -1,0 +1,45 @@
+{{- if .Values.multicluster.createServicePerPod }}
+{{- range $server := .Values.Services }}
+{{- $vars := include "yugabyte.stsIndexVars" (dict "serviceName" $server.name "root" $) | fromYaml -}}
+
+{{- range $stsIdx := until (int $vars.stsCount) }}
+{{- $loopVars := include "yugabyte.stsIndexLoopVars" (dict "stsIdx" $stsIdx "stsStart" $vars.stsStart "stsEnd" $vars.stsEnd "replicas" $vars.replicas "moveOpReplicas" $vars.moveOpReplicas) | fromYaml -}}
+{{- $currentStsIndex := $loopVars.currentStsIndex -}}
+{{- $useMoveOp := $loopVars.useMoveOp -}}
+{{- $stsIndexSuffix := $loopVars.stsIndexSuffix -}}
+{{- $currentReplicas := $loopVars.currentReplicas -}}
+{{- $appLabelArgs := dict "label" $server.label "root" $ -}}
+{{- range $replicaNum := until (int $currentReplicas) }}
+{{- $basePodName := $.Values.oldNamingStyle | ternary $server.label (printf "%s-%s%s" (include "yugabyte.fullname" $) $server.label $stsIndexSuffix) -}}
+{{- $podName := printf "%s-%d" $basePodName $replicaNum }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $podName | quote }}
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $ | indent 4 }}
+    service-type: "non-endpoint"
+spec:
+  ports:
+    {{- range $label, $port := $server.ports }}
+    {{- if or (eq $label "grpc-ybc-port") (eq $label "tcp-ybc-port")}}
+    {{- if $.Values.ybc.enabled }}
+    - name: "tcp-ybc-port"
+      port: {{ $port }}
+    {{- end }}
+    {{- else }}
+    - name: {{ $label | quote }}
+      port: {{ $port }}
+    {{- end }}
+    {{- end}}
+  selector:
+    statefulset.kubernetes.io/pod-name: {{ $podName | quote }}
+    {{- include "yugabyte.appselector" ($appLabelArgs) | indent 4 }}
+  {{- include "yugabyte.ipFamilyConfig" $ | indent 2 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

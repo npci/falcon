@@ -1,0 +1,66 @@
+master:
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#affinity-v1-core
+  ## This might override the default affinity from service.yaml
+  ## Example.
+  # affinity:
+  #   podAntiAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values:
+  #           - "yb-master"
+  #       topologyKey: kubernetes.io/hostname
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: custom_label_1
+            operator: In
+            values:
+            - custom_value_1
+          matchFields:
+          - key: metadata.name
+            operator: In
+            values:
+            - name
+        - matchExpressions:
+          - key: custom_label_2
+            operator: In
+            values:
+            - custom_value_2
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 30
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: paa_key
+              operator: In
+              values:
+              - paa_value
+
+tserver:
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#affinity-v1-core
+  ## This might override the default affinity from service.yaml
+  ## Example.
+  # affinity:
+  #   podAntiAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values:
+  #           - "yb-tserver"
+  #       topologyKey: kubernetes.io/hostname
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        random_key: random_value
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        random_key2: random_value2
+

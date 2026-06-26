@@ -1,0 +1,646 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/quintush/helm-unittest/master/schema/helm-testsuite.json
+suite: Labels on all objects
+templates:
+- master-gflags-secret.yaml
+- tserver-gflags-secret.yaml
+- debug_config_map.yaml
+- setup-credentials-configmap.yaml
+- master-servicemonitor.yaml
+- tserver-servicemonitor.yaml
+- otel-collector.yaml
+- hooks/setup-credentials-job.yaml
+- certificates.yaml
+- service.yaml
+tests:
+# Test master-gflags-secret.yaml
+- it: master-gflags-secret has labels
+  template: templates/master-gflags-secret.yaml
+  set:
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+  asserts:
+  - exists:
+      path: metadata.labels
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+# Test tserver-gflags-secret.yaml
+- it: tserver-gflags-secret has labels
+  template: templates/tserver-gflags-secret.yaml
+  set:
+    Services:
+    - name: yb-tservers
+      label: yb-tserver
+      ports:
+        tcp-rpc-port: 9100
+  asserts:
+  - exists:
+      path: metadata.labels
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+
+# Test debug_config_map.yaml - master-hooks
+- it: debug_config_map master-hooks has labels
+  template: templates/debug_config_map.yaml
+  set:
+    replicas:
+      master: 3
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 0
+
+# Test debug_config_map.yaml - tserver-hooks
+- it: debug_config_map tserver-hooks has labels
+  template: templates/debug_config_map.yaml
+  set:
+    replicas:
+      tserver: 3
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 1
+
+# Test setup-credentials-configmap.yaml
+- it: setup-credentials-configmap has labels
+  template: templates/setup-credentials-configmap.yaml
+  set:
+    authCredentials:
+      ysql:
+        password: testpass
+  asserts:
+  - exists:
+      path: metadata.labels
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+# Test master-servicemonitor.yaml
+- it: master-servicemonitor has labels
+  template: templates/master-servicemonitor.yaml
+  set:
+    serviceMonitor:
+      enabled: true
+      master:
+        enabled: true
+        port: http-ui
+        path: /metrics
+  asserts:
+  - exists:
+      path: metadata.labels
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+# Test tserver-servicemonitor.yaml
+- it: tserver-servicemonitor has labels
+  template: templates/tserver-servicemonitor.yaml
+  set:
+    serviceMonitor:
+      enabled: true
+      tserver:
+        enabled: true
+        port: http-ui
+        path: /metrics
+  asserts:
+  - exists:
+      path: metadata.labels
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+# Test otel-collector.yaml - Secret
+- it: otel-collector secret has labels
+  template: templates/otel-collector.yaml
+  set:
+    otelCollector:
+      enabled: true
+      secretEnv:
+      - envName: TEST_ENV
+        envValue: test_value
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 0
+
+# Test otel-collector.yaml - OpenTelemetryCollector
+- it: otel-collector OpenTelemetryCollector has labels
+  template: templates/otel-collector.yaml
+  set:
+    otelCollector:
+      enabled: true
+      exporters:
+        datadog:
+          apikey: test
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 1
+
+# Test hooks/setup-credentials-job.yaml - Job
+- it: setup-credentials-job has labels
+  template: templates/hooks/setup-credentials-job.yaml
+  set:
+    authCredentials:
+      ysql:
+        password: testpass
+  asserts:
+  - exists:
+      path: metadata.labels
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+# Test hooks/setup-credentials-job.yaml - Pod template
+- it: setup-credentials-job pod template has labels
+  template: templates/hooks/setup-credentials-job.yaml
+  set:
+    authCredentials:
+      ysql:
+        password: testpass
+  asserts:
+  - exists:
+      path: spec.template.metadata.labels
+  - exists:
+      path: spec.template.metadata.labels.app
+  - exists:
+      path: spec.template.metadata.labels.release
+  - exists:
+      path: spec.template.metadata.labels.chart
+  - exists:
+      path: spec.template.metadata.labels.component
+
+# Test certificates.yaml - Issuer (bootstrap)
+- it: certificates issuer bootstrap has labels
+  template: templates/certificates.yaml
+  set:
+    tls:
+      certManager:
+        enabled: true
+        bootstrapSelfsigned: true
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 0
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 0
+
+# Test certificates.yaml - Certificate (CA)
+- it: certificates CA certificate has labels
+  template: templates/certificates.yaml
+  set:
+    tls:
+      certManager:
+        enabled: true
+        bootstrapSelfsigned: true
+        certificates:
+          algorithm: RSA
+          keySize: 2048
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 1
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 1
+
+# Test certificates.yaml - Service-specific Certificate
+- it: certificates service certificate has labels
+  template: templates/certificates.yaml
+  set:
+    tls:
+      certManager:
+        enabled: true
+        bootstrapSelfsigned: true
+        certificates:
+          algorithm: RSA
+          keySize: 2048
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+    replicas:
+      master: 3
+    domainName: cluster.local
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 3
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 3
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 3
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 3
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 3
+
+# Test service.yaml - PodDisruptionBudget
+- it: service PodDisruptionBudget has labels
+  template: templates/service.yaml
+  set:
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+        http-ui: 7000
+    replicas:
+      master: 3
+    storage:
+      master:
+        count: 1
+        size: 10Gi
+  asserts:
+  - exists:
+      path: metadata.labels
+      documentIndex: 2
+  - exists:
+      path: metadata.labels.app
+      documentIndex: 2
+  - exists:
+      path: metadata.labels.release
+      documentIndex: 2
+  - exists:
+      path: metadata.labels.chart
+      documentIndex: 2
+  - exists:
+      path: metadata.labels.component
+      documentIndex: 2
+
+# Test with oldNamingStyle - should use 'app' label
+- it: labels use 'app' with oldNamingStyle
+  template: templates/master-gflags-secret.yaml
+  set:
+    oldNamingStyle: true
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+  asserts:
+  - equal:
+      path: metadata.labels.app
+      value: yb-master
+
+# Test with new naming style - should use 'app.kubernetes.io/name' label
+- it: labels use 'app.kubernetes.io/name' with new naming style
+  template: templates/master-gflags-secret.yaml
+  set:
+    oldNamingStyle: false
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+  asserts:
+  - equal:
+      path: metadata.labels['app.kubernetes.io/name']
+      value: yb-master
+  - notExists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.heritage
+  - exists:
+      path: metadata.labels.release
+  - exists:
+      path: metadata.labels.chart
+  - exists:
+      path: metadata.labels.component
+
+# Test custom labels from commonLabels are included
+- it: custom labels from commonLabels are included
+  template: templates/master-gflags-secret.yaml
+  set:
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+    commonLabels:
+      environment: production
+      team: platform
+      cost-center: data-infra
+  asserts:
+  - exists:
+      path: metadata.labels.environment
+  - equal:
+      path: metadata.labels.environment
+      value: production
+  - exists:
+      path: metadata.labels.team
+  - equal:
+      path: metadata.labels.team
+      value: platform
+  - exists:
+      path: metadata.labels['cost-center']
+  - equal:
+      path: metadata.labels['cost-center']
+      value: data-infra
+  - exists:
+      path: metadata.labels.app
+  - exists:
+      path: metadata.labels.release
+
+# Test that chart-managed labels cannot be overridden by commonLabels
+- it: chart-managed labels are protected from commonLabels override
+  template: templates/master-gflags-secret.yaml
+  set:
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+    commonLabels:
+      heritage: overridden-heritage
+      release: overridden-release
+      chart: overridden-chart
+      component: overridden-component
+      app: overridden-app
+  asserts:
+  # Chart-managed labels should NOT be overridden
+  - equal:
+      path: metadata.labels.heritage
+      value: Helm
+  - exists:
+      path: metadata.labels.release
+  - notEqual:
+      path: metadata.labels.release
+      value: overridden-release
+  - equal:
+      path: metadata.labels.chart
+      value: yugabyte
+  - equal:
+      path: metadata.labels.component
+      value: yugabytedb
+  - equal:
+      path: metadata.labels.app
+      value: yb-master
+
+# Test that app.kubernetes.io/name cannot be overridden by commonLabels (new naming style)
+- it: app.kubernetes.io/name is protected from commonLabels override
+  template: templates/master-gflags-secret.yaml
+  set:
+    oldNamingStyle: false
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+    commonLabels:
+      app.kubernetes.io/name: overridden-app-name
+      app: overridden-app
+  asserts:
+  # Service-specific app label should NOT be overridden
+  - equal:
+      path: metadata.labels['app.kubernetes.io/name']
+      value: yb-master
+  # app label should not exist in new naming style
+  - notExists:
+      path: metadata.labels.app
+
+# Test StatefulSet selector matches pod template labels when commonLabels tries to override
+- it: StatefulSet selector matches pod template labels (protected from commonLabels)
+  template: templates/service.yaml
+  set:
+    oldNamingStyle: false
+    Services:
+    - name: yb-masters
+      label: yb-master
+      ports:
+        tcp-rpc-port: 7100
+        http-ui: 7000
+    replicas:
+      master: 3
+    storage:
+      master:
+        count: 1
+        size: 10Gi
+    domainName: cluster.local
+    commonLabels:
+      app.kubernetes.io/name: overridden-name
+      release: overridden-release
+      environment: production
+  asserts:
+  # Verify StatefulSet exists at documentIndex 2
+  - matchRegex:
+      path: kind
+      pattern: StatefulSet
+      documentIndex: 2
+  # Selector should use service-specific app label, not overridden value
+  - equal:
+      path: spec.selector.matchLabels['app.kubernetes.io/name']
+      value: yb-master
+      documentIndex: 2
+  - exists:
+      path: spec.selector.matchLabels.release
+      documentIndex: 2
+  # Pod template should also have service-specific app label
+  - equal:
+      path: spec.template.metadata.labels['app.kubernetes.io/name']
+      value: yb-master
+      documentIndex: 2
+  - exists:
+      path: spec.template.metadata.labels.release
+      documentIndex: 2
+  # Custom labels should still be present
+  - exists:
+      path: spec.template.metadata.labels.environment
+      documentIndex: 2
+  - equal:
+      path: spec.template.metadata.labels.environment
+      value: production
+      documentIndex: 2
+
+# Test custom labels on multiple object types
+- it: custom labels appear on ConfigMap
+  template: templates/debug_config_map.yaml
+  set:
+    replicas:
+      master: 3
+    commonLabels:
+      custom-label-1: value1
+      custom-label-2: value2
+  asserts:
+  - exists:
+      path: metadata.labels['custom-label-1']
+      documentIndex: 0
+  - equal:
+      path: metadata.labels['custom-label-1']
+      value: value1
+      documentIndex: 0
+  - exists:
+      path: metadata.labels['custom-label-2']
+      documentIndex: 0
+  - equal:
+      path: metadata.labels['custom-label-2']
+      value: value2
+      documentIndex: 0
+
+# Test custom labels on ServiceMonitor
+- it: custom labels appear on ServiceMonitor
+  template: templates/master-servicemonitor.yaml
+  set:
+    serviceMonitor:
+      enabled: true
+      master:
+        enabled: true
+        port: http-ui
+        path: /metrics
+    commonLabels:
+      monitoring: enabled
+      prometheus: scrape
+  asserts:
+  - exists:
+      path: metadata.labels.monitoring
+  - equal:
+      path: metadata.labels.monitoring
+      value: enabled
+  - exists:
+      path: metadata.labels.prometheus
+  - equal:
+      path: metadata.labels.prometheus
+      value: scrape
+
+# Test custom labels on Job
+- it: custom labels appear on Job and pod template
+  template: templates/hooks/setup-credentials-job.yaml
+  set:
+    authCredentials:
+      ysql:
+        password: testpass
+    commonLabels:
+      job-type: setup
+      managed-by: helm
+  asserts:
+  # Check Job labels
+  - exists:
+      path: metadata.labels['job-type']
+  - equal:
+      path: metadata.labels['job-type']
+      value: setup
+  - exists:
+      path: metadata.labels['managed-by']
+  - equal:
+      path: metadata.labels['managed-by']
+      value: helm
+  # Check pod template labels
+  - exists:
+      path: spec.template.metadata.labels['job-type']
+  - equal:
+      path: spec.template.metadata.labels['job-type']
+      value: setup
+  - exists:
+      path: spec.template.metadata.labels['managed-by']
+  - equal:
+      path: spec.template.metadata.labels['managed-by']
+      value: helm
+

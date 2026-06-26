@@ -1,0 +1,21 @@
+{{- /*
+  Ref - https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services#registering_a_service_for_export
+  https://github.com/kubernetes/enhancements/tree/master/keps/sig-multicluster/1645-multi-cluster-services-api#exporting-services
+*/}}
+{{- if .Values.multicluster.createServiceExports }}
+apiVersion: {{ .Values.multicluster.mcsApiVersion }}
+kind: ServiceExport
+metadata:
+  name: {{ .Values.oldNamingStyle | ternary "yb-masters" (printf "%s-%s" (include "yugabyte.fullname" .) "yb-masters") | quote }}
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+  {{- include "yugabyte.labels" . | indent 4 }}
+---
+apiVersion: {{ .Values.multicluster.mcsApiVersion }}
+kind: ServiceExport
+metadata:
+  name: {{ .Values.oldNamingStyle | ternary "yb-tservers" (printf "%s-%s" (include "yugabyte.fullname" .) "yb-tservers") | quote }}
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+  {{- include "yugabyte.labels" . | indent 4 }}
+{{ end -}}

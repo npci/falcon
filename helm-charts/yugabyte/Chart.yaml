@@ -1,0 +1,17 @@
+apiVersion: v2
+name: yugabyte
+version: 2025.2.3
+appVersion: 2025.2.3.2-b1
+kubeVersion: ">=1.17.0-0"
+home: https://www.yugabyte.com
+description: YugabyteDB is the high-performance distributed SQL database for building global, internet-scale apps.
+icon: https://avatars0.githubusercontent.com/u/17074854?s=200&v=4
+sources:
+- https://github.com/yugabyte/yugabyte-db
+maintainers:
+- name: Sanketh Indarapu
+  email: sanketh@yugabyte.com
+- name: Govardhan Reddy Jalla
+  email: gjalla@yugabyte.com
+annotations:
+  charts.openshift.io/name: yugabyte

@@ -1,0 +1,978 @@
+{{- $root := . -}}
+{{- $tlsRootCA := include "yugabyte.tlsRootCA" (dict "root" $root) | fromYaml -}}
+{{- /* Validate stsIndex values */ -}}
+{{- include "yugabyte.validateStsIndex" (dict "start" ($root.Values.stsIndex.master.start | int) "end" ($root.Values.stsIndex.master.end | int) "component" "master") -}}
+{{- include "yugabyte.validateStsIndex" (dict "start" ($root.Values.stsIndex.tserver.start | int) "end" ($root.Values.stsIndex.tserver.end | int) "component" "tserver") -}}
+---
+{{- if and (eq $root.Values.tls.enabled true) (eq $root.Values.tls.certManager.enabled false) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.labels" $root | indent 4 }}
+type: Opaque
+data:
+{{- if $tlsRootCA.key }}
+{{- $rootCAClient := buildCustomCert $tlsRootCA.cert $tlsRootCA.key -}}
+{{- $client := genSignedCert "yugabyte" ( default nil ) ( default nil ) 3650 $rootCAClient }}
+  root.crt: {{ $rootCAClient.Cert | b64enc }}
+  yugabytedb.crt: {{ $client.Cert | b64enc }}
+  yugabytedb.key: {{ $client.Key | b64enc }}
+{{- else }}
+  root.crt: {{ $tlsRootCA.cert }}
+  yugabytedb.crt: {{ $root.Values.tls.clientCert.cert }}
+  yugabytedb.key: {{ $root.Values.tls.clientCert.key }}
+{{- end }}
+---
+{{- end }}
+---
+{{- range .Values.Services }}
+{{- $service := . -}}
+{{- $appLabelArgs := dict "label" .label "root" $root -}}
+{{- $serviceValues := (dict "Service" $service "Values" $root.Values "Chart" $root.Chart "Release" $root.Release) -}}
+{{- $vars := include "yugabyte.stsIndexVars" (dict "serviceName" .name "root" $root) | fromYaml -}}
+
+{{- if and (eq $root.Values.tls.enabled true) (eq $root.Values.tls.certManager.enabled false) }}
+{{- range $stsIdx := until (int $vars.stsCount) }}
+{{- $loopVars := include "yugabyte.stsIndexLoopVars" (dict "stsIdx" $stsIdx "stsStart" $vars.stsStart "stsEnd" $vars.stsEnd "replicas" $vars.replicas "moveOpReplicas" $vars.moveOpReplicas) | fromYaml -}}
+{{- $currentStsIndex := $loopVars.currentStsIndex -}}
+{{- $useMoveOp := $loopVars.useMoveOp -}}
+{{- $stsIndexSuffix := $loopVars.stsIndexSuffix -}}
+{{- $currentReplicas := $loopVars.currentReplicas -}}
+{{- if gt (int $currentReplicas) 0 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+type: Opaque
+data:
+{{- range $index := until ( int ( $currentReplicas ) ) }}
+{{- $nodeOldStyle := printf "%s%s-%d.%s.%s.svc.%s" $service.label $stsIndexSuffix $index $service.name $root.Release.Namespace $root.Values.domainName }}
+{{- $nodeNewStyle := printf "%s-%s%s-%d.%s-%s.%s.svc.%s" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix $index (include "yugabyte.fullname" $root) $service.name $root.Release.Namespace $root.Values.domainName }}
+
+{{- if $root.Values.multicluster.createServiceExports -}}
+  {{- $nodeOldStyle = printf "%s%s-%d.%s.%s.%s.svc.clusterset.local" $service.label $stsIndexSuffix $index $root.Values.multicluster.kubernetesClusterId $service.name $root.Release.Namespace }}
+  {{- $nodeNewStyle = printf "%s-%s%s-%d.%s.%s-%s.%s.svc.clusterset.local" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix $index $root.Values.multicluster.kubernetesClusterId (include "yugabyte.fullname" $root) $service.name $root.Release.Namespace }}
+{{- end -}}
+
+{{- if $root.Values.multicluster.createServicePerPod -}}
+  {{- $nodeOldStyle = printf "%s%s-%d.%s.svc.%s" $service.label $stsIndexSuffix $index $root.Release.Namespace $root.Values.domainName }}
+  {{- $nodeNewStyle = printf "%s-%s%s-%d.%s.svc.%s" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix $index $root.Release.Namespace $root.Values.domainName }}
+{{- end -}}
+
+{{- $node := $root.Values.oldNamingStyle | ternary $nodeOldStyle $nodeNewStyle }}
+{{- if $tlsRootCA.key }}
+{{- $dns1 := printf "*.%s-%s%s.%s" (include "yugabyte.fullname" $root) $service.name $stsIndexSuffix $root.Release.Namespace }}
+{{- $dns2 := printf "%s.svc.%s" $dns1 $root.Values.domainName }}
+{{- if $root.Values.multicluster.createServiceExports -}}
+  {{- $dns1 = printf "*.%s.%s-%s%s.%s.svc.clusterset.local" $root.Values.multicluster.kubernetesClusterId (include "yugabyte.fullname" $root) $service.name $stsIndexSuffix $root.Release.Namespace }}
+{{- end -}}
+{{- if $root.Values.multicluster.createServicePerPod -}}
+  {{- $dns1 = printf "*.%s.svc.%s" $root.Release.Namespace $root.Values.domainName }}
+{{- end -}}
+{{- $rootCA := buildCustomCert $tlsRootCA.cert $tlsRootCA.key -}}
+{{- $server := genSignedCert $node ( default nil ) (list $node $dns1 $dns2 ) 3650 $rootCA }}
+  node.{{$node}}.crt: {{ $server.Cert | b64enc }}
+  node.{{$node}}.key: {{ $server.Key | b64enc }}
+{{- else }}
+  node.{{$node}}.crt: {{ $root.Values.tls.nodeCert.cert }}
+  node.{{$node}}.key: {{ $root.Values.tls.nodeCert.key }}
+{{- end }}
+{{- end }}
+  ca.crt: {{ $tlsRootCA.cert }}
+{{- end }}
+{{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $root.Values.oldNamingStyle | ternary .name (printf "%s-%s" (include "yugabyte.fullname" $root) .name) | quote }}
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+    service-type: "headless"
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    {{- range $label, $port := .ports }}
+    {{- if or (eq $label "grpc-ybc-port") (eq $label "tcp-ybc-port")}}
+    {{- if $root.Values.ybc.enabled }}
+    - name: "tcp-ybc-port"
+      port: {{ $port }}
+    {{- end }}
+    {{- else if (eq $label "yugabyted-ui") }}
+    {{- if $root.Values.yugabytedUi.enabled }}
+    - name: {{ $label | quote }}
+      port: {{ $port }}
+    {{- end }}
+    {{- else }}
+    - name: {{ $label | quote }}
+      port: {{ $port }}
+    {{- end }}
+    {{- end }}
+  selector:
+    {{- include "yugabyte.appselector" ($appLabelArgs) | indent 4 }}
+  {{- include "yugabyte.ipFamilyConfig" ($root) | indent 2 }}
+
+{{- range $stsIdx := until (int $vars.stsCount) }}
+{{- $loopVars := include "yugabyte.stsIndexLoopVars" (dict "stsIdx" $stsIdx "stsStart" $vars.stsStart "stsEnd" $vars.stsEnd "replicas" $vars.replicas "moveOpReplicas" $vars.moveOpReplicas) | fromYaml -}}
+{{- $currentStsIndex := $loopVars.currentStsIndex -}}
+{{- $useMoveOp := $loopVars.useMoveOp -}}
+{{- $stsIndexSuffix := $loopVars.stsIndexSuffix -}}
+{{- $currentReplicas := $loopVars.currentReplicas -}}
+{{- if gt (int $currentReplicas) 0 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s" $service.label $stsIndexSuffix) (printf "%s-%s%s" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) | quote }}
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+  {{- if $root.Values.statefulSetAnnotations }}
+  annotations:
+{{ toYaml $root.Values.statefulSetAnnotations | indent 4 }}
+  {{- end }}
+spec:
+  serviceName: {{ $root.Values.oldNamingStyle | ternary $service.name (printf "%s-%s" (include "yugabyte.fullname" $root) $service.name) | quote }}
+  podManagementPolicy: {{ $root.Values.PodManagementPolicy }}
+  {{ if eq $service.name "yb-masters" }}
+  replicas: {{ $useMoveOp | ternary $root.Values.moveOp.replicas.master $root.Values.replicas.master }}
+  {{ else }}
+  replicas: {{ $useMoveOp | ternary $root.Values.moveOp.replicas.tserver $root.Values.replicas.tserver }}
+  {{ end }}
+  {{- $storageInfo := include "yugabyte.storageInfo" (dict "serviceName" $service.name "useMoveOp" $useMoveOp "root" $root) | fromYaml -}}
+  {{- $storageEphemeral := $useMoveOp | ternary $root.Values.moveOp.storage.ephemeral $root.Values.storage.ephemeral -}}
+  {{ if not $storageEphemeral }}
+  volumeClaimTemplates:
+    {{- range $index := until (int ($storageInfo.count )) }}
+    - metadata:
+        name: {{ $root.Values.oldNamingStyle | ternary (printf "datadir%d" $index) (printf "%s%d" (include "yugabyte.volume_name" $root) $index) }}
+        {{- if $root.Values.legacyVolumeClaimAnnotations }}
+        annotations:
+          volume.beta.kubernetes.io/storage-class: {{ $storageInfo.storageClass | quote }}
+        {{- end }}
+        labels:
+          {{- include "yugabyte.labels" $root | indent 10 }}
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        {{- if $storageInfo.storageClass }}
+        storageClassName: {{ $storageInfo.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $storageInfo.size }}
+    {{- end }}
+  {{- end }}
+  updateStrategy:
+    {{- if eq $root.Values.updateStrategy.type "RollingUpdate" }}
+    type: RollingUpdate
+    rollingUpdate:
+      {{- if eq $service.name "yb-masters" }}
+      partition: {{ $useMoveOp | ternary $root.Values.moveOp.partition.master $root.Values.partition.master }}
+      {{- else }}
+      partition: {{ $useMoveOp | ternary $root.Values.moveOp.partition.tserver $root.Values.partition.tserver }}
+      {{- end }}
+    {{- else }}
+    type: {{ $root.Values.updateStrategy.type }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "yugabyte.appselector" ($appLabelArgs) | indent 6 }}
+  template:
+    metadata:
+      annotations:
+      {{- if eq $service.name "yb-masters" }}
+        checksum/gflags: {{ (not $root.Values.master.gflagsChecksum) | ternary (include (print $root.Template.BasePath "/master-gflags-secret.yaml") $root | sha256sum) $root.Values.master.gflagsChecksum }}
+      {{- if (or $root.Values.networkAnnotation $root.Values.master.podAnnotations $root.Values.tls.enabled) }}
+      {{- with $root.Values.networkAnnotation }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- with $root.Values.master.podAnnotations }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- if $root.Values.tls.enabled }}
+        checksum/rootCA: {{ (not $root.Values.tls.rootCAChecksum) | ternary (cat $tlsRootCA.cert $tlsRootCA.key | sha256sum) $root.Values.tls.rootCAChecksum }}
+      {{- end }}
+      {{- end }}
+      {{- else }}
+        checksum/gflags: {{ (not $root.Values.tserver.gflagsChecksum) | ternary (include (print $root.Template.BasePath "/tserver-gflags-secret.yaml") $root | sha256sum) $root.Values.tserver.gflagsChecksum }}
+      {{- if $root.Values.ybc.useYBDBImage }}
+        checksum/ybcGflags: {{ (not $root.Values.ybc.gflagsChecksum) | ternary (include (print $root.Template.BasePath "/controller-gflags-secret.yaml") $root | sha256sum) $root.Values.ybc.gflagsChecksum }}
+      {{- end }}
+      {{- if (or $root.Values.networkAnnotation $root.Values.tserver.podAnnotations $root.Values.tls.enabled) }}
+      {{- with $root.Values.networkAnnotation }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- with $root.Values.tserver.podAnnotations }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- if $root.Values.tls.enabled }}
+        checksum/rootCA: {{ (not $root.Values.tls.rootCAChecksum) | ternary (cat $tlsRootCA.cert $tlsRootCA.key | sha256sum) $root.Values.tls.rootCAChecksum }}
+      {{- end }}
+      {{- end }}
+      {{- if and (eq $service.name "yb-tservers") ($root.Values.otelCollector.enabled) }}
+        sidecar.opentelemetry.io/inject: {{ $root.Values.oldNamingStyle | ternary "otel-yb-tserver" (printf "otel-%s-%s" (include "yugabyte.fullname" $root) $service.label) | quote }}
+        checksum/otel: {{ $root.Values.otelCollector | toYaml | sha256sum }} # Required to trigger a pod restart when the config changes
+      {{- end}}
+      {{- end }}
+      labels:
+        {{- include "yugabyte.labels" $root | indent 8 }}
+        {{- include "yugabyte.applabel" ($appLabelArgs) | indent 8 }}
+        {{- if $root.Values.istioCompatibility.enabled }}
+        sidecar.istio.io/inject: "true"
+        {{- end }}
+        {{- if eq $service.name "yb-masters" }}
+        {{- with $root.Values.master.podLabels }}{{ toYaml . | nindent 8 }}{{ end }}
+        {{- else }}
+        {{- with $root.Values.tserver.podLabels }}{{ toYaml . | nindent 8 }}{{ end }}
+        {{- end }}
+        {{- if $root.Values.yugabytedUi.enabled }}
+        yugabytedUi: "true"
+        {{- end }}
+    spec:
+      {{- if $root.Values.Image.pullSecretName }}
+      imagePullSecrets:
+      - name: {{ $root.Values.Image.pullSecretName }}
+      {{ end }}
+      {{- $priorityClassName := "" }}
+      {{- if eq $service.name "yb-masters" }}
+      {{- $priorityClassName = $root.Values.master.priorityClassName | default $root.Values.priorityClassName }}
+      {{- else }}
+      {{- $priorityClassName = $root.Values.tserver.priorityClassName | default $root.Values.priorityClassName }}
+      {{- end }}
+      {{- if $priorityClassName }}
+      priorityClassName: {{ $priorityClassName | quote }}
+      {{- end }}
+      {{- if $root.Values.podSecurityContext.enabled }}
+      securityContext:
+        fsGroup: {{ $root.Values.podSecurityContext.fsGroup }}
+        runAsUser: {{ required "runAsUser cannot be empty" $root.Values.podSecurityContext.runAsUser }}
+        {{- if ne $root.Values.podSecurityContext.runAsGroup nil }}
+        runAsGroup: {{ $root.Values.podSecurityContext.runAsGroup }}
+        {{- else }}
+        runAsGroup: {{ $root.Values.podSecurityContext.runAsUser }}
+        {{- end }}
+        runAsNonRoot: {{ $root.Values.podSecurityContext.runAsNonRoot }}
+        {{- if $root.Values.podSecurityContext.additionalSettings }}
+        {{- toYaml $root.Values.podSecurityContext.additionalSettings | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- if $root.Values.nodeSelector }}
+      nodeSelector:
+      {{- with $root.Values.nodeSelector }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- end }}
+      {{- if eq $service.name "yb-masters" }} # yb-masters
+      {{- with $root.Values.master.serviceAccount }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      {{- if $root.Values.master.tolerations }}
+      tolerations:
+      {{- with $root.Values.master.tolerations }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- end }}
+      {{- else }} # yb-tservers
+      {{- with $root.Values.tserver.serviceAccount }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      {{- if $root.Values.tserver.tolerations }}
+      tolerations:
+      {{- with $root.Values.tserver.tolerations }}{{ toYaml . | nindent 8 }}{{ end }}
+      {{- end }}
+      {{- end }}
+      terminationGracePeriodSeconds: 300
+      affinity:
+        # Set the anti-affinity selector scope to YB masters and tservers.
+        {{- $nodeAffinityData := dict}}
+        {{- if eq $service.name "yb-masters" -}}
+        {{- $nodeAffinityData = get $root.Values.master.affinity "nodeAffinity" | default (dict) -}}
+        {{- else -}}
+        {{- $nodeAffinityData = get $root.Values.tserver.affinity "nodeAffinity" | default (dict) -}}
+        {{- end -}}
+        {{ if $root.Values.AZ }}
+          {{- $userSelectorTerms := dig "requiredDuringSchedulingIgnoredDuringExecution" "nodeSelectorTerms" "" $nodeAffinityData | default (list) -}}
+          {{- $baseAffinity := include "yugabyte.multiAZNodeAffinity" $root | fromYaml -}}
+          {{- $requiredSchedule := (list) -}}
+          {{- if $userSelectorTerms -}}
+            {{- range $userSelectorTerms -}}
+              {{- $userTerm := . -}}
+              {{- range $baseAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms -}}
+                {{- $matchExpr := concat .matchExpressions $userTerm.matchExpressions | dict "matchExpressions" -}}
+                {{- $requiredSchedule = mustMerge $matchExpr $userTerm | append $requiredSchedule -}}
+              {{- end -}}
+            {{- end -}}
+          {{- else -}}
+            {{- $requiredSchedule = $baseAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms -}}
+          {{- end -}}
+
+          {{- with $baseAffinity.requiredDuringSchedulingIgnoredDuringExecution -}}
+            {{- $_ := set . "nodeSelectorTerms" $requiredSchedule -}}
+          {{- end -}}
+          {{- $nodeAffinityData = mustMerge $baseAffinity $nodeAffinityData -}}
+        {{- end -}}
+
+        {{- $basePodAntiAffinity := include "yugabyte.podAntiAffinity" ($appLabelArgs) | fromYaml -}}
+        {{- $podAntiAffinityData := $basePodAntiAffinity -}}
+        {{- if eq $service.name "yb-masters" -}}
+          {{- with $root.Values.master.affinity -}}
+            {{- $userPodAntiAffinity := get . "podAntiAffinity" | default (dict) -}}
+            {{- if $userPodAntiAffinity -}}
+              {{- $preferredList := dig "preferredDuringSchedulingIgnoredDuringExecution" "" $userPodAntiAffinity | default (list) | concat $basePodAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution}}
+              {{- $_ := set $basePodAntiAffinity "preferredDuringSchedulingIgnoredDuringExecution" $preferredList -}}
+            {{- end -}}
+            {{- $podAntiAffinityData = mustMerge $basePodAntiAffinity $userPodAntiAffinity -}}
+          {{- end -}}
+        {{- else -}}
+          {{- with $root.Values.tserver.affinity -}}
+            {{- $userPodAntiAffinity := get . "podAntiAffinity" | default (dict) -}}
+            {{- if $userPodAntiAffinity -}}
+              {{- $preferredList := dig "preferredDuringSchedulingIgnoredDuringExecution" "" $userPodAntiAffinity | default (list) | concat $basePodAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution}}
+              {{- $_ := set $basePodAntiAffinity "preferredDuringSchedulingIgnoredDuringExecution" $preferredList -}}
+            {{- end -}}
+            {{- $podAntiAffinityData = mustMerge $basePodAntiAffinity $userPodAntiAffinity -}}
+          {{- end -}}
+        {{- end -}}
+
+        {{- if eq $service.name "yb-masters" -}}
+        {{- if $nodeAffinityData -}}
+        {{- $_ := set $root.Values.master.affinity "nodeAffinity" $nodeAffinityData -}}
+        {{- end -}}
+        {{- $_ := set $root.Values.master.affinity "podAntiAffinity" $podAntiAffinityData -}}
+        {{ toYaml $root.Values.master.affinity | nindent 8 }}
+        {{- else -}}
+        {{- if $nodeAffinityData -}}
+        {{- $_ := set $root.Values.tserver.affinity "nodeAffinity" $nodeAffinityData -}}
+        {{- end -}}
+        {{- $_ := set $root.Values.tserver.affinity "podAntiAffinity" $podAntiAffinityData -}}
+        {{ toYaml $root.Values.tserver.affinity | nindent 8 }}
+        {{ end }}
+      {{- with $root.Values.dnsConfig }}
+      dnsConfig: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.dnsPolicy }}
+      dnsPolicy: {{ . | quote }}
+      {{- end }}
+      {{- if and $root.Values.tls.enabled $root.Values.tls.certManager.enabled }}
+      initContainers:
+        - name: certmanager-init
+          image: {{ $root.Values.Image.repository }}:{{ $root.Values.Image.tag }}
+          imagePullPolicy: {{ $root.Values.Image.pullPolicy }}
+          {{- if $root.Values.containerSecurityContext.enabled }}
+          {{- include "getSecurityContext" $root | nindent 10 }}
+          {{- end }}
+          command:
+            - "/bin/bash"
+            - "-c"
+            - |
+              {{ $serverFqdn := include "yugabyte.server_fqdn" $serviceValues }}
+              mkdir -p /mnt/disk0/certs;
+              chmod u+x /mnt/disk0/certs;
+              if [ -L /mnt/disk0/certs/certs ]; then
+                echo "Cleaning up old recursive symlink at /mnt/disk0/certs/certs if it exists";
+                chmod --reference="$(dirname /mnt/disk0/certs)" /mnt/disk0/certs
+                rm -f /mnt/disk0/certs/certs;
+              fi
+              echo "Creating ephemeral /opt/certs/yugabyte/ as symlink to persisted /mnt/disk0/certs/"
+              ln -sF /mnt/disk0/certs /opt/certs/yugabyte
+              # Copy the root CA certificate to the persistent volume
+              cp /home/yugabyte/cert-manager/ca.crt /mnt/disk0/certs/ca.crt;
+
+              if [[ -s /home/yugabyte/cert-manager/tls.crt ]]; then
+                echo "Verifying TLS certificate..."
+                echo "Running: openssl verify -CAfile /mnt/disk0/certs/ca.crt -untrusted /home/yugabyte/cert-manager/tls.crt /home/yugabyte/cert-manager/tls.crt"
+                openssl verify -CAfile /mnt/disk0/certs/ca.crt -untrusted /home/yugabyte/cert-manager/tls.crt /home/yugabyte/cert-manager/tls.crt; verifyResult=$?;
+                if [[ $verifyResult -eq 0 ]]; then
+                  echo "TLS certificate is signed by the CA. Copying to persistent volume.";
+                  cp /home/yugabyte/cert-manager/tls.crt /mnt/disk0/certs/node.{{$serverFqdn}}.crt;
+                  cp /home/yugabyte/cert-manager/tls.key /mnt/disk0/certs/node.{{$serverFqdn}}.key;
+                else
+                  echo "TLS certificate is not signed by the CA. Checking for existing certificates.";
+                  if [[ -f /mnt/disk0/certs/node.{{$serverFqdn}}.crt ]]; then
+                    echo "Validating existing certificates.";
+                    echo "Running: openssl verify -CAfile /mnt/disk0/certs/ca.crt -untrusted /mnt/disk0/certs/node.{{$serverFqdn}}.crt /mnt/disk0/certs/node.{{$serverFqdn}}.crt"
+                    openssl verify -CAfile /mnt/disk0/certs/ca.crt -untrusted /mnt/disk0/certs/node.{{$serverFqdn}}.crt /mnt/disk0/certs/node.{{$serverFqdn}}.crt; verifyResult=$?;
+                    if [[ $verifyResult -eq 0 ]]; then
+                      echo "Existing certificates are valid. Using them.";
+                    else
+                      echo "Existing certificates are not valid. Exiting.";
+                      exit 1;
+                    fi
+                  else
+                    echo "No existing certificates found. Certificates provided by cert-manager are not valid. Exiting. Please ensure certificates are valid and try again.";
+                    exit 1;
+                  fi
+                fi
+              else
+                echo "Using existing server certificate."
+              fi
+              # Always normalize cert permissions here;
+              # existing-cert path can otherwise retain group-writable (660) modes in non-root universes.
+              chmod 600 /mnt/disk0/certs/*;
+
+          volumeMounts:
+            {{- if not $storageEphemeral }}
+            - name: {{ $root.Values.oldNamingStyle | ternary (printf "datadir0") (printf "%s0" (include "yugabyte.volume_name" $root)) }}
+              mountPath: /mnt/disk0
+            {{- end }}
+            - name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+              mountPath: /home/yugabyte/cert-manager
+              readOnly: true
+            - name: certs-dir
+              mountPath: /opt/certs
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      {{- end }}
+      containers:
+      - name: "{{ $service.label }}"
+        image: "{{ $root.Values.Image.repository }}:{{ $root.Values.Image.tag }}"
+        imagePullPolicy: {{ $root.Values.Image.pullPolicy }}
+        {{- if $root.Values.containerSecurityContext.enabled }}
+        {{- include "getSecurityContext" $root | nindent 8 }}
+        {{- end }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - "bash"
+                - "-c"
+                - >
+                  mkdir -p /mnt/disk0/cores;
+                  mkdir -p /mnt/disk0/yb-data/scripts;
+                  if [ ! -f /mnt/disk0/yb-data/scripts/log_cleanup.sh ]; then
+                    if [ -f /home/yugabyte/bin/log_cleanup.sh ]; then
+                      cp /home/yugabyte/bin/log_cleanup.sh /mnt/disk0/yb-data/scripts;
+                    fi;
+                  fi
+        {{- if (and (not $storageEphemeral) (not $service.skipHealthChecks)) }}
+        {{- if $root.Values.livenessProbe.enabled }}
+        {{- if $root.Values.customLivenessProbe }}
+        livenessProbe: {{- toYaml $root.Values.customLivenessProbe | nindent 10 }}
+        {{- else }}
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -v
+            - -c
+            - |
+              {{- include "yugabyte.fs_data_dirs_probe" $storageInfo | nindent 14 }};
+              exit_code="$?";
+              echo "disk check exited with: ${exit_code}";
+              exit "${exit_code}"
+          failureThreshold: {{ $root.Values.livenessProbe.failureThreshold }}
+          periodSeconds: {{ $root.Values.livenessProbe.periodSeconds }}
+          successThreshold: {{ $root.Values.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ $root.Values.livenessProbe.timeoutSeconds }}
+        {{- end }}
+        {{- end }}
+        {{- if (and (eq $service.name "yb-masters") (include "yugabyte.master.startupProbe" $root)) }}
+        startupProbe: {{- include "yugabyte.master.startupProbe" $root | nindent 10 }}
+        {{- else if (and (eq $service.name "yb-tservers") (include "yugabyte.tserver.startupProbe" $root)) }}
+        startupProbe: {{- include "yugabyte.tserver.startupProbe" $root | nindent 10 }}
+        {{- end }}
+        {{- end }}
+        {{- if (and (eq $service.name "yb-masters") (include "yugabyte.master.readinessProbe" $root)) }}
+        readinessProbe: {{- include "yugabyte.master.readinessProbe" $root | nindent 10 }}
+        {{- else if (and (eq $service.name "yb-tservers") (include "yugabyte.tserver.readinessProbe" $root)) }}
+        readinessProbe: {{- include "yugabyte.tserver.readinessProbe" $root | nindent 10 }}
+        {{- end }}
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: YBDEVOPS_CORECOPY_DIR
+          value: "/mnt/disk0/cores"
+        - name: CERT_MANAGER_ENABLED
+          value: {{ $root.Values.tls.certManager.enabled | quote }}
+        - name: SERVER_FQDN
+          value: {{ include "yugabyte.server_fqdn" $serviceValues }}
+        {{- if eq $service.name "yb-masters" }}
+        {{- with $root.Values.master.extraEnv }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- $data := dict "secretenv" $root.Values.master.secretEnv "root" $root "suffix" "master"}}
+        {{- include "yugabyte.addenvsecrets" $data | nindent 8 }}
+        {{- else }}
+        {{- with $root.Values.tserver.extraEnv }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- $data := dict "secretenv" $root.Values.tserver.secretEnv "root" $root "suffix" "tserver" }}
+        {{- include "yugabyte.addenvsecrets" $data | nindent 8 }}
+        {{- end }}
+        {{- if and $root.Values.tls.enabled $root.Values.tls.clientToServer (ne $service.name "yb-masters") }}
+        - name: SSL_CERTFILE
+          value: /root/.yugabytedb/root.crt
+        {{- end }}
+        resources:
+        {{- if eq $service.name "yb-masters" }}
+{{ toYaml $root.Values.resource.master | indent 10 }}
+        {{ else }}
+{{ toYaml $root.Values.resource.tserver | indent 10 }}
+        {{ end }}
+        # core dumps are collected to workingDir if
+        # kernel.core_pattern is set to a relative path like
+        # core.%e.%p.%t ref:
+        # https://github.com/yugabyte/charts/issues/11
+        workingDir: "/mnt/disk0/cores"
+        command:
+          - "/sbin/tini"
+          - "--"
+        args:
+          - "/bin/bash"
+          - "-c"
+          - |
+          {{- $preCommands := ( (eq $service.name "yb-masters") | ternary $root.Values.master.advanced.preCommands $root.Values.tserver.advanced.preCommands ) }} {{- with $preCommands }} {{ . | nindent 12 }} {{- end }}
+          {{- if and (not $root.Values.preflight.skipUlimit) (not $root.Values.preflight.skipAll) }}
+            if [ -f /home/yugabyte/tools/k8s_preflight.py ]; then
+              /home/yugabyte/tools/k8s_preflight.py all
+            fi && \
+          {{- end }}
+          {{- if (and (not $storageEphemeral) (not $root.Values.preflight.skipAll)) }}
+          {{- include "yugabyte.fs_data_dirs_probe" $storageInfo | nindent 12 }} && \
+          {{- end }}
+          {{- $rpcAddr := include "yugabyte.rpc_bind_address" $serviceValues -}}
+          {{- $rpcPort := index $service.ports "tcp-rpc-port" -}}
+          {{- $rpcDict := dict "Addr" $rpcAddr "Port" $rpcPort -}}
+          {{- $rpcPreflight := include "yugabyte.preflight_check" (set $serviceValues "Preflight" $rpcDict) -}}
+          {{- if $rpcPreflight -}}{{ $rpcPreflight | nindent 12 }}{{ end -}}
+          {{- $broadcastAddr := include "yugabyte.server_broadcast_address" $serviceValues -}}
+          {{/* skip bind check for servicePerPod multi-cluster, we cannot/don't bind to service IP */}}
+          {{- if not $root.Values.multicluster.createServicePerPod }}
+            {{- $broadcastPort := index $service.ports "tcp-rpc-port" -}}
+            {{- $broadcastDict := dict "Addr" $broadcastAddr "Port" $broadcastPort -}}
+            {{- $broadcastPreflight := include "yugabyte.preflight_check" (set $serviceValues "Preflight" $broadcastDict) -}}
+            {{- if $broadcastPreflight -}}{{ $broadcastPreflight | nindent 12 }}{{ end -}}
+          {{- end }}
+          {{- $webserverAddr := include "yugabyte.webserver_interface" $serviceValues -}}
+          {{- $webserverPort := index $service.ports "http-ui" -}}
+          {{- $webserverDict := dict "Addr" $webserverAddr "Port" $webserverPort -}}
+          {{- $webserverPreflight := include "yugabyte.preflight_check" (set $serviceValues "Preflight" $webserverDict) -}}
+          {{- if $webserverPreflight -}}{{ $webserverPreflight | nindent 12 }}{{ end }}
+            if [[ -f /home/yugabyte/bin/post_install.sh ]]; then
+              /home/yugabyte/bin/post_install.sh
+            fi && \
+            if [[ -f /home/yugabyte/tools/k8s_parent.py ]]; then
+              k8s_parent="/home/yugabyte/tools/k8s_parent.py"
+            else
+              k8s_parent=""
+            fi && \
+          {{- if eq $service.name "yb-masters" }}
+            mkdir -p /tmp/yugabyte/master/conf && \
+            envsubst < /opt/master/conf/server.conf.template > /tmp/yugabyte/master/conf/server.conf && \
+            exec ${k8s_parent} /home/yugabyte/bin/yb-master \
+              --flagfile /tmp/yugabyte/master/conf/server.conf
+          {{- else }}
+            {{- $cqlAddr := include "yugabyte.cql_proxy_bind_address" $serviceValues -}}
+            {{- $cqlPort := index $service.ports "tcp-yql-port" -}}
+            {{- $cqlDict := dict "Addr" $cqlAddr "Port" $cqlPort -}}
+            {{- $cqlPreflight := include "yugabyte.preflight_check" (set $serviceValues "Preflight" $cqlDict) -}}
+            {{- if $cqlPreflight -}}{{ $cqlPreflight | nindent 12 }}{{ end -}}
+            {{- $ysqlAddr := include "yugabyte.pgsql_proxy_bind_address" $serviceValues -}}
+            {{- $ysqlPort := index $service.ports "tcp-ysql-port" -}}
+            {{- if not $root.Values.disableYsql -}}
+              {{- $ysqlDict := dict "Addr" $ysqlAddr "Port" $ysqlPort -}}
+              {{- $ysqlPreflight := include "yugabyte.preflight_check" (set $serviceValues "Preflight" $ysqlDict) -}}
+              {{- if $ysqlPreflight -}}{{ $ysqlPreflight | nindent 12 }}{{ end -}}
+            {{- end }}
+              mkdir -p /tmp/yugabyte/tserver/conf && \
+              envsubst < /opt/tserver/conf/server.conf.template > /tmp/yugabyte/tserver/conf/server.conf && \
+              exec ${k8s_parent} /home/yugabyte/bin/yb-tserver \
+                --flagfile /tmp/yugabyte/tserver/conf/server.conf
+          {{- end }}
+        ports:
+          {{- range $label, $port := $service.ports }}
+          {{- if (eq $label "yugabyted-ui") }}
+          {{- if $root.Values.yugabytedUi.enabled }}
+          - containerPort: {{ $port }}
+            name: {{ $label | quote }}
+          {{- end }}
+          {{- else if not (or (eq $label "grpc-ybc-port") (eq $label "tcp-ybc-port"))}}
+          - containerPort: {{ $port }}
+            name: {{ $label | quote }}
+          {{- end }}
+          {{- end}}
+        volumeMounts:
+          {{- if (eq $service.name "yb-tservers") }}
+          - name: tserver-tmp
+            mountPath: /tmp
+          - name: tserver-gflags
+            mountPath: /opt/tserver/conf
+          {{- else if (eq $service.name "yb-masters") }}
+          - name: master-gflags
+            mountPath: /opt/master/conf
+          {{- end }}
+          - name: debug-hooks-volume
+            mountPath: /opt/debug_hooks_config
+          {{ if not $storageEphemeral }}
+          {{- range $index := until (int ($storageInfo.count)) }}
+          - name: {{ $root.Values.oldNamingStyle | ternary (printf "datadir%d" $index) (printf "%s%d" (include "yugabyte.volume_name" $root) $index) }}
+            mountPath: /mnt/disk{{ $index }}
+          {{- end }}
+          {{- end }}
+          {{- if $root.Values.tls.enabled }}
+          - name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+            mountPath: {{ $root.Values.tls.certManager.enabled | ternary "/home/yugabyte/cert-manager" "/opt/certs/yugabyte" }}
+            readOnly: true
+          {{- if $root.Values.tls.certManager.enabled }}
+          - name: certs-dir
+            mountPath: /opt/certs
+          {{- end }}
+          - name: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+            mountPath: /root/.yugabytedb/
+            readOnly: true
+          {{- end }}
+          {{- if and (eq $service.name "yb-masters") ($root.Values.master.extraVolumeMounts) -}}
+          {{- include "yugabyte.isExtraVolumesMappingExists" $root.Values.master -}}
+          {{- $root.Values.master.extraVolumeMounts | toYaml | nindent 10 -}}
+          {{- else if and (eq $service.name "yb-tservers") ($root.Values.tserver.extraVolumeMounts) -}}
+          {{- include "yugabyte.isExtraVolumesMappingExists" $root.Values.tserver -}}
+          {{- $root.Values.tserver.extraVolumeMounts | toYaml | nindent 10 -}}
+          {{- end -}}
+
+      {{ if not $storageEphemeral }}
+      - name: yb-cleanup
+        image: "{{ $root.Values.Image.repository }}:{{ $root.Values.Image.tag }}"
+        imagePullPolicy: {{ $root.Values.Image.pullPolicy }}
+        {{- if $root.Values.containerSecurityContext.enabled }}
+        {{- include "getSecurityContext" $root | nindent 8 }}
+        {{- end }}
+        env:
+        - name: USER
+          value: "yugabyte"
+        {{- if $root.Values.otelCollector.enabled }}
+        - name: PRESERVE_AUDIT_LOGS # Allows the exporter sufficient time to collect logs before they are deleted.
+          value: "true"
+        {{- end }}
+        command:
+          - "/sbin/tini"
+          - "--"
+        args:
+          - "/bin/bash"
+          - "-c"
+          - >
+            while true; do
+              sleep 3600;
+              /home/yugabyte/scripts/log_cleanup.sh;
+            done
+        volumeMounts:
+          - name: {{ $root.Values.oldNamingStyle | ternary "datadir0" (printf "%s0" (include "yugabyte.volume_name" $root)) }}
+            mountPath: /home/yugabyte/
+            subPath: yb-data
+          - name: {{ $root.Values.oldNamingStyle | ternary "datadir0" (printf "%s0" (include "yugabyte.volume_name" $root)) }}
+            mountPath: /var/yugabyte/cores
+            subPath: cores
+        {{- if $root.Values.ybCleanup.resources }}
+        resources: {{ toYaml $root.Values.ybCleanup.resources | nindent 10 }}
+        {{- end }}
+      {{- end }}
+
+      {{- if $root.Values.yugabytedUi.enabled }}
+      - name: yugabyted-ui
+        image: "{{ $root.Values.Image.repository }}:{{ $root.Values.Image.tag }}"
+        imagePullPolicy: "IfNotPresent"
+        {{- if $root.Values.containerSecurityContext.enabled }}
+        {{- include "getSecurityContext" $root | nindent 8 }}
+        {{- end }}
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: YUGABYTED_UI_K8S
+          value: "true"
+        command:
+          - "/sbin/tini"
+          - "--"
+        args:
+          - "/bin/bash"
+          - "-c"
+          - |
+            {{- if $root.Values.yugabytedUi.recoverWithoutFailure }}
+            while true; do
+            {{- end }}
+            /home/yugabyte/bin/yugabyted-ui \
+            {{- $rpcAddr := include "yugabyte.rpc_bind_address" $serviceValues }}
+              -database_host={{ $rpcAddr }} \
+            {{- $webserverAddr := include "yugabyte.webserver_interface" $serviceValues }}
+              -bind_address={{ $webserverAddr }} \
+            {{- $masterPort := "7000" }}
+            {{- $tserverPort := "9000" }}
+            {{- $ysqlPort := "5433" }}
+            {{- $ycqlPort := "9042" }}
+            {{- range $root.Values.Services -}}
+              {{- if eq .name "yb-masters" -}}
+                {{- $masterPort = index .ports "http-ui" -}}
+              {{- else if eq .name "yb-tservers" -}}
+                {{- $tserverPort = index .ports "http-ui" -}}
+                {{- $ysqlPort = index .ports "tcp-ysql-port" -}}
+                {{- $ycqlPort = index .ports "tcp-yql-port" -}}
+              {{- end -}}
+            {{- end }}
+              -ysql_port={{ $ysqlPort }} \
+              -ycql_port={{ $ycqlPort }} \
+              -master_ui_port={{ $masterPort }} \
+              -tserver_ui_port={{ $tserverPort }} \
+            {{- if $root.Values.tls.enabled }}
+              -secure={{ $root.Values.tls.enabled }} \
+            {{- end }}
+            {{- if $root.Values.authCredentials.ysql.user }}
+              -ysql_username={{ $root.Values.authCredentials.ysql.user }} \
+            {{- end }}
+            {{- if $root.Values.authCredentials.ycql.user }}
+              -ycql_username={{ $root.Values.authCredentials.ycql.user }} \
+            {{- end }}
+            {{- if $root.Values.authCredentials.ysql.password }}
+              -ysql_password={{ $root.Values.authCredentials.ysql.password }} \
+            {{- end }}
+            {{- if $root.Values.authCredentials.ycql.password }}
+              -ycql_password={{ $root.Values.authCredentials.ycql.password }} \
+            {{- end }}
+            || echo "ERROR: yugabyted-ui failed. This might be because your yugabyte \
+            version is older than 2.21.0. If this is the case, set yugabytedUi.enabled to false \
+            in helm to disable yugabyted-ui, or upgrade to a version 2.21.0 or newer."; \
+            {{- if $root.Values.yugabytedUi.recoverWithoutFailure }}
+            echo "Attempting restart in {{ $root.Values.yugabytedUi.recoveryInterval }}."
+            trap break TERM INT; \
+            sleep {{ $root.Values.yugabytedUi.recoveryInterval }} & wait; \
+            trap - TERM INT;
+            done \
+            {{- end }}
+      {{- end }}
+
+      {{- if and (eq $service.name "yb-tservers") ($root.Values.ybc.enabled) }}
+      - name: yb-controller
+        image: "{{ $root.Values.Image.repository }}:{{ $root.Values.Image.tag }}"
+        imagePullPolicy: {{ $root.Values.Image.pullPolicy }}
+        {{- if $root.Values.containerSecurityContext.enabled }}
+        {{- include "getSecurityContext" $root | nindent 8 }}
+        {{- end }}
+        {{- if $root.Values.ybc.useYBDBImage }}
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: YBDEVOPS_CORECOPY_DIR
+          value: "/mnt/disk0/cores"
+        workingDir: "/mnt/disk0/cores"
+        command:
+          - "/sbin/tini"
+          - "--"
+        args:
+          - "/bin/bash"
+          - "-c"
+          - |
+            if [[ -f /home/yugabyte/tools/k8s_parent.py ]]; then
+              k8s_parent="/home/yugabyte/tools/k8s_parent.py"
+            else
+              k8s_parent=""
+            fi && \
+            mkdir -p /tmp/yugabyte/controller/conf && \
+            envsubst < /opt/controller/conf/server.conf.template > /tmp/yugabyte/controller/conf/server.conf && \
+            exec ${k8s_parent} /home/yugabyte/controller/bin/yb-controller-server \
+              --flagfile /tmp/yugabyte/controller/conf/server.conf
+        {{- else }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - "bash"
+                - "-c"
+                - >
+                  mkdir -p /mnt/disk0/yw-data/controller/tmp;
+                  mkdir -p /mnt/disk0/yw-data/controller/conf;
+                  mkdir -p /mnt/disk0/ybc-data/controller/logs;
+                  mkdir -p /tmp/yugabyte/controller;
+                  ln -sf /mnt/disk0/ybc-data/controller/logs /tmp/yugabyte/controller;
+                  ln -sf /mnt/disk0/yw-data/controller/bin /tmp/yugabyte/controller;
+                  rm -f /tmp/yugabyte/controller/yb-controller.pid;
+        command:
+          - "/sbin/tini"
+          - "--"
+        args:
+          - "/bin/bash"
+          - "-c"
+          - >
+            while true; do
+              sleep 60;
+              /home/yugabyte/tools/k8s_ybc_parent.py status || /home/yugabyte/tools/k8s_ybc_parent.py start;
+            done
+        {{- end }}
+        {{- range $label, $port := $service.ports }}
+        {{- if or (eq $label "grpc-ybc-port") (eq $label "tcp-ybc-port")}}
+        ports:
+          - containerPort: {{ $port }}
+            name: "tcp-ybc-port"
+        {{- end }}
+        {{- end }}
+        volumeMounts:
+          - name: tserver-tmp
+            mountPath: /tmp
+          {{- if $root.Values.ybc.useYBDBImage }}
+          - name: controller-gflags
+            mountPath: /opt/controller/conf
+          {{- end }}
+          {{- if not $storageEphemeral }}
+          {{- range $index := until (int ($storageInfo.count)) }}
+          - name: {{ $root.Values.oldNamingStyle | ternary (printf "datadir%d" $index) (printf "%s%d" (include "yugabyte.volume_name" $root) $index) }}
+            mountPath: /mnt/disk{{ $index }}
+          {{- end }}
+          {{- end }}
+          {{- if $root.Values.tls.enabled }}
+          - name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+            mountPath: {{ $root.Values.tls.certManager.enabled | ternary "/home/yugabyte/cert-manager" "/opt/certs/yugabyte" }}
+            readOnly: true
+          {{- if $root.Values.tls.certManager.enabled }}
+          - name: certs-dir
+            mountPath: /opt/certs
+          {{- end }}
+          {{- end }}
+          {{- if ($root.Values.tserver.extraVolumeMounts) -}}
+          {{- include "yugabyte.isExtraVolumesMappingExists" $root.Values.tserver -}}
+          {{- $root.Values.tserver.extraVolumeMounts | toYaml | nindent 10 -}}
+          {{- end -}}
+        {{- if $root.Values.ybc.resources }}
+        resources: {{ toYaml $root.Values.ybc.resources | nindent 10 }}
+        {{- end }}
+      {{- end}}
+
+      volumes:
+        {{- if (eq $service.name "yb-masters") }}
+        - name: debug-hooks-volume
+          configMap:
+            name: {{ include "yugabyte.fullname" $root }}-master-hooks
+            defaultMode: 0755
+        - name: master-gflags
+          secret:
+            secretName: {{ printf "%s%s-master-gflags" (include "yugabyte.fullname" $root) $stsIndexSuffix }}
+            defaultMode: 0755
+        {{- else if (eq $service.name "yb-tservers") }}
+        - name: debug-hooks-volume
+          configMap:
+            name: {{ include "yugabyte.fullname" $root }}-tserver-hooks
+            defaultMode: 0755
+        - name: tserver-gflags
+          secret:
+            secretName: {{ printf "%s%s-tserver-gflags" (include "yugabyte.fullname" $root) $stsIndexSuffix }}
+            defaultMode: 0755
+        {{- if $root.Values.ybc.useYBDBImage }}
+        - name: controller-gflags
+          secret:
+            secretName: {{ include "yugabyte.fullname" $root }}-controller-gflags
+            defaultMode: 0755
+        {{- end }}
+        - name: tserver-tmp
+          emptyDir: {}
+        {{- end }}
+        {{- if $root.Values.tls.enabled }}
+        {{- if $root.Values.tls.certManager.enabled }}
+        {{- /* certManager enabled */}}
+        - name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+          projected:
+            sources:
+            - secret:
+                name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+            {{- if and (not $root.Values.tls.certManager.bootstrapSelfsigned) (or (not (empty $tlsRootCA.cert)) (not (empty $root.Values.tls.rootCA.existingSecret))) }}
+            - secret:
+                name: {{ printf "%s-root-ca" (include "yugabyte.fullname" $root) }}
+            {{- end }}
+        - name: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+          projected:
+            sources:
+            {{- /* get the ca.crt from values or cert-manager */}}
+            {{- if and (not $root.Values.tls.certManager.bootstrapSelfsigned) (or (not (empty $tlsRootCA.cert)) (not (empty $root.Values.tls.rootCA.existingSecret))) }}
+            - secret:
+                name: {{ printf "%s-root-ca" (include "yugabyte.fullname" $root) }}
+                items:
+                  - key: ca.crt
+                    path: root.crt
+            {{- else }}
+            - secret:
+                name: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+                items:
+                  - key: ca.crt
+                    path: root.crt
+            {{- end }}
+            {{- /* finally mount the tls client cert and key from cert-manager */}}
+            - secret:
+                name: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+                items:
+                  - key: tls.crt
+                    path: yugabytedb.crt
+                  - key: tls.key
+                    path: yugabytedb.key
+            defaultMode: 256
+        - name: certs-dir
+          emptyDir: {}
+        {{- else }}
+        {{/* certManager disabled */}}
+        - name: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+          secret:
+            secretName: {{ $root.Values.oldNamingStyle | ternary (printf "%s%s-yugabyte-tls-cert" $service.label $stsIndexSuffix) (printf "%s-%s%s-tls-cert" (include "yugabyte.fullname" $root) $service.label $stsIndexSuffix) }}
+            defaultMode: 256
+        - name: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+          secret:
+            secretName: {{ $root.Values.oldNamingStyle | ternary "yugabyte-tls-client-cert" (printf "%s-client-tls" (include "yugabyte.fullname" $root)) }}
+            defaultMode: 256
+        {{- end }}
+        {{- end }}
+        {{- if and (eq $service.name "yb-masters") ($root.Values.master.extraVolumes) -}}
+        {{- include "yugabyte.isExtraVolumesMappingExists" $root.Values.master -}}
+        {{- $root.Values.master.extraVolumes | toYaml | nindent 8 -}}
+        {{- else if and (eq $service.name "yb-tservers") ($root.Values.tserver.extraVolumes) -}}
+        {{- include "yugabyte.isExtraVolumesMappingExists" $root.Values.tserver -}}
+        {{- $root.Values.tserver.extraVolumes | toYaml | nindent 8 -}}
+        {{- end -}}
+{{- end }}
+{{- end }}
+{{- if and $root.Values.useOldPodDisruptionBudget (not $root.Values.isMultiAz) }}
+---
+{{/*
+TODO: switch to policy/v1 completely when we stop supporting
+Kubernetes versions < 1.21
+*/}}
+{{- if $root.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
+apiVersion: policy/v1
+{{- else }}
+apiVersion: policy/v1beta1
+{{- end }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $root.Values.oldNamingStyle | ternary (printf "%s-pdb" $service.label) (printf "%s-%s-pdb" (include "yugabyte.fullname" $root) $service.name) }}
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+spec:
+  maxUnavailable: {{ template "yugabyte.max_unavailable_for_quorum" $root }}
+  selector:
+    matchLabels:
+      {{- include "yugabyte.appselector" ($appLabelArgs) | indent 6 }}
+{{- end }}
+{{- end }}

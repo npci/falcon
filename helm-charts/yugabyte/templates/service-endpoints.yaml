@@ -1,0 +1,93 @@
+{{- $root := . -}}
+---
+# Services endpoints
+{{- if $root.Values.enableLoadBalancer }}
+{{- range .Values.Services }}
+{{- $service := . -}}
+{{- $appLabelArgs := dict "label" .label "root" $root -}}
+{{- range $endpoint := $root.Values.serviceEndpoints }}
+{{- $serviceScopeArgs := dict "endpoint" $endpoint "defaultScope" $root.Values.defaultServiceScope }}
+{{- $scope := include "yugabyte.servicescope" $serviceScopeArgs }}
+{{- if eq $service.label $endpoint.app }}
+# Only render if new naming style or old naming style + AZ scope
+{{- if or (not $root.Values.oldNamingStyle) (eq $scope "AZ") }}
+{{- $servicenameargs := dict "root" $root "endpoint" $endpoint "scope" $scope }}
+{{- $serviceName := include "yugabyte.servicename" ($servicenameargs) }}
+{{- $serviceArgs := dict "endpoint" $endpoint "serviceName" $serviceName "root" $root "scope" $scope }}
+{{- $service := include "yugabyte.should_render_service" ($serviceArgs) }}
+# Render if:
+# 1. Always if scope is AZ
+# 2. Namespaced scope: Service does not exist
+# 3. Namespaced scope: Service exists and is owned by this release
+{{- if eq $service "true" }}
+{{- if (or (ne $endpoint.name "yugabyted-ui-service") $root.Values.yugabytedUi.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName | quote }}
+  namespace: "{{ $root.Release.Namespace }}"
+  annotations:
+    # Keep resource for namespaced services
+    {{- if eq $scope "Namespaced" }}
+    "helm.sh/resource-policy": keep
+    {{- end }}
+    {{- if $endpoint.annotations }}
+{{ toYaml $endpoint.annotations | nindent 4 }}
+    {{- end }}
+  labels:
+    # scope is "Namespaced" or "AZ"
+    scope: {{ $scope }}
+    serviceName: {{ $endpoint.name }}
+    service-type: "endpoint" 
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- $labels := include "yugabyte.labels" $root | fromYaml }}
+    # For Namespaced service, remove zone and release name filter
+    {{- if eq $scope "Namespaced" }}
+    {{- $labels = omit $labels "yugabyte.io/zone" "release" }}
+    {{- end }}
+    {{- range $key,$value := $labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  {{- if eq $root.Release.Service "Tiller" }}
+  clusterIP:
+  {{- else }}
+  {{- if $endpoint.clusterIP }}
+  clusterIP: {{ $endpoint.clusterIP }}
+  {{- end }}
+  {{- end }}
+  type: {{ $endpoint.type }}
+  ports:
+    {{- range $label, $port := $endpoint.ports }}
+    - name: {{ $label | quote }}
+      port: {{ $port }}
+    {{- end }}
+  selector:
+    {{- if eq $endpoint.name "yugabyted-ui-service"}}
+    yugabytedUi: "true"
+    {{- else if eq $scope "Namespaced" }}
+    {{- include "yugabyte.namespacedserviceselector" ($appLabelArgs) | indent 4 }}
+    {{- else }}
+    {{- include "yugabyte.appselector" ($appLabelArgs) | indent 4 }}
+    {{- end }}
+  {{- if ne $endpoint.type "ClusterIP" }}
+  externalTrafficPolicy: {{ $endpoint.externalTrafficPolicy | default "Cluster" }}
+  {{- end }}
+  {{- if $endpoint.loadBalancerIP }}
+  loadBalancerIP: {{ $endpoint.loadBalancerIP }}
+  {{- end }}
+  {{- if eq $endpoint.name "yugabyted-ui-service"}}
+  sessionAffinity: {{ $endpoint.sessionAffinity }}
+  {{- end }}
+  {{- include "yugabyte.ipFamilyConfig" ($root) | indent 2 }}
+  {{- range $key, $value := $endpoint.extraArgs }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

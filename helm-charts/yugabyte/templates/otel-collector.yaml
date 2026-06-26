@@ -1,0 +1,174 @@
+{{- $root := . -}}
+---
+{{- if .Values.otelCollector.enabled }}
+---
+{{- if .Values.otelCollector.secretEnv }}
+{{ $appLabelArgs := dict "label" "yb-tserver" "root" $root }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name:  {{ include "yugabyte.fullname" $root }}-otel-secrets
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+type: Opaque
+data:
+{{- range .Values.otelCollector.secretEnv }}
+  {{ .envName }}: {{ .envValue | quote }}
+{{- end }}
+{{- end }}
+---
+{{ $appLabelArgs := dict "label" "yb-tserver" "root" $root }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ $root.Values.oldNamingStyle | ternary "otel-yb-tserver" (printf "otel-%s-yb-tserver" (include "yugabyte.fullname" $root)) | quote }}
+  namespace: "{{ $root.Release.Namespace }}"
+  labels:
+    {{- include "yugabyte.applabel" ($appLabelArgs) | indent 4 }}
+    {{- include "yugabyte.labels" $root | indent 4 }}
+spec:
+  config:
+    exporters:
+      {{- range $name, $exporter := .Values.otelCollector.exporters}}
+      {{ $name }}:
+{{ toYaml $exporter | indent 8 }}
+      {{- end }}
+    extensions:
+      file_storage/queue:
+        create_directory: true
+        compaction:
+          directory: /mnt/disk0/otel-collector/queue
+          on_rebound: true
+          on_start: true
+          rebound_needed_threshold_mib: 100
+          rebound_trigger_threshold_mib: 10
+        directory: /mnt/disk0/otel-collector/queue
+      health_check:
+        endpoint: {{ (printf "%s:13133" (include "yugabyte.webserver_interface" $root)) | quote }}
+        path: "/health"
+    processors:
+      {{- range $name := (keys .Values.otelCollector.exporters) }}
+      attributes/{{ $name }}:
+        actions:
+        - action: upsert
+          key: ddsource
+          value: yugabyte
+        - action: upsert
+          key: service
+          value: yb-otel-collector
+        - action: upsert
+          key: host
+          value: ${POD_NAME}
+      {{- end }}
+    receivers:
+      filelog/ysql:
+        attributes:
+          audit_log_type: ysql
+        exclude:
+        - /mnt/disk0/yb-data/tserver/logs/*.gz
+        include:
+        - /mnt/disk0/yb-data/tserver/logs/postgresql-*.log
+        multiline:
+          line_start_pattern: {{ $root.Values.otelCollector.recievers.ysql.lineStartPattern | quote }}
+        operators:
+        - expr: 'body not matches "^.*\\w+:  AUDIT:(.|\\n|\\r|\\s)*$"'
+          type: filter
+        - on_error: drop
+          regex: {{ $root.Values.otelCollector.recievers.ysql.regex | quote }}
+          timestamp:
+{{ toYaml $root.Values.otelCollector.recievers.ysql.timestamp | indent 12 }}
+          type: regex_parser
+        start_at: beginning
+        storage: file_storage/queue
+    service:
+      extensions:
+      - file_storage/queue
+      - health_check
+      pipelines:
+        {{- range $name := (keys .Values.otelCollector.exporters) }}
+        logs/{{ $name }}:
+          exporters:
+          - {{ $name }}
+          processors:
+          - attributes/{{ $name }}
+          receivers:
+          - filelog/ysql
+        {{- end}}
+      telemetry:
+        logs:
+          output_paths:
+          - /mnt/disk0/otel-collector/logs/otel-collector.logs
+  image: {{ .Values.otelCollector.image | default "otel/opentelemetry-collector-contrib:0.114.0" | quote }}
+  ipFamilyPolicy: SingleStack
+  managementState: managed
+  mode: sidecar
+  replicas: 1
+  resources: {{ .Values.otelCollector.resources | toYaml | nindent 4 }}
+  upgradeStrategy: automatic
+  env:
+    - name: USER
+      value: yugabyte
+    {{- range .Values.otelCollector.secretEnv }}
+    {{- if eq .envName "GOOGLE_APPLICATION_CREDENTIALS_CONTENT" }}
+    - name: GOOGLE_APPLICATION_CREDENTIALS
+      value: /mnt/disk0/otel-collector/gcp_credentials/gcp_credentials.json
+    {{- else }}
+    - name: {{ .envName }}
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "yugabyte.fullname" $root }}-otel-secrets
+          key: {{ .envName }}
+    {{- end }}
+    {{- end }}
+  volumeMounts:
+    - mountPath: /mnt/disk0/
+      name: {{ $root.Values.oldNamingStyle | ternary "datadir0" (printf "%s0" (include "yugabyte.volume_name" $root)) }}
+  initContainers:
+  - name: init-otel-collector
+    image: "{{ $root.Values.Image.repository }}:{{ $root.Values.Image.tag }}"
+    imagePullPolicy: {{ $root.Values.Image.pullPolicy }}
+    command:
+      - "sh"
+      - "-c"
+      - >
+        mkdir -p /mnt/disk0/otel-collector/logs;
+        rm -rf /mnt/disk0/otel-collector/gcp_credentials;
+        if [ -n "${GOOGLE_APPLICATION_CREDENTIALS_CONTENT}" ] ; then
+          mkdir -p /mnt/disk0/otel-collector/gcp_credentials;
+          echo ${GOOGLE_APPLICATION_CREDENTIALS_CONTENT} > /mnt/disk0/otel-collector/gcp_credentials/gcp_credentials.json;
+        fi
+    volumeMounts:
+    - mountPath: /mnt/disk0/
+      name: {{ $root.Values.oldNamingStyle | ternary "datadir0" (printf "%s0" (include "yugabyte.volume_name" $root)) }}
+    env:
+    {{- range .Values.otelCollector.secretEnv }}
+    {{- if eq .envName "GOOGLE_APPLICATION_CREDENTIALS_CONTENT" }}
+    - name: {{ .envName }}
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "yugabyte.fullname" $root }}-otel-secrets
+          key: {{ .envName }}
+    {{- end }}
+    {{- end }}
+  {{- if .Values.containerSecurityContext.enabled }}
+  {{- include "getSecurityContext" . | nindent 2 }}
+  {{- else if .Values.podSecurityContext.enabled }}
+  securityContext:
+    runAsUser: {{ required "runAsUser cannot be empty" .Values.podSecurityContext.runAsUser }}
+    {{- if ne .Values.podSecurityContext.runAsGroup nil }}
+    runAsGroup: {{ .Values.podSecurityContext.runAsGroup }}
+    {{- else }}
+    runAsGroup: {{ .Values.podSecurityContext.runAsUser }}
+    {{- end }}
+    runAsNonRoot: {{ .Values.podSecurityContext.runAsNonRoot }}
+    {{- if .Values.podSecurityContext.additionalSettings }}
+    {{- toYaml .Values.podSecurityContext.additionalSettings | nindent 4 }}
+    {{- end }}
+  {{- else if not .Values.ocpCompatibility.enabled }}
+  securityContext:
+    runAsUser: 0
+  {{- end }}
+---
+{{- end }}
