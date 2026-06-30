@@ -96,6 +96,33 @@ readinessProbe:
     port: http
     scheme: HTTPS
 
+# cert-manager integration for ingress TLS.
+# When enabled, a Certificate CRD is created to provision a TLS certificate
+# for the CA ingress. The ingress terminates TLS using the cert-manager-issued
+# certificate and forwards traffic to the CA pod over HTTPS (backend-protocol).
+#
+# IMPORTANT: When certManager.enabled is true, do NOT set ssl-passthrough in
+# ingress.annotations. ssl-passthrough and backend-protocol: HTTPS are mutually
+# exclusive. The chart automatically adds backend-protocol: HTTPS when cert-manager
+# is enabled.
+#
+# Fabric CA's own TLS (FABRIC_CA_SERVER_TLS_ENABLED) remains unchanged. cert-manager
+# only manages the ingress-facing certificate, not Fabric's internal PKI.
+certManager:
+  enabled: false
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: ""
+    kind: Issuer
+    group: cert-manager.io
+  trustCA:
+    enabled: false
+    secretName: ""
+    caCertPath: /etc/ssl/certs/ca-cert.crt
+  private:
+    enabled: false
+
 podAnnotations: {}
 podSecurityContext: {}
 securityContext: {}

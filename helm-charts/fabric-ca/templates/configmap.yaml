@@ -5,6 +5,8 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- if .Values.ica.enabled -}}
 {{- $ParentCaEndpoint := .Values.ica.parent_ca_endpoint -}}
+{{- $trustCAEnabled := and .Values.certManager.enabled .Values.certManager.trustCA.enabled -}}
+{{- $caCertPath := .Values.certManager.trustCA.caCertPath | default "/etc/ssl/certs/ca-cert.crt" -}}
 
 apiVersion: v1
 kind: ConfigMap
@@ -15,19 +17,25 @@ metadata:
 data:
   init.sh: |
     FABRIC_TLS_CERT_FILE=$4
+    {{- if $trustCAEnabled }}
+    CURL_VERIFY_FLAG="--cacert {{ $caCertPath }}"
+    {{- else }}
+    CURL_VERIFY_FLAG="--insecure"
+    {{- end }}
+
     function fabric_public_key_fetch() {
 
     FABRIC_CA_URL=$1
     FABRIC_TLS_CERT_FILE=$2
 
     while true; do
-      http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" --insecure -o /dev/null)
+      http_response=$(curl -sL -w  "%{http_code}" "https://$FABRIC_CA_URL/cainfo" $CURL_VERIFY_FLAG -o /dev/null)
       if [ "$http_response" -eq "200" ]; then
         echo "--------------------------------"
         echo "Fetching public key cert of $FABRIC_CA_URL, received HTTP response with 200."
         echo "--------------------------------"
-        curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE
-          if curl https://$FABRIC_CA_URL/cainfo --insecure | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
+        curl https://$FABRIC_CA_URL/cainfo $CURL_VERIFY_FLAG | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE
+          if curl https://$FABRIC_CA_URL/cainfo $CURL_VERIFY_FLAG | jq .result.CAChain | base64 -i -d > $FABRIC_TLS_CERT_FILE; then
             echo "--------------------------------"
             echo "The downloaded public key cert of $FABRIC_CA_URL"
             echo "--------------------------------"

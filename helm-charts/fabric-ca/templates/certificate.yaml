@@ -1,0 +1,35 @@
+{{/*
+Copyright National Payments Corporation of India. All Rights Reserved.
+SPDX-License-Identifier:  GPL-3.0
+*/}}
+
+{{- if .Values.certManager.enabled -}}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "fabric-ca.fullname" . }}-tls
+  labels:
+    {{- include "fabric-ca.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "fabric-ca.fullname" . }}-tls-secret
+  duration: {{ .Values.certManager.duration | default "2160h" }}
+  renewBefore: {{ .Values.certManager.renewBefore | default "360h" }}
+  {{- with .Values.certManager.issuerRef }}
+  issuerRef:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  dnsNames:
+    - {{ include "fabric-ca.fullname" . }}.{{ $.Values.tls_domain }}
+    {{- range .Values.ca_server.additional_sans }}
+    - {{ . }}
+    {{- end }}
+  usages:
+    - server auth
+    - client auth
+  {{- if .Values.certManager.private.enabled }}
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  {{- end }}
+{{- end }}

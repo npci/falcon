@@ -4,6 +4,9 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{- $ParentCaEndpoint := .Values.ica.parent_ca_endpoint -}}
+{{- $trustCAEnabled := and .Values.certManager.enabled .Values.certManager.trustCA.enabled -}}
+{{- $trustCASecretName := .Values.certManager.trustCA.secretName -}}
+{{- $caCertPath := .Values.certManager.trustCA.caCertPath | default "/etc/ssl/certs/ca-cert.crt" -}}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -59,6 +62,12 @@ spec:
              mountPath: /scripts/init.sh
            - name: intermediate-ca-cert
              mountPath: {{ .Values.ica.intermediate_tls_cert_dir }}
+           {{- if $trustCAEnabled }}
+           - name: trusted-ca-cert
+             mountPath: {{ $caCertPath }}
+             subPath: ca.crt
+             readOnly: true
+           {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -113,6 +122,12 @@ spec:
           configMap:
             name: {{ include "fabric-ca.fullname" . }}-scripts
             defaultMode: 0777
+        {{- end }}
+        {{- if $trustCAEnabled }}
+        - name: trusted-ca-cert
+          secret:
+            secretName: {{ $trustCASecretName }}
+            defaultMode: 0644
         {{- end }}
       restartPolicy: {{ .Values.restartPolicy }}
       {{- with .Values.nodeSelector }}
