@@ -26,8 +26,6 @@ metadata:
     {{- include "fabric-ca.labels" . | nindent 4 }}
   annotations:
     {{- if .Values.certManager.enabled }}
-    cert-manager.io/issuer: {{ .Values.certManager.issuerRef.name | quote }}
-    cert-manager.io/issuer-kind: {{ .Values.certManager.issuerRef.kind | default "Issuer" | quote }}
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     {{- end }}
     {{- with .Values.ingress.annotations }}
@@ -88,5 +86,5 @@ spec:
               servicePort: {{ $svcPort }}
               {{- end }}
       {{- end }}
-    {{- end }}          
+    {{- end }}
 {{- end }}

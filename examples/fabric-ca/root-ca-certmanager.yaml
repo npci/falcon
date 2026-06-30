@@ -76,7 +76,7 @@ certManager:
   duration: 2160h
   renewBefore: 360h
   issuerRef:
-    name: letsencrypt-prod
+    name: selfsigned-issuer
     kind: ClusterIssuer
     group: cert-manager.io
   # trustCA: When enabled, the parent CA's certificate is mounted as a trusted CA
