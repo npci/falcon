@@ -99,3 +99,124 @@ The following table lists the configurable parameters of the Fabric-ca chart and
 | `affinity` | Default affinity | `{}` |
 | `nodeSelector` | Default nodeSelector  | `{}` |
 | `tolerations` | Default tolerations | `[]` |
+| `certManager.enabled` | Enable cert-manager integration for ingress TLS | `false` |
+| `certManager.duration` | Certificate duration (e.g., `2160h` for 90 days) | `2160h` |
+| `certManager.renewBefore` | How long before expiry to renew | `360h` |
+| `certManager.issuerRef.name` | Name of the cert-manager Issuer or ClusterIssuer | `""` |
+| `certManager.issuerRef.kind` | Kind of issuer (`Issuer` or `ClusterIssuer`) | `"Issuer"` |
+| `certManager.issuerRef.group` | API group of the issuer | `"cert-manager.io"` |
+| `certManager.trustCA.enabled` | Mount parent CA cert for verified ICA enrollment | `false` |
+| `certManager.trustCA.secretName` | K8s Secret containing the trusted CA certificate | `""` |
+| `certManager.trustCA.caCertPath` | Path where the CA cert is mounted in the pod | `"/etc/ssl/certs/ca-cert.crt"` |
+| `certManager.private.enabled` | Use a private CA issuer (non-ACME) | `false` |
+
+## cert-manager Integration
+
+This chart supports [cert-manager](https://cert-manager.io/) for provisioning TLS certificates at the ingress layer. When enabled, cert-manager replaces the `ssl-passthrough` pattern with standard TLS termination.
+
+### Architecture
+
+When `certManager.enabled: true`, the chart creates a `Certificate` CRD that instructs cert-manager to provision a TLS certificate. The ingress terminates TLS using this certificate, and forwards traffic to the Fabric CA pod over HTTPS (the CA pod still uses its own self-signed Fabric TLS certificate internally).
+
+```
+External Clients
+    |
+    v
++----------------------------------+
+|   NGINX Ingress Controller        |
+|   (cert-manager TLS termination)  |
++----------------------------------+
+    |  (backend-protocol: HTTPS)
+    v
++----------------------------------+
+|   Fabric CA Pod                    |
+|   (Fabric CA self-signed TLS)     |
++----------------------------------+
+```
+
+**Important:** cert-manager only manages the ingress-facing TLS certificate. Fabric CA's internal TLS (`FABRIC_CA_SERVER_TLS_ENABLED`) and the Fabric PKI hierarchy (root CA, intermediate CA, enrollment certificates) remain unchanged.
+
+### Prerequisites
+
+1. Install cert-manager in your cluster: https://cert-manager.io/docs/installation/
+2. Create an Issuer or ClusterIssuer. Examples:
+
+**Let's Encrypt (ACME HTTP01):**
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: your-email@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+```
+
+**Self-signed (for testing):**
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+```
+
+**Private CA (e.g., Vault PKI, Smallstep):**
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: private-ca-issuer
+spec:
+  ca:
+    secretName: private-ca-key-pair
+```
+
+### Deploying with cert-manager (Root CA)
+
+```bash
+kubectl create ns orderer
+kubectl -n orderer create secret generic rca-secret --from-literal=user=rca-admin --from-literal=password=rcaComplexPassword
+helm install root-ca -n orderer helm-charts/fabric-ca -f examples/fabric-ca/root-ca-certmanager.yaml
+```
+
+### Deploying with cert-manager (Intermediate CA with trusted CA)
+
+When deploying an ICA with `certManager.trustCA.enabled: true`, the init container verifies the parent CA's certificate instead of using `--insecure`:
+
+1. First, extract the root CA's certificate and create a Secret:
+```bash
+kubectl -n orderer create secret generic root-ca-cert \
+  --from-literal=ca.crt="$(kubectl -n orderer exec root-ca-0 -- cat /tmp/hyperledger/fabric-ca/crypto/ca-cert.pem)"
+```
+
+2. Then deploy the ICA:
+```bash
+helm install ica-orderer -n orderer helm-charts/fabric-ca -f examples/fabric-ca/ica-orderer-certmanager.yaml
+```
+
+### Migration from ssl-passthrough
+
+To migrate an existing CA deployment from `ssl-passthrough` to cert-manager:
+
+1. Install cert-manager and create an Issuer/ClusterIssuer
+2. Update your values to set `certManager.enabled: true` and configure the issuer
+3. Remove `ssl-passthrough` from ingress annotations (it's automatically removed when cert-manager is enabled)
+4. Run `helm upgrade`
+
+The chart automatically adds `nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"` when cert-manager is enabled, ensuring the ingress forwards traffic to the CA pod over HTTPS.
+
+### Backward Compatibility
+
+When `certManager.enabled: false` (the default), the chart behaves exactly as before:
+- The ingress uses `ssl-passthrough` if specified in annotations
+- The ICA init container uses `--insecure` to fetch parent CA certificates
+- No Certificate CRD is created

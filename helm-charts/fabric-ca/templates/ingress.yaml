@@ -24,16 +24,26 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "fabric-ca.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    {{- if .Values.certManager.enabled }}
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    {{- end }}
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.ingress.className }}
   {{- end }}
-  {{- if .Values.ingress.tls }}
   tls:
+    {{- if .Values.certManager.enabled }}
+    - hosts:
+        - {{ include "fabric-ca.fullname" . }}.{{ $.Values.tls_domain }}
+        {{- range .Values.ca_server.additional_sans }}
+        - {{ . }}
+        {{- end }}
+      secretName: {{ include "fabric-ca.fullname" . }}-tls-secret
+    {{- else if .Values.ingress.tls }}
     {{- range .Values.ingress.tls }}
     - hosts:
         {{- range .hosts }}
@@ -41,7 +51,7 @@ spec:
         {{- end }}
       secretName: {{ .secretName }}
     {{- end }}
-  {{- end }}
+    {{- end }}
   rules:
     - host: {{ include "fabric-ca.fullname" $ }}.{{ $.Values.tls_domain }}
       http:
@@ -76,5 +86,5 @@ spec:
               servicePort: {{ $svcPort }}
               {{- end }}
       {{- end }}
-    {{- end }}          
+    {{- end }}
 {{- end }}

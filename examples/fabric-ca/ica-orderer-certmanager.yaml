@@ -1,0 +1,97 @@
+# Example values for deploying Fabric Intermediate CA with cert-manager integration.
+#
+# Prerequisites:
+# 1. cert-manager must be installed in the cluster
+# 2. A ClusterIssuer or Issuer must be configured
+# 3. The root-ca must be deployed first (with cert-manager if using trustCA)
+#
+# When trustCA.enabled is true:
+#   - The root CA's certificate is mounted from a Kubernetes Secret into the init container
+#   - The init container uses --cacert instead of --insecure to verify the parent CA
+#   - The secretName should reference a Secret containing the root CA's public certificate
+#     under the key "ca.crt" (or "tls.crt")
+#
+# To create the trusted CA secret from the root-ca's certificate:
+#   kubectl -n orderer create secret generic root-ca-cert \
+#     --from-file=ca.crt=<(kubectl -n orderer get secret root-ca-tls-secret -o jsonpath='{.data.ca\.crt}' | base64 -d)
+
+imagePullSecrets: []
+nameOverride: "ica-orderer"
+fullnameOverride: ""
+project: yourproject
+
+replicaCount: 1
+
+image:
+  repository: hyperledger/fabric-ca
+  pullPolicy: IfNotPresent
+  tag: "1.5.0"
+
+init:
+  image:
+   repository: npcioss/hlf-builder
+   pullPolicy: IfNotPresent
+   tag: "2.4"
+
+tls_domain: my-hlf-domain.com
+ca_server:
+  csr_names_country: IN
+  csr_names_st: Maharashtra
+  csr_names_l: Mumbai
+  csr_names_o: Your Company Name
+  csr_names_ou: Your Organization Unit
+  container_port: 7051
+  debug: true
+  tls_enabled: true
+  admin_secret: orderer-secret
+
+retry_seconds: 60
+recreate_intermediate_cert: false
+
+ica:
+  enabled: true
+  parent_ca_endpoint: root-ca.my-hlf-domain.com:30000
+  intermediate_tls_cert_dir: /tmp/hyperledger/fabric-ca/root-ca-cert
+  intermediate_tls_cert_file: cert.pem
+
+service:
+  type: ClusterIP
+  port: 7051
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+
+# cert-manager integration for ingress TLS.
+certManager:
+  enabled: true
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  # trustCA: Mount the parent CA's certificate so the ICA init container
+  # can verify the parent CA without --insecure.
+  trustCA:
+    enabled: true
+    # Name of a Kubernetes Secret containing the parent CA's certificate.
+    # The certificate should be stored under the key "ca.crt".
+    # If empty and trustCA is enabled, you must create this secret manually.
+    secretName: root-ca-cert
+    caCertPath: /etc/ssl/certs/ca-cert.crt
+  private:
+    enabled: false
+
+storage:
+  pvc_enabled: true
+  accessMode: ReadWriteOnce
+  storageClass: standard
+  size: 1G
+  path: /tmp/hyperledger/fabric-ca/crypto
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""

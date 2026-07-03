@@ -1,0 +1,102 @@
+# Example values for deploying Fabric Root CA with cert-manager integration.
+#
+# Prerequisites:
+# 1. cert-manager must be installed in the cluster: https://cert-manager.io/docs/installation/
+# 2. A ClusterIssuer or Issuer must be configured (see examples below)
+#
+# ClusterIssuer example (Let's Encrypt):
+#   apiVersion: cert-manager.io/v1
+#   kind: ClusterIssuer
+#   metadata:
+#     name: letsencrypt-prod
+#   spec:
+#     acme:
+#       server: https://acme-v02.api.letsencrypt.org/directory
+#       email: your-email@example.com
+#       privateKeySecretRef:
+#         name: letsencrypt-prod
+#       solvers:
+#         - http01:
+#             ingress:
+#               class: nginx
+#
+# ClusterIssuer example (self-signed, for testing):
+#   apiVersion: cert-manager.io/v1
+#   kind: ClusterIssuer
+#   metadata:
+#     name: selfsigned-issuer
+#   spec:
+#     selfSigned: {}
+
+imagePullSecrets: []
+nameOverride: "root-ca"
+fullnameOverride: ""
+project: yourproject
+
+replicaCount: 1
+
+image:
+  repository: hyperledger/fabric-ca
+  pullPolicy: IfNotPresent
+  tag: "1.5.0"
+
+tls_domain: my-hlf-domain.com
+ca_server:
+  csr_names_country: IN
+  csr_names_st: Maharashtra
+  csr_names_l: Mumbai
+  csr_names_o: "Your Company Name"
+  csr_names_ou: "Your Organization Unit"
+  container_port: 7051
+  debug: true
+  tls_enabled: true
+  admin_secret: rca-secret
+  additional_sans: []
+
+ica:
+  enabled: false
+
+service:
+  type: ClusterIP
+  port: 7051
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  path: /
+  pathType: Prefix
+
+# cert-manager integration for ingress TLS.
+# When enabled, this creates a Certificate CRD that provisions a TLS certificate
+# for the CA ingress. The ingress will terminate TLS using the cert-manager-issued
+# certificate instead of using ssl-passthrough.
+certManager:
+  enabled: true
+  duration: 2160h
+  renewBefore: 360h
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  # trustCA: When enabled, the parent CA's certificate is mounted as a trusted CA
+  # in the init container, allowing the ICA to verify the parent CA without --insecure.
+  # Only relevant when ica.enabled is also true.
+  trustCA:
+    enabled: false
+    secretName: ""
+    caCertPath: /etc/ssl/certs/ca-cert.crt
+  private:
+    enabled: false
+
+storage:
+  pvc_enabled: true
+  accessMode: ReadWriteOnce
+  storageClass: standard
+  size: 1G
+  path: /tmp/hyperledger/fabric-ca/crypto
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
