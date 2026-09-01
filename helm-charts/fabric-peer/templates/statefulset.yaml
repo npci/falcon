@@ -4,12 +4,13 @@ SPDX-License-Identifier:  GPL-3.0
 */}}
 
 {{- $BankName          := .Values.nameOverride }}
-{{- $HlfDomain         := .Values.global.hlf_domain }}
-{{- $IcaEndPoint       := .Values.global.ica_endpoint }}
-{{- $TlsCaEndpoint     := .Values.global.tlsca_endpoint }}
+{{- $HlfDomain         := and .Values.global .Values.global.hlf_domain | default .Values.hlf_domain }}
+{{- $IcaEndPoint       := and .Values.global .Values.global.ica_endpoint | default .Values.ica_endpoint }}
+{{- $TlsCaEndpoint     := and .Values.global .Values.global.tlsca_endpoint | default .Values.tlsca_endpoint }}
 {{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
 {{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
 {{- $OverrideMspId     := .Values.MspIdOverride }}
+{{- $useDefaultDNS     := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 
 {{- range .Values.peers }}
 ---
@@ -166,11 +167,16 @@ spec:
             - containerPort: {{ .peerContainerPort | default $.Values.global.peerContainerPort }}
           {{- $peerServicePort := .peerServicePort | default $.Values.global.peerServicePort }}
           {{- $IngressPort     := $.Values.global.ingressPort }}
+          {{- $peerUseDefaultDNS := or .useDefaultServiceDNS $useDefaultDNS }}
           env:
             - name: CORE_PEER_ADDRESS
               value: {{ .identity_name }}:{{ $peerServicePort }}
             - name: CORE_PEER_GOSSIP_EXTERNALENDPOINT
+              {{- if $peerUseDefaultDNS }}
+              value: {{ .identity_name }}.{{ $.Release.Namespace }}.svc.cluster.local:{{ $peerServicePort }}
+              {{- else }}
               value: {{ .identity_name }}.{{ $HlfDomain }}:{{ $IngressPort }}
+              {{- end }}
             - name: CORE_PEER_GOSSIP_BOOTSTRAP
               value: {{ .core_peer_gossip_bootstrap | default $.Values.global.core_peer_gossip_bootstrap }}
             - name: CORE_PEER_ID

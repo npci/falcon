@@ -3,7 +3,8 @@ Copyright National Payments Corporation of India. All Rights Reserved.
 SPDX-License-Identifier:  GPL-3.0
 */}}
 
-{{- $HlfDomain := .Values.global.hlf_domain }}
+{{- $HlfDomain := and .Values.global .Values.global.hlf_domain | default .Values.hlf_domain }}
+{{- $useDefaultDNS := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -64,7 +65,11 @@ data:
             --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
             --mspdir {{ .Values.fabric_base_dir }}/msp \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
-            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
+            {{- if $useDefaultDNS }}
+            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $.Release.Namespace }},$FABRIC_CA_IDENTITY.{{ $.Release.Namespace }}.svc.cluster.local{{- if $HlfDomain }},$FABRIC_CA_IDENTITY.{{ $HlfDomain }}{{- end }} \
+            {{- else }}
+            --csr.hosts $FABRIC_CA_IDENTITY{{- if $HlfDomain }},$FABRIC_CA_IDENTITY.{{ $HlfDomain }}{{- end }} \
+            {{- end }}
             --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
         echo "======== Identity $FABRIC_CA_IDENTITY is valid and enrollment is successful. Rearranging msp certificate directory structure for $FABRIC_CA_IDENTITY ========"
@@ -91,7 +96,11 @@ data:
             --url https://$FABRIC_CA_IDENTITY:$FABRIC_CA_SECRET@$FABRIC_CA_URL \
             --mspdir {{ .Values.fabric_base_dir }}/tls \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
-            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $HlfDomain }} \
+            {{- if $useDefaultDNS }}
+            --csr.hosts $FABRIC_CA_IDENTITY,$FABRIC_CA_IDENTITY.{{ $.Release.Namespace }},$FABRIC_CA_IDENTITY.{{ $.Release.Namespace }}.svc.cluster.local{{- if $HlfDomain }},$FABRIC_CA_IDENTITY.{{ $HlfDomain }}{{- end }} \
+            {{- else }}
+            --csr.hosts $FABRIC_CA_IDENTITY{{- if $HlfDomain }},$FABRIC_CA_IDENTITY.{{ $HlfDomain }}{{- end }} \
+            {{- end }}
             --enrollment.profile tls \
             --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
       if [ $? -eq 0 ]; then

@@ -6,6 +6,7 @@
 
 nameOverride: ""
 fullnameOverride: ""
+useDefaultServiceDNS: false
 orderer_cert_base_dir: "/var/hyperledger/orderer"
 orderer_data_dir: "/var/hyperledger/production"
 filestore_ssl: false

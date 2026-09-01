@@ -5,13 +5,14 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $Chart               := .Chart.Name -}}
 {{- $Name                := .Values.nameOverride | default .Chart.Name -}}
-{{- $Annotations         := .Values.global.ingress.annotations -}}
-{{- $ClassName           := .Values.global.ingressClass -}}
-{{- $IngressEnabled      := .Values.global.ingressEnabled -}}
+{{- $Annotations         := and .Values.global .Values.global.ingress .Values.global.ingress.annotations -}}
+{{- $ClassName           := and .Values.global .Values.global.ingressClass -}}
+{{- $IngressEnabled      := and .Values.global .Values.global.ingressEnabled -}}
+{{- $useDefaultDNS       := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 
 {{- range .Values.peers }}
-{{- if or $IngressEnabled .ingressEnabled }}
-{{- if (ne .ingressEnabled false) }}
+{{- $peerUseDefaultDNS := or .useDefaultServiceDNS $useDefaultDNS }}
+{{- if or (and $IngressEnabled (ne .ingressEnabled false) (not (and $peerUseDefaultDNS (not .ingressEnabled)))) (eq .ingressEnabled true) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -40,6 +41,5 @@ spec:
                 name: {{ .name }}-{{ include "fabric-peer.name" $ }}
                 port:
                   number: {{ .peerServicePort | default $.Values.global.peerServicePort }}
-{{- end }}
 {{- end }}
 {{- end }}

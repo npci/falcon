@@ -30,6 +30,7 @@ The following table lists the configurable parameters of the Fabric-tools chart 
 | `csr_names_l` | Locality | `"Mumbai"` |
 | `csr_names_o` | Organization Name | `"Your Company Name"` |
 | `hlf_domain` | The FQDN suffix for the identities enrollment  | `"my-hlf-domain.com"` |
+| `useDefaultServiceDNS` | `true` to include default Kubernetes ClusterIP DNS (`<service>.<namespace>.svc.cluster.local`) in CSR hosts | `false` |
 | `ca_endpoint` | The CA endpoint; Eg; `ica-org.com:30000` | `""` |
 | `tlsca_endpoint` | The TLSCA endpoint; Eg; `tlsca-org.com:30000` | `""` |
 | `identities` | The identities arrary | `[]` |
