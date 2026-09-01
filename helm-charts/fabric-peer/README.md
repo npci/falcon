@@ -59,12 +59,13 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `tlsca_tls_certfile` | Path for the init container to store the public key cert of `global.tlsca_endpoint` | `"/tmp/tlsca-cert.pem"` |
 | `fabric_base_dir` | Path to store the `msp/tls` enrollment certificates | `"/etc/hyperledger/fabric"` |
 | `retry_seconds` | Retry period in seconds for any script activities. Eg; enrollment | `60` |
-| `MspIdOverride` | To override Org name different than `nameOverride` | `""` |
+| `useDefaultServiceDNS` | `true` to enable peer communication via standard Kubernetes ClusterIP DNS (`<service>.<namespace>.svc.cluster.local`) without mandating custom ingress hostnames | `false` |
 | `peers` | The list of Peer identities to deploy | `[]` |
 | `peers.[].name` | The name of the peer | `peer[n]` |
 | `peers.[].identity_name` | The identity of peer | `""` |
 | `peers.[].identity_secret` | The identity password of peer | `""` |
 | `peers.[].additionalLabels` | The identity password of peer | `""` |
+| `peers.[].useDefaultServiceDNS` | `true` to use default Kubernetes ClusterIP DNS for this peer | default `global.useDefaultServiceDNS` |
 | `peers.[].require_certs_dir_persistence` | `true` for enabling PVC support for the `fabric_base_dir` | `""` |
 | `peers.[].ingressEnabled` | `true` to enable ingress for peer | default `global.ingressEnabled` |
 | `peers.[].ingressClass` | Ingress classname for peer | default `global.ingressClass` |
@@ -130,6 +131,7 @@ The following table lists the configurable parameters of the Fabric-peer chart a
 | `peers.[].peerPvcAccessMode` | Peer PVC accessmode | default `.Values.global.peerPvcAccessMode` |
 | `peers.[].peerUseExistingPvcPrefix` | If you want to use an existing pvc for Peer. A pvc must exists with this prefix and its fullname must match with the redered pod name under this statefulset | `"data-peer"` |
 | `global.hlf_domain` | The FQDN suffix for the peers. | `"my-hlf-domain.com"` |
+| `global.useDefaultServiceDNS` | `true` to enable peer communication via standard Kubernetes ClusterIP DNS across all peers | `false` |
 | `global.ica_endpoint` | MSPCA Server endpoint with port (without http/s) | `""` |
 | `global.tlsca_endpoint` | TLSCA server endpoint with port (without http/s) | `""` |
 | `global.storageClass` | Default Storageclass name | `"standard"` |

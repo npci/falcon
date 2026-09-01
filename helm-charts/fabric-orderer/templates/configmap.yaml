@@ -5,6 +5,7 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $HlfDomain     := .Values.hlf_domain | default "cluster.local" }}
 {{- $Project       := .Values.project }}
+{{- $useDefaultDNS := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -52,7 +53,11 @@ data:
             --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_CA_URL \
             --mspdir {{ $.Values.orderer_cert_base_dir }}/msp \
             --tls.certfiles $FABRIC_TLS_CERT_FILE \
+            {{- if $useDefaultDNS }}
+            --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $.Release.Namespace }},$FABRIC_IDENTITY.{{ $.Release.Namespace }}.svc.cluster.local{{- if $HlfDomain }},$FABRIC_IDENTITY.$HLF_DOMAIN{{- end }} \
+            {{- else }}
             --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$HLF_DOMAIN \
+            {{- end }}
             --csr.names O='{{ $.Values.csr_names_o }}',L={{ $.Values.csr_names_l }},ST={{ $.Values.csr_names_st }},C={{ $.Values.csr_names_cn }}
       if [ $? -eq 0 ]; then
         echo "======== Identity is valid and enrollment is successful. ========"

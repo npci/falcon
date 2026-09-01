@@ -94,8 +94,13 @@ Common env variables
 {{- end }}
 - name: FABRIC_CA_SERVER_PORT
   value: {{ .Values.ca_server.container_port | quote }}
+{{- $useDefaultDNS := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 - name: FABRIC_CA_SERVER_CSR_HOSTS
+  {{- if $useDefaultDNS }}
+  value: "{{ include "fabric-ca.fullname" . }},{{ include "fabric-ca.fullname" . }}.{{ .Release.Namespace }},{{ include "fabric-ca.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local{{- if .Values.tls_domain }},{{ include "fabric-ca.fullname" . }}.{{ .Values.tls_domain }}{{- end }} {{- if .Values.ca_server.additional_sans }},{{ join "," .Values.ca_server.additional_sans }} {{- end }}"
+  {{- else }}
   value: "{{ include "fabric-ca.fullname" . }},{{ include "fabric-ca.fullname" . }}.{{ .Values.tls_domain }} {{- if .Values.ca_server.additional_sans }},{{ join "," .Values.ca_server.additional_sans }} {{- end }}"
+  {{- end }}
 - name: FABRIC_CA_SERVER_DEBUG
   value: {{ .Values.ca_server.debug | quote }}
 - name: FABRIC_CA_SERVER_CA_NAME

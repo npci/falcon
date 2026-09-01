@@ -7,6 +7,7 @@ SPDX-License-Identifier:  GPL-3.0
 
 {{- $HlfDomain      := .Values.hlf_domain }}
 {{- $BaseDir        := .Values.workdir }}
+{{- $useDefaultDNS  := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -37,7 +38,11 @@ data:
                 Rule: "OR('{{ .org_name }}.admin')"
         OrdererEndpoints:
         {{- range .orderer_identities }}
+            {{- if or .useDefaultServiceDNS $useDefaultDNS }}
+            - {{ printf "%s.%s.svc.cluster.local:%s" .identity_name $.Release.Namespace .port }}
+            {{- else }}
             - {{ printf "%s.%s:%s" .identity_name $HlfDomain .port }}
+            {{- end }}
         {{- end }}        
       {{- end }}
       {{- if eq "consortium" .org_type }}
@@ -153,14 +158,14 @@ data:
                 Consenters:
                 {{- range .orderer_identities }}
                 {{- $msp_dir  := printf "%s/%s/%s/%s" $BaseDir $Org_name .identity_name "tls" }}
-                - Host: {{ printf "%s.%s" .identity_name $HlfDomain }}
+                - Host: {{ if or .useDefaultServiceDNS $useDefaultDNS }}{{ printf "%s.%s.svc.cluster.local" .identity_name $.Release.Namespace }}{{ else }}{{ printf "%s.%s" .identity_name $HlfDomain }}{{ end }}
                   Port: {{ .port }}
                   ClientTLSCert: {{ $msp_dir }}/server.crt
                   ServerTLSCert: {{ $msp_dir }}/server.crt
                 {{- end }}
             Addresses:
             {{- range .orderer_identities }}
-               - {{ printf "%s.%s:%s" .identity_name $HlfDomain .port }}
+               - {{ if or .useDefaultServiceDNS $useDefaultDNS }}{{ printf "%s.%s.svc.cluster.local:%s" .identity_name $.Release.Namespace .port }}{{ else }}{{ printf "%s.%s:%s" .identity_name $HlfDomain .port }}{{ end }}
             {{- end }}
             Organizations:
             - *{{ $Org_name }}

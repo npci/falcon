@@ -9,6 +9,7 @@ SPDX-License-Identifier:  GPL-3.0
 {{- $Msp_base_dir      := printf "%s%s" .Values.workdir "/crypto/users" }}
 {{- $IcaTlsCertFile    := .Values.ica_tls_certfile | default "/tmp/ca-cert.pem" }}
 {{- $TlsCaTlsCertFile  := .Values.tlsca_tls_certfile | default "/tmp/tlsca-cert.pem" }}
+{{- $useDefaultDNS     := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -49,7 +50,11 @@ data:
             --url https://$identity_name:$identity_secret@$ica_url \
             --mspdir $msp_base_dir/$identity_name/msp \
             --tls.certfiles {{ $IcaTlsCertFile }} \
+            {{- if $useDefaultDNS }}
+            --csr.hosts $identity_name,$identity_name.{{ $.Release.Namespace }},$identity_name.{{ $.Release.Namespace }}.svc.cluster.local{{- if $HlfDomain }},$identity_name.{{ $HlfDomain }}{{- end }} \
+            {{- else }}
             --csr.hosts $identity_name,$identity_name.{{ $HlfDomain }} \
+            {{- end }}
             --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
       echo "Re-arranging the MSP cert directory";
       cp $msp_base_dir/$identity_name/msp/intermediatecerts/* $msp_base_dir/$identity_name/msp/intermediatecerts/ca-cert.pem;
@@ -66,7 +71,11 @@ data:
               --url https://$identity_name:$identity_secret@$tlsca_url \
               --mspdir $msp_base_dir/$identity_name/tls \
               --tls.certfiles {{ $TlsCaTlsCertFile }} \
+              {{- if $useDefaultDNS }}
+              --csr.hosts $identity_name,$identity_name.{{ $.Release.Namespace }},$identity_name.{{ $.Release.Namespace }}.svc.cluster.local{{- if $HlfDomain }},$identity_name.{{ $HlfDomain }}{{- end }} \
+              {{- else }}
               --csr.hosts $identity_name,$identity_name.{{ $HlfDomain }} \
+              {{- end }}
               --enrollment.profile tls \
               --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
         echo "Re-arranging the TLS cert directory";

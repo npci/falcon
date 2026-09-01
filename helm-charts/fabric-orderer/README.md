@@ -64,6 +64,7 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `orderer_data_dir` | Path to store the orderer data | `"/var/hyperledger/production"` |
 | `retry_seconds` | Retry period in seconds for any script activities. Eg; enrollment | `60` |
 | `hlf_domain` | The FQDN suffix for the orderers.  | `"my-hlf-domain.com"` |
+| `useDefaultServiceDNS` | `true` to enable orderer communication via standard Kubernetes ClusterIP DNS (`<service>.<namespace>.svc.cluster.local`) | `false` |
 | `init.image.repository` | The init container image repository | `"npcioss/hlf-builder"` |
 | `init.image.tag` | The init container image tag | `2.4` |
 | `MspIdOverride` | To override Org name different than `nameOverride` | `""` |
@@ -71,6 +72,7 @@ The following table lists the configurable parameters of the Fabric-orderer char
 | `orderers.[].name` | The name of the orderer | `orderer[n]` |
 | `orderers.[].identity_name` | The identity of orderer | `""` |
 | `orderers.[].identity_secret` | The identity password of orderer | `""` |
+| `orderers.[].useDefaultServiceDNS` | `true` to use default Kubernetes ClusterIP DNS for this orderer | default `useDefaultServiceDNS` |
 | `orderers.[].command` | To override command for this orderer | `"` Default to container image spec |
 | `orderers.[].args` | To override args for this orderer | `orderer` |
 | `orderers.[].hlf_domain` | If want to override the `.Values.hlf_domain` for this orderer. Make sure this is matching with the endpoint in channel config. | `""` |

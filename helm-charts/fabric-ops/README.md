@@ -33,6 +33,7 @@ A Helm chart for performing various operations in Hyperledger fabric network.
 | `csr_names_l` | Locality | `"Mumbai"` |
 | `csr_names_o` | Organization name | `"Your Company Name"` |
 | `hlf_domain` | The FQDN suffix will be used in CSR generation. Eg `peer0-prg1.my-hlf-domain.com` | `"my-hlf-domain.com"` |
+| `useDefaultServiceDNS` | `true` to use standard Kubernetes ClusterIP DNS (`<service>.<namespace>.svc.cluster.local`) for peer/orderer communication and CSR generation | `false` |
 | `ica_tls_certfile` | Public key cert file path of the respective ICA/MSP endpoint | "`/tmp/ca-cert.pem"` |
 | `tlsca_tls_certfile` | Public key cert file path of the respective TLSCA endpoint | "`/tmp/tlsca-cert.pem"` |
 | `workdir` | The default work directory inside the job container | `"/opt/gopath/src/github.com/hyperledger/fabric"` |

@@ -65,6 +65,7 @@ data:
       REQUIRE_MSP_ENROLLMENT="${9}"
       REQUIRE_TLS_ENROLLMENT="${10}"
 
+      {{- $useDefaultDNS := or .Values.useDefaultServiceDNS (and .Values.global .Values.global.useDefaultServiceDNS) }}
       if [[ $REQUIRE_MSP_ENROLLMENT == "true" ]]
         then
           fabric_public_key_fetch $FABRIC_ICA_URL $FABRIC_ICA_TLS_CERTFILES
@@ -77,7 +78,11 @@ data:
                   --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_ICA_URL \
                   --mspdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/msp \
                   --tls.certfiles $FABRIC_ICA_TLS_CERTFILES \
+                  {{- if $useDefaultDNS }}
+                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $.Release.Namespace }},$FABRIC_IDENTITY.{{ $.Release.Namespace }}.svc.cluster.local{{- if .Values.hlf_domain }},$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN{{- end }} \
+                  {{- else }}
                   --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN \
+                  {{- end }}
                   --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
             if [ $? -eq 0 ]; then
               echo "============ Re-arranging the MSP cert directory ============"
@@ -107,7 +112,11 @@ data:
                   --url https://$FABRIC_IDENTITY:$FABRIC_IDENTITY_SECRET@$FABRIC_TLS_CA_URL \
                   --mspdir $FABRIC_IDENTITY_MSP_DIR/$FABRIC_IDENTITY/tls \
                   --tls.certfiles $FABRIC_TLSCA_TLS_CERTFILES \
+                  {{- if $useDefaultDNS }}
+                  --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.{{ $.Release.Namespace }},$FABRIC_IDENTITY.{{ $.Release.Namespace }}.svc.cluster.local{{- if .Values.hlf_domain }},$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN{{- end }} \
+                  {{- else }}
                   --csr.hosts $FABRIC_IDENTITY,$FABRIC_IDENTITY.$FABRIC_HLF_DOMAIN \
+                  {{- end }}
                   --enrollment.profile tls \
                   --csr.names O='{{ .Values.csr_names_o }}',L={{ .Values.csr_names_l }},ST={{ .Values.csr_names_st }},C={{ .Values.csr_names_cn }}
             if [ $? -eq 0 ]; then
